@@ -22,10 +22,24 @@ struct MapSizeModifier: ViewModifier {
 }
 
 struct ContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(ColorPresenter.self) private var colors
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
     @State private var selectedScreen = Screen.home
     @State private var navigationVisible = Visibility.hidden
     @State private var navigationTitle = ""
+    @State private var containerWidth: CGFloat = 0
+
+    // The capsule draws about 5 points outside its content, so 21 leaves a 16 point gap to the screen edge.
+    private let toolbarSideMargin: CGFloat = 21
+    private let toolbarMaxWidth: CGFloat = 600
+
+    /// iOS 26 sizes the bottom bar capsule to its content, so Spacer() cannot widen it.
+    /// Nil until the first measurement, which leaves the system layout in place.
+    private var toolbarWidth: CGFloat? {
+        guard self.containerWidth > 0 else { return nil }
+        return min(self.containerWidth - 2 * self.toolbarSideMargin, self.toolbarMaxWidth)
+    }
 
     enum Screen {
         case home
@@ -42,12 +56,27 @@ struct ContentView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     HStack {
-                        Image("dashboard-of-doom-logo")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 200, height: 34)
-                            .padding(.top, 10)
-                            .padding(.leading, 5)
+                        Group {
+                            if self.colorScheme == .light {
+                                Text(verbatim: "Dashboard of Doom")
+                                    .font(.headline)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .frame(minHeight: 34, alignment: .leading)
+                            }
+                            else {
+                                Image("dashboard-of-doom-logo")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 200, height: 34)
+                                    .accessibilityLabel(Text(verbatim: "Dashboard of Doom"))
+                            }
+                        }
+                        .padding(.top, 10)
+                        .padding(.leading, 5)
+                        .accessibilityAddTraits(.isHeader)
                         Spacer()
                     }
                     switch selectedScreen {
@@ -205,8 +234,14 @@ struct ContentView: View {
                             }
                             .accessibilityLabel("Settings")
                         }
+                        .frame(width: self.toolbarWidth)
                     }
                 }
+            }
+            .onGeometryChange(for: CGFloat.self) {
+                $0.size.width - $0.safeAreaInsets.leading - $0.safeAreaInsets.trailing
+            } action: {
+                self.containerWidth = $0
             }
             .toolbar(.hidden, for: .navigationBar)
             .toolbarBackground(.visible, for: .bottomBar)
@@ -227,5 +262,6 @@ struct ContentView: View {
                 }
             }
         }
+        .tint(self.colors.tint(for: self.colorScheme))
     }
 }

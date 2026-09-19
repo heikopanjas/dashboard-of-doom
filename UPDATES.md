@@ -4,6 +4,53 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.4.0, wider bottom toolbar, 00:45)
+
+- widen the ios bottom toolbar capsule, which spanned about 60 percent of the screen; it now sits 16 points from each screen edge
+- cause: on ios 26 the capsule is sized to its content, so the spacers between the buttons had nothing to expand into, and a maximum width frame inside a toolbar item is not honored either
+- the capsule now gets an explicit width: the container width measured with onGeometryChange, minus horizontal safe area, minus a 21 point margin, capped at 600 points; the capsule draws about 5 points outside its content, so 21 gives a 16 point visible gap
+- the cap keeps the six or seven icons from spreading across a 13 inch ipad; on iphone it is edge to edge
+- decision: keep the single glass capsule the user already had; the alternative, separate round glass buttons split by flexible toolbar spacers, was declined because it changes the look
+- correction to the 2026-09-19 header entry: the light mode title row is a 34 point minimum, not a fixed height, and it does grow at accessibility text sizes; agents.md now says so
+- validation: iOS Debug build; in the simulator the gap is equal on both sides in light and dark, the seven icon case with election polls on fits, the largest accessibility text size does not clip, and on an iPad Pro 13 inch the capsule is centered at about 600 points; landscape was not checked because the simulator cannot rotate from the command line
+- version bump: none; folded into the pending ios 6.4.0 (179), which is still uncommitted
+
+### 2026-09-20 (ios v6.4.0, system label color for accent text in light mode, 00:35)
+
+- ios text labels that were accent colored now use the system label color in light mode; in dark mode they keep the accent
+- affected labels are the location row (icon and address) in the covid, forecast, level, particle, radiation and survey views, and the chart title in each of the six chart views, twelve sites in all
+- tab icons, chart lines and gradients are not labels and keep the accent in both modes; the last update lines were already gray and are unchanged
+- one small modifier, accentLabel, carries the rule instead of a color scheme check in twelve files; new accent-colored text should use it
+- hazard view still uses the accent directly; it is commented out of the home screen, so it was left alone
+- rationale: with the system accent now blue in light mode, blue headings and addresses on white read as links; the user asked for these labels to use the system color instead
+- validation: iOS Debug build; in the simulator, light mode shows black labels with blue icons and chart lines, and dark mode with a stored orange accent still shows orange labels
+- version bump: none; folded into the pending ios 6.4.0 (179), which is still uncommitted
+
+### 2026-09-20 (ios v6.4.0, system accent in light mode, 00:20)
+
+- ios light mode now uses the system accent and the accent picker is hidden there; the accent choice applies in dark mode only
+- rationale: the user tried the deeper light variants from the previous entry on the iphone and preferred the stock look; this supersedes those variants (B35C00, 007C96, 0057D9), which are removed along with the light/dark color wrapper
+- ios has no user-set system accent like macos, so the system accent here means systemBlue; the AccentColor asset is now systemBlue, with systemCyan for dark to match the default
+- a nil tint falls back to the asset catalog accent, not to swiftui's built-in blue, which is why the asset had to change; the previous entry had set it to the custom cyan, so a nil tint alone would have left light mode teal
+- ColorPresenter.tint(for:) returns nil in light mode and the selected color in dark mode; the stored choice is kept, so it is still there when the app returns to dark
+- the picker keeps orange, cyan and blue in dark mode as plain system colors, and its footnote now says light mode uses the system color
+- validation: iOS Debug and Release builds, macOS Debug build, 21 iOS tests including a new light mode test; in the simulator, a stored orange accent shows stock blue in light mode and orange in dark mode, and a stored blue shows blue in dark mode
+- version bump: none; this is folded into the pending ios 6.4.0 (179), which is still uncommitted, following the earlier pending-migration entries
+
+### 2026-09-19 (ios v6.4.0, light mode header and three accents, 17:20)
+
+- ios light mode shows the title as bold text instead of the logo image; the logo is dark red lettering drawn for black and disappears on white, and macOS already did this before its header was removed in dd0f972; dark mode keeps the logo
+- the header row keeps a 34 point minimum height in both schemes so the map below does not move when the theme changes, and the title shrinks to fit rather than growing at large Dynamic Type sizes
+- reduce the accent choices from fifteen to orange, cyan and blue; white, gray and black were invisible against one of the two themes and the rest were rarely useful
+- light mode uses deeper accents (B35C00, 007C96, 0057D9, about 4.7 to 6.2 to 1 against white) because the system orange and cyan measure about 2.2 to 1 and made every chart line and tab icon look faint; dark mode keeps the system colors
+- replace the two index-matched accent arrays with one array of accent structs; the old lookup fell back to index 6, which would have crashed at launch once the arrays shrank below seven entries
+- retired accents migrate on launch to the nearest survivor (red, yellow, brown and pink to orange; green, mint and teal to cyan; indigo and purple to blue; white, gray and black to the cyan default) and the stored value is rewritten, so the settings ring and the tint cannot disagree
+- settings swatches are now buttons with accessibility labels, and the settings view no longer writes the selectedColor key itself; the presenter is the only writer
+- apply the tint on the NavigationStack in ContentView instead of in the App body; a first attempt one level lower, on the ScrollView chain, left the charts and bottom bar on the default color, found by launching with a non-default accent and seeing cyan
+- the asset catalog AccentColor was black in light mode and referenced a macOS color in dark mode; it is now the cyan default, so anything the tint misses degrades to the accent
+- validation: iOS Debug and Release builds, macOS Debug build, 20 iOS tests including the migration cases; in the simulator, orange and a retired purple (now blue) retint the charts, header text and tab bar, and dark mode shows the logo
+- version bump: ios 6.3.0 (178) to 6.4.0 (179) (MINOR - user-visible palette and header changes); macOS untouched
+
 ### 2026-09-07 (macos v6.5.4, area-weighted covid district centroid, 17:50)
 
 - fix the covid sensor's displayed location, reported by the user as an oddly specific street address for a district-wide statistic

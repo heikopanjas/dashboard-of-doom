@@ -1,6 +1,6 @@
 # Agent Instructions for Dashboard of Doom (macOS and iOS)
 
-*Last updated: September 7, 2026, 17:50 CEST (area-weighted centroid for the COVID district placemark)*
+*Last updated: September 20, 2026, 00:45 CEST (wider iOS bottom toolbar)*
 
 ## Project Overview
 
@@ -254,7 +254,7 @@ Controllers → Services → Transformers → Presenters → Views
 ### iOS Lifecycle and Validation
 
 - Use `feature/ios-modernization` for this migration. Preserve the imported iOS history; do not restore its obsolete standalone Xcode project or duplicate services.
-- iOS 6.3.0 (178) uses the user-confirmed bundle `com.panjas.dashboard-of-doom`, automatic signing team `8J2G689FCZ`, WeatherKit entitlement, and background location plist mode. macOS is 6.4.3 (147) with unchanged identity/signing.
+- iOS 6.4.0 (179) uses the user-confirmed bundle `com.panjas.dashboard-of-doom`, automatic signing team `8J2G689FCZ`, WeatherKit entitlement, and background location plist mode. macOS is 6.5.4 (152) with unchanged identity/signing.
 - `IOSAppDelegate` owns one runtime and all presenters. Its lifecycle starts once and refreshes once after background return, without stopping background location. Do not instantiate dormant hazards or start location from a presenter/view.
 - `LocationConfiguration.continuousBackground` is iOS-only: best accuracy, Always request, background updates enabled, automatic pauses disabled, background indicator enabled. Default macOS behavior remains kilometer accuracy and When In Use.
 - Preserve the strictly-greater-than-100-metre movement filter. The iOS coordinator uses everyMovement; default macOS uses firstMeasurement. Keep immediate fallback startup and cancellation checks.
@@ -264,6 +264,11 @@ Controllers → Services → Transformers → Presenters → Views
 - `iOSTests` is an unhosted Swift Testing target; `iOSUITests` uses XCTest for navigation, gestures, orientations, appearances, Dynamic Type, and 2,000/10,000-POI screenshots. Debug-only `--ui-fixture` data never starts network/location work. Release omits this fixture.
 - Package simulator tests run from each package directory using its package-name scheme. Release tests need `ENABLE_TESTABILITY=YES` for @testable imports; keep optimization enabled. Isolate derived data, SYMROOT, and OBJROOT for concurrent builds.
 - Simulator tests do not establish real background delivery or WeatherKit authorization. Record physical-device results separately in ios/MIGRATION.md.
+- iOS accents are orange, cyan and blue only (`ColorPresenter.accents`, default cyan, stored under `selectedColor`), and they apply in dark mode only. Light mode uses the system accent: `ColorPresenter.tint(for:)` returns nil, and the `AccentColor` asset supplies systemBlue (its dark entry is systemCyan). iOS has no user-set system accent, and `.tint(nil)` falls back to that asset, not to SwiftUI's built-in blue, so keep the asset at systemBlue. The Accent Color section in Settings is hidden in light mode, and the stored choice is kept for the next dark session. Retired names migrate on launch and the stored value is rewritten. Never index one accent array with a position from another; that lookup is what a shrunken palette would have crashed on.
+- iOS text labels that used the accent (the location row and the chart title in each sensor view) use `.accentLabel()` from `ios/DashboardOfDoom/Views/AccentLabel.swift`: the accent in dark mode, the system label color (`Color.primary`) in light mode. Icons, chart lines and tab icons are not labels and keep the accent in both modes. Use the modifier for new accent-colored text instead of `.foregroundColor(.accentColor)`.
+- Apply the iOS `.tint()` on the `NavigationStack` in `ContentView`. Applied lower, on the `ScrollView` chain, it did not reach the charts or the bottom bar. To test accents in the simulator, launch with `-selectedColor <name>`; `simctl spawn defaults write` targets a different plist than the app reads.
+- iOS light mode shows the title as bold text and dark mode shows `dashboard-of-doom-logo`, which is dark red and unreadable on white. Both branches give the row 34 points at standard text sizes so the content below does not shift; the text branch is a minimum height and can grow at accessibility sizes.
+- The iOS bottom toolbar capsule is given an explicit width (`toolbarWidth` in `ContentView`): the measured container width minus horizontal safe area, minus a 21-point side margin, capped at 600 points. iOS 26 sizes the capsule to its content, so `Spacer()` and `.frame(maxWidth: .infinity)` inside the toolbar item do not widen it. The capsule draws about 5 points outside its content, so 21 leaves a 16-point gap to the screen edge; the width is nil until the first measurement.
 
 ### Map Annotation Layout
 

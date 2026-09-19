@@ -8,6 +8,6 @@ See the [root README](../README.md#ios-development) for build and simulator
 commands, [migration record](MIGRATION.md) for behavior and validation,
 and [root agent instructions](../AGENTS.md) for development conventions.
 
-Current version: **6.3.0 (178)**. Requires **iOS 26+**.
+Current version: **6.4.0 (179)**. Requires **iOS 26+**.
 The user-confirmed app identity is `com.panjas.dashboard-of-doom`.
 The old standalone Xcode project and duplicate data layers have been retired.

@@ -94,7 +94,7 @@ struct SurveyChartView: View {
                 Spacer()
             }
             .font(.headline)
-            .foregroundColor(.accentColor)
+            .accentLabel()
             Chart {
                 ForEach(presenter.measurements[selector] ?? []) { measurement in
                     if selector != .survey(.fascists) && selector != .survey(.clowns) && selector != .survey(.sonstige) {

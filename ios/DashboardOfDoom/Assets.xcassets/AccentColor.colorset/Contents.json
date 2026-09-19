@@ -3,25 +3,7 @@
     {
       "color" : {
         "platform" : "ios",
-        "reference" : "systemOrangeColor"
-      },
-      "idiom" : "iphone"
-    },
-    {
-      "appearances" : [
-        {
-          "appearance" : "luminosity",
-          "value" : "light"
-        }
-      ],
-      "color" : {
-        "color-space" : "srgb",
-        "components" : {
-          "alpha" : "1.000",
-          "blue" : "0.000",
-          "green" : "0.000",
-          "red" : "0.000"
-        }
+        "reference" : "systemBlueColor"
       },
       "idiom" : "iphone"
     },
@@ -33,8 +15,8 @@
         }
       ],
       "color" : {
-        "platform" : "osx",
-        "reference" : "systemTealColor"
+        "platform" : "ios",
+        "reference" : "systemCyanColor"
       },
       "idiom" : "iphone"
     }

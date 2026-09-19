@@ -32,7 +32,7 @@ struct SurveyView: View {
                         Text(String(format: "%@", self.presenter.placemark))
                         Spacer()
                     }
-                    .foregroundColor(.accentColor)
+                    .accentLabel()
                     HStack {
                         Text("Last update: \(Date.absoluteString(date: self.presenter.timestamp))")
                         Spacer()

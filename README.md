@@ -10,7 +10,7 @@
 
 > **Platforms**: macOS 15+ and iOS 26+. Both apps use the five local DoomKit packages and the app code in `shared/Sources/`. The original iOS history is retained under `ios/`; see [migration and validation](ios/MIGRATION.md).
 
-Current versions: **macOS 6.4.3 (147)** and **iOS 6.3.0 (178)**.
+Current versions: **macOS 6.5.4 (152)** and **iOS 6.4.0 (179)**.
 
 ## iOS development
 

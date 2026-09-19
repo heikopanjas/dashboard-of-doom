@@ -9,7 +9,6 @@ struct DashboardOfDoomApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(self.enableDarkTheme == true ? .dark : nil)
-                .tint(self.delegate.runtime.colors.tintColor)
                 .environment(self.delegate.runtime.weather)
                 .environment(self.delegate.runtime.forecast)
                 .environment(self.delegate.runtime.covid)

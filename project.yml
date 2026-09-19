@@ -241,8 +241,8 @@ targets:
         PRODUCT_NAME: Dashboard of Doom
         PRODUCT_MODULE_NAME: DashboardOfDoom
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
-        MARKETING_VERSION: 6.3.0
-        CURRENT_PROJECT_VERSION: '178'
+        MARKETING_VERSION: 6.4.0
+        CURRENT_PROJECT_VERSION: '179'
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development
         DEVELOPMENT_TEAM: 8J2G689FCZ

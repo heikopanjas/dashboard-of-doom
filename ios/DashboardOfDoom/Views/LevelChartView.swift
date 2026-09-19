@@ -20,7 +20,7 @@ struct LevelChartView: View {
                 Spacer()
             }
             .font(.headline)
-            .foregroundColor(.accentColor)
+            .accentLabel()
             Chart {
                 ForEach(presenter.measurements[selector] ?? []) { level in
                     LineMark(

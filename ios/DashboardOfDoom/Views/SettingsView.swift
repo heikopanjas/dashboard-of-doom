@@ -5,11 +5,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(PointOfInterestPresenter.self) private var pointsOfInterest
-    @Environment(ColorPresenter.self) private var colorScheme
+    @Environment(ColorPresenter.self) private var colors
+    @Environment(\.colorScheme) private var colorScheme
     @AppStorage("enableDarkTheme") private var enableDarkTheme: Bool = false
-    @AppStorage("selectedColor") private var selectedColorString: String = "cyan"
-
-    let columns: [GridItem] = Array(repeating: .init(.flexible()), count: 5)
 
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage("showCovid") private var showCovid: Bool = true
@@ -52,40 +50,45 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
 
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Accent Color")
-                    Spacer()
-                }
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(ColorPresenter.accentNames, id: \.self) { name in
-                        let color = ColorPresenter.accentColors[ColorPresenter.accentNames.firstIndex(of: name) ?? 6]
-                        Rectangle()
-                            .fill(color)
-                            .frame(width: 33, height: 33)
-                            .aspectRatio(1, contentMode: .fit)
-                            .cornerRadius(5)
-                            .overlay(
+            if self.colorScheme == .dark {
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Accent Color")
+                        Spacer()
+                    }
+                    HStack(spacing: 12) {
+                        ForEach(ColorPresenter.accents) { accent in
+                            Button {
+                                self.colors.selectAccent(accent.id)
+                            } label: {
                                 RoundedRectangle(cornerRadius: 5)
-                                    .stroke(self.selectedColorString == name ? Color.primary : Color.clear, lineWidth: 2)
-                            )
-                            .onTapGesture {
-                                self.selectedColorString = name
-                                self.colorScheme.selectAccent(name)
+                                    .fill(accent.color)
+                                    .frame(width: 33, height: 33)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 5)
+                                            .stroke(
+                                                self.colors.selectedAccent.id == accent.id ? Color.primary : Color.clear,
+                                                lineWidth: 2)
+                                    )
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(accent.label)
+                            .accessibilityAddTraits(self.colors.selectedAccent.id == accent.id ? [.isSelected] : [])
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 4)
+                    HStack {
+                        Text("Accent color in dark mode. Light mode uses the system color.")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                        Spacer()
                     }
                 }
                 .padding()
-                HStack {
-                    Text("Color that should be used for the accent color.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
         }
 
         VStack(alignment: .leading, spacing: 8) {

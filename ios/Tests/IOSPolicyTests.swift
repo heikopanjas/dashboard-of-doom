@@ -1,6 +1,7 @@
 import DoomKitLocation
 import DoomKitProcess
 import Foundation
+import SwiftUI
 import Testing
 
 @MainActor
@@ -31,10 +32,51 @@ struct IOSPolicyTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let original = ColorPresenter(defaults: defaults)
-        original.selectAccent("purple")
+        original.selectAccent("blue")
         let relaunched = ColorPresenter(defaults: defaults)
-        #expect(relaunched.tintColor == original.tintColor)
-        #expect(defaults.string(forKey: "selectedColor") == "purple")
+        #expect(relaunched.tint(for: .dark) == original.tint(for: .dark))
+        #expect(defaults.string(forKey: ColorPresenter.storageKey) == "blue")
+    }
+
+    @Test func lightModeUsesSystemTintAndKeepsSelection() throws {
+        let suite = "IOSPolicyTests.accent.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let presenter = ColorPresenter(defaults: defaults)
+        presenter.selectAccent("orange")
+        #expect(presenter.tint(for: .light) == nil)
+        #expect(presenter.tint(for: .dark) == Color.orange)
+        #expect(presenter.selectedAccent.id == "orange")
+        #expect(defaults.string(forKey: ColorPresenter.storageKey) == "orange")
+    }
+
+    @Test func unknownAccentIsIgnoredAndNeverPersisted() throws {
+        let suite = "IOSPolicyTests.accent.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let presenter = ColorPresenter(defaults: defaults)
+        #expect(presenter.selectedAccent == ColorPresenter.defaultAccent)
+        #expect(defaults.string(forKey: ColorPresenter.storageKey) == nil)
+        presenter.selectAccent("chartreuse")
+        #expect(presenter.selectedAccent == ColorPresenter.defaultAccent)
+        #expect(defaults.string(forKey: ColorPresenter.storageKey) == nil)
+    }
+
+    @Test(arguments: [
+        ("purple", "blue"), ("indigo", "blue"), ("red", "orange"), ("mint", "cyan"), ("black", "cyan"),
+    ])
+    func retiredAccentMigratesOnLaunch(stored: String, expected: String) throws {
+        let suite = "IOSPolicyTests.accent.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(stored, forKey: ColorPresenter.storageKey)
+        let presenter = ColorPresenter(defaults: defaults)
+        #expect(presenter.selectedAccent.id == expected)
+        #expect(defaults.string(forKey: ColorPresenter.storageKey) == expected)
+    }
+
+    @Test func accentCatalogIsExactlyThreeInDisplayOrder() {
+        #expect(ColorPresenter.accents.map(\.id) == ["orange", "cyan", "blue"])
     }
 
     @Test func legacyKeysAndPollVisibilityRemainIndependent() throws {

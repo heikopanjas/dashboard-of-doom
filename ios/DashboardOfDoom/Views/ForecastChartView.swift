@@ -30,7 +30,7 @@ struct ForecastChartView: View {
                 Spacer()
             }
             .font(.headline)
-            .foregroundColor(.accentColor)
+            .accentLabel()
             Chart {
                 ForEach(presenter.measurements[selector] ?? []) { measurement in
                     AreaMark(
