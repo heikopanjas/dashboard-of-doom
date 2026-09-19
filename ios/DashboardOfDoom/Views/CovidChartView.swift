@@ -6,6 +6,7 @@ import SwiftUI
 
 struct CovidChartView: View {
     @Environment(CovidPresenter.self) private var presenter
+    @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -44,11 +45,13 @@ struct CovidChartView: View {
                 if let measurement = presenter.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(self.colorScheme.markerColor)
                     PointMark(
                         x: .value("Date", measurement.timestamp),
                         y: .value("Value", measurement.value.value)
                     )
                     .symbolSize(CGSize(width: 7, height: 7))
+                    .foregroundStyle(self.colorScheme.markerColor)
                     .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
                             Text(measurement.timestamp.absoluteString())
@@ -71,11 +74,13 @@ struct CovidChartView: View {
                     if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
+                            .foregroundStyle(self.colorScheme.markerColor)
                         PointMark(
                             x: .value("Date", timestamp),
                             y: .value("Value", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
+                        .foregroundStyle(self.colorScheme.markerColor)
                         .annotation(position: .bottomLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
                                 Text(timestamp.absoluteString())

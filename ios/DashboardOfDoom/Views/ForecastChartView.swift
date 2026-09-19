@@ -6,6 +6,7 @@ import SwiftUI
 
 struct ForecastChartView: View {
     @Environment(ForecastPresenter.self) private var presenter
+    @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -45,11 +46,13 @@ struct ForecastChartView: View {
                 if let measurement = presenter.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(self.colorScheme.markerColor)
                     PointMark(
                         x: .value("Date", measurement.timestamp),
                         y: .value("Forecast", measurement.value.value)
                     )
                     .symbolSize(CGSize(width: 7, height: 7))
+                    .foregroundStyle(self.colorScheme.markerColor)
                     .annotation(position: .topTrailing, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
                             Text(String(format: "%@ %@", measurement.timestamp.dateString(), measurement.timestamp.timeString()))
@@ -75,11 +78,13 @@ struct ForecastChartView: View {
                     if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", Date.round(from: timestamp, strategy: .previousHour) ?? Date.now))
                             .lineStyle(StrokeStyle(lineWidth: 1))
+                            .foregroundStyle(self.colorScheme.markerColor)
                         PointMark(
                             x: .value("Date", timestamp),
                             y: .value("Forecast", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
+                        .foregroundStyle(self.colorScheme.markerColor)
                         .annotation(position: .bottomTrailing, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
                                 Text(String(format: "%@ %@", timestamp.dateString(), timestamp.timeString()))

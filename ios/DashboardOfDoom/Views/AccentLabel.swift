@@ -14,3 +14,9 @@ extension View {
         modifier(AccentLabel())
     }
 }
+
+extension ColorScheme {
+    /// Chart markers match the axis labels (the default secondary label color) in light mode
+    /// and take the accent in dark mode.
+    var markerColor: Color { self == .light ? Color.secondary : Color.accentColor }
+}

@@ -6,6 +6,7 @@ import SwiftUI
 
 struct ParticleChartView: View {
     @Environment(ParticlePresenter.self) private var presenter
+    @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -88,11 +89,13 @@ struct ParticleChartView: View {
                 if let measurement = presenter.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(self.colorScheme.markerColor)
                     PointMark(
                         x: .value("Date", measurement.timestamp),
                         y: .value("Particle", measurement.value.value)
                     )
                     .symbolSize(CGSize(width: 7, height: 7))
+                    .foregroundStyle(self.colorScheme.markerColor)
                     .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
                             Text(measurement.timestamp.absoluteString())
@@ -115,11 +118,13 @@ struct ParticleChartView: View {
                     if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", Date.round(from: timestamp, strategy: .previousHour) ?? Date.now))
                             .lineStyle(StrokeStyle(lineWidth: 1))
+                            .foregroundStyle(self.colorScheme.markerColor)
                         PointMark(
                             x: .value("Date", timestamp),
                             y: .value("Particle", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
+                        .foregroundStyle(self.colorScheme.markerColor)
                         .annotation(position: .bottomTrailing, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
                                 Text(timestamp.absoluteString())

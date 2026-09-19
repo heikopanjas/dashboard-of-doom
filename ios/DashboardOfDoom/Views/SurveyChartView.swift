@@ -6,6 +6,7 @@ import SwiftUI
 
 struct SurveyChartView: View {
     @Environment(SurveyPresenter.self) private var presenter
+    @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -117,11 +118,13 @@ struct SurveyChartView: View {
                 if let measurement = presenter.current[selector] {
                     RuleMark(x: .value("Timestamp", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(self.colorScheme.markerColor)
                     PointMark(
                         x: .value("Timestamp", measurement.timestamp),
                         y: .value("Value", measurement.value.value)
                     )
                     .symbolSize(CGSize(width: 7, height: 7))
+                    .foregroundStyle(self.colorScheme.markerColor)
                     .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
                             Text(String(format: "%@ %@", measurement.timestamp.dateString(), measurement.timestamp.timeString()))
@@ -144,11 +147,13 @@ struct SurveyChartView: View {
                     if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Timestamp", timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
+                            .foregroundStyle(self.colorScheme.markerColor)
                         PointMark(
                             x: .value("Timestamp", timestamp),
                             y: .value("Value", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
+                        .foregroundStyle(self.colorScheme.markerColor)
                         .annotation(position: .bottomLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
                                 Text(String(format: "%@ %@", timestamp.dateString(), timestamp.timeString()))
