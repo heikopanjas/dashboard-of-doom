@@ -33,7 +33,7 @@ struct PointOfInterestSettingsView: View {
                 }
                 .disabled(self.presenter.isEnabled == false)
             }
-            Text("Places within 6.7 km refresh hourly or after moving 1 km. Map data © OpenStreetMap contributors.")
+            Text("Marks these places within 6.7 km on the map. The list refreshes every hour, or as soon as you move 1 km. Map data © OpenStreetMap contributors.")
                 .font(.caption).foregroundStyle(.secondary)
         }
 

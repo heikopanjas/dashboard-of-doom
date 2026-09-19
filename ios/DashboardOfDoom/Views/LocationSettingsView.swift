@@ -6,19 +6,35 @@ struct LocationSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Location").font(.headline)
-            Text(self.authorizationText)
-            Text(self.state.origin == .fallback ? "Using the default location: HKW, Berlin." : "Using your current location.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Text("Nearby data updates as you move. Allow Always in iOS Settings for background location updates.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Button("Open iOS Settings") {
-                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                UIApplication.shared.open(url)
+            Text("Location")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                HStack {
+                    Text("Access")
+                    Spacer()
+                    Text(self.accessValue)
+                        .foregroundColor(.gray)
+                }
+                HStack {
+                    Text(self.detail)
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+                HStack {
+                    Button("Open iOS Settings") {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    }
+                    Spacer()
+                }
             }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
         }
-        .padding()
-        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
         .task {
             for await state in AppLocation.shared.updates() {
                 guard Task.isCancelled == false else { return }
@@ -27,16 +43,34 @@ struct LocationSettingsView: View {
         }
     }
 
-    private var authorizationText: String {
+    private var accessValue: String {
         switch self.state.authorization {
-            case .denied: return "Location access is denied."
-            case .restricted: return "Location access is restricted."
-            case .notDetermined: return "Location permission has not been granted."
+            case .denied: return "Denied"
+            case .restricted: return "Restricted"
+            case .notDetermined: return "Not Granted"
             case .authorized:
                 switch self.state.authorizationScope {
-                    case .always: return "Location access: Always."
-                    case .whenInUse: return "Location access: While Using the App."
-                    case .unknown: return "Location access is allowed."
+                    case .always: return "Always"
+                    case .whenInUse: return "While Using the App"
+                    case .unknown: return "Allowed"
+                }
+        }
+    }
+
+    private var detail: String {
+        let origin =
+            self.state.origin == .fallback
+            ? "Readings come from sensors near the default location, HKW in Berlin."
+            : "Readings come from sensors near you."
+        switch self.state.authorization {
+            case .denied, .restricted, .notDetermined:
+                return "\(origin) Allow location access to use where you actually are."
+            case .authorized:
+                switch self.state.authorizationScope {
+                    case .always:
+                        return "\(origin) They follow you as you move, even while the app is in the background."
+                    default:
+                        return "\(origin) Choose Always to keep them following you while the app is in the background."
                 }
         }
     }

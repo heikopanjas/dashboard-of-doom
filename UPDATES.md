@@ -4,6 +4,43 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.4.0, move the location section down, 01:35)
+
+- move the ios settings location section below points of interest, so the order is general, home, points of interest, location, water, particulate matter, election polls
+- rationale: the user asked for it; it also groups location next to the two nearest sensor sections it affects, since location is what decides which gauge and station are chosen
+- validation: iOS Debug build and an ipad simulator screenshot of the new order
+- version bump: none; folded into the pending work on top of ee0f4e6
+
+### 2026-09-20 (ios v6.4.0, clearer settings explainers and location section, 01:25)
+
+- reword every short explainer on the ios settings page and restyle the location section to match the others
+- the home switches did not say that they also stop a source from updating; covid, water, radiation and particles cancel that source's refresh, so the matching tab sits on stale values, while weather and the poll map switch only hide the map label; the texts now say which of the two a switch does
+- the election polls enable switch had no explainer at all although it also decides whether the polls tab exists
+- the two nearest sensor switches described what they avoid rather than what they pick; they now say the app otherwise prefers a gauge on a natural river, or a station reporting all four pollutants
+- the poll scope text now names the bundestag and the parliament where you are, which is how the scope actually resolves, from the constituency at your location
+- the location section was the odd one out: its heading sat inside the card and the card was narrower than every other section, because its texts had no trailing Spacer to push the card to full width; it now uses the same heading outside, full width card, and an Access row that reads like the toggle rows
+- also reworded the points of interest explainer, which lives in a shared view, so the macos settings window picks up the same text
+- validation: iOS and macOS Debug builds, 21 iOS tests; every section checked on an ipad simulator in light and dark, including the two sections below the fold, which were temporarily moved to the top to be photographed and then restored
+- version bump: none; folded into the pending work on top of ee0f4e6
+
+### 2026-09-20 (ios v6.4.0, chart markers match axis labels, 01:10)
+
+- in light mode the vertical marker line and dot on each ios chart now use the secondary system label color, the same color as the axis labels along the bottom and right of the chart, instead of the primary label color from the previous entry
+- rationale: the user wanted the markers to match the axis labels; the charts use default axis styling, so those labels are the secondary label color, and using the same semantic color keeps them in step if that default changes
+- measured on a simulator screenshot: axis labels and the marker line over white background both read 138, 138, 142; the marker is drawn at 60 percent opacity like the labels, so over the blue area fill it blends to a bluish gray instead of a pure gray
+- scope is unchanged from the previous entry: light mode only, dark mode keeps the accent; no test or version change
+- validation: iOS Debug build and the pixel comparison above; the drag-selected markers use the same edit but could not be triggered from the command line
+
+### 2026-09-20 (ios v6.4.0, chart markers use system color in light mode, 00:55)
+
+- the vertical marker line and the dot on each ios chart now use the system label color in light mode and keep the accent in dark mode
+- covers the current value marker and the marker shown while dragging, in all six charts: covid, forecast, level, particle, radiation and survey, so twelve rule marks and twelve point marks
+- rationale: the user asked for these to follow the system color in light mode, like the accent text labels changed in the previous entries; a blue line and dot on the blue fill were also hard to pick out
+- chart marks are not views, so the accentLabel modifier does not apply; each chart reads the color scheme and uses a shared ColorScheme.markerColor, defined next to accentLabel
+- the area fill under each line is not a marker and keeps the accent in both modes
+- validation: iOS Debug build; in the simulator, light mode shows a black line and dot on the level chart and dark mode with a stored orange accent shows an orange line and dot; the dragging markers use the same edit but could not be triggered, since the simulator cannot touch from the command line
+- version bump: none; the earlier work is committed as ee0f4e6 but the version was already raised to 6.4.0 (179) there, and this is a small follow-up inside it
+
 ### 2026-09-20 (ios v6.4.0, wider bottom toolbar, 00:45)
 
 - widen the ios bottom toolbar capsule, which spanned about 60 percent of the screen; it now sits 16 points from each screen edge

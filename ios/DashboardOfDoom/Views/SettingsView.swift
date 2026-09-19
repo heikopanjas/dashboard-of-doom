@@ -40,7 +40,7 @@ struct SettingsView: View {
             VStack(spacing: 12) {
                 Toggle("Always Use Dark Theme", isOn: $enableDarkTheme)
                 HStack {
-                    Text("Override system theme settings.")
+                    Text("Use the dark theme even when iOS is set to light.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
@@ -79,7 +79,7 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 4)
                     HStack {
-                        Text("Accent color in dark mode. Light mode uses the system color.")
+                        Text("Tints icons, charts and headings. Light mode always uses the standard blue.")
                             .font(.footnote)
                             .foregroundColor(.gray)
                         Spacer()
@@ -99,35 +99,35 @@ struct SettingsView: View {
             VStack(spacing: 12) {
                 Toggle("Weather", isOn: $showWeather)
                 HStack {
-                    Text("Show weather conditions on the map.")
+                    Text("Shows the temperature on the map. Weather keeps updating either way.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
                 }
                 Toggle("COVID-19", isOn: $showCovid)
                 HStack {
-                    Text("Show COVID-19 incidence on the map.")
+                    Text("Shows incidence on the map. Turning it off also stops COVID-19 from updating.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
                 }
                 Toggle("Water", isOn: $showWater)
                 HStack {
-                    Text("Show water level on the map.")
+                    Text("Shows the water level on the map. Turning it off also stops it from updating.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
                 }
                 Toggle("Radiation", isOn: $showRadiation)
                 HStack {
-                    Text("Show radiation on the map.")
+                    Text("Shows the dose rate on the map. Turning it off also stops it from updating.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
                 }
                 Toggle("Particulate Matter", isOn: $showParticles)
                 HStack {
-                    Text("Show particulate matter on the map.")
+                    Text("Shows particulates on the map. Turning it off also stops them from updating.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
@@ -136,7 +136,7 @@ struct SettingsView: View {
                     VStack {
                         Toggle("Election Polls", isOn: $showElectionPolls)
                         HStack {
-                            Text("Show election polls on the map.")
+                            Text("Shows poll results on the map. The Polls tab keeps them either way.")
                                 .font(.footnote)
                                 .foregroundColor(.gray)
                             Spacer()
@@ -148,9 +148,9 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
-        LocationSettingsView()
-
         PointOfInterestSettingsView(presenter: self.pointsOfInterest)
+
+        LocationSettingsView()
 
         VStack(alignment: .leading, spacing: 8) {
             Text("Water")
@@ -164,7 +164,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Always select the nearest sensor, even if it is located at an artificial water body."
+                        "Use the closest gauge, even on a canal. Otherwise a gauge on the nearest river or stream is preferred."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
@@ -187,7 +187,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Always select the nearest sensor, even if it doesn't provide \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082}."
+                        "Use the closest station, even if it measures only some pollutants. Otherwise a station reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} is preferred."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
@@ -206,6 +206,12 @@ struct SettingsView: View {
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
                 Toggle("Enable", isOn: $enableElectionPolls)
+                HStack {
+                    Text("Downloads polling data and adds the Polls tab.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
                 if enableElectionPolls == true {
                     Picker("Scope", selection: $electionPollScope) {
                         Text("Federal").tag(0)
@@ -216,7 +222,7 @@ struct SettingsView: View {
                                                 AppProcess.shared.refreshSubscription(subscriber: electionPolls)
                     }
                     HStack {
-                        Text("Show federal or state parliament election polls.")
+                        Text("Federal covers the Bundestag. State covers the parliament where you are.")
                             .font(.footnote)
                             .foregroundColor(.gray)
                         Spacer()
