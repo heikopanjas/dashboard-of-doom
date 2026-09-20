@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, keychain store for api keys and tokens, 19:00)
+
+- a sixth local package, doomkitsecrets, keeps api keys and tokens in the keychain, one string per named key, behind a small store protocol with a memory double for tests; the app's instance is appsecrets shared, and a secretfield settings row lets a key be pasted or removed. nothing consumes a key yet; it is there for the first source that needs one
+- decision: items are synchronizable, so a key entered on the phone reaches the mac through icloud keychain, as asked; they use the data protection keychain, which is the one that syncs and the one the sandboxed macos app has, and are readable after first unlock so a background refresh can use them
+- decision: a package of its own rather than a corner of the network package, so credentials do not pull the security framework into request code and the boundary stays as clean as the other five
+- the keychain only works in an entitled process: the unsigned test runners and the unsigned simulator app both fail with missing entitlement, which is how a round trip test in the ios unit target failed and was removed. instead a debug launch argument runs a write, replace and remove of a probe key in the app itself; on the signed device build it passed
+- validation: package tests for the memory store, the item query and the key type; both apps build; the device self check passed and the app was relaunched normally afterwards
+- version bump: none; no user visible change
+
 ### 2026-09-20 (ios v6.5.0, energy prices tab and covid behind a switch, 18:00)
 
 - a new ios energy tab shows daily brent and wti crude oil prices in usd per barrel and the eu lng spot price in eur per mwh, one chart each over the last year, a quarter at first and widened on request; it takes the slot the covid tab had

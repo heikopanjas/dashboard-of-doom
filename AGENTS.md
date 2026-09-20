@@ -1,6 +1,6 @@
 # Agent Instructions for Dashboard of Doom (macOS and iOS)
 
-*Last updated: September 20, 2026, 18:10 CEST (Energy prices tab with explainers, COVID tab behind a switch)*
+*Last updated: September 20, 2026, 19:00 CEST (DoomKitSecrets keychain store for API keys)*
 
 ## Project Overview
 
@@ -29,7 +29,7 @@ Dashboard of Doom is a sophisticated macOS menu bar application providing real-t
 - **macOS**: MVP (Model-View-Presenter) pattern optimized for menu bar applications
 - **Menu Bar Interface**: Lightweight status bar extra with popover/window presentation
 - **Settings Window**: Dedicated configuration interface for user preferences
-- **Shared Business Logic**: Both apps compile `shared/Sources/` and use the same five local DoomKit packages
+- **Shared Business Logic**: Both apps compile `shared/Sources/` and use the same six local DoomKit packages
 
 ### Core Components
 
@@ -245,7 +245,7 @@ Controllers → Services → Transformers → Presenters → Views
 - Keep the existing signing configuration, app identity, and WeatherKit entitlement unless explicitly changing them; configure signing in the spec, including SDK-specific overrides
 - Generated project files are ignored, except the tracked package lockfile at `DashboardOfDoom.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`
 - Preserve locked dependency revisions during unrelated changes
-- Local package tests: run `swift test --package-path shared/doom-kit-location`, then `doom-kit-network`, then `doom-kit-process`, `doom-kit-tools`, and `doom-kit-services`; repeat Process, Tools, and Services with `-c release`; tests use injected dependencies and no live network
+- Local package tests: run `swift test --package-path shared/doom-kit-location`, then `doom-kit-network`, then `doom-kit-process`, `doom-kit-tools`, `doom-kit-services`, and `doom-kit-secrets`; repeat Process, Tools, and Services with `-c release`; tests use injected dependencies and no live network
 - `PointOfInterestTests` is an unhosted macOS Swift Testing target. Run `xcodegen generate`, then `xcodebuild -project DashboardOfDoom.xcodeproj -scheme PointOfInterestTests -destination 'platform=macOS' -derivedDataPath .build/poi-tests test`. Its filtered synchronized source folder excludes the app entry point; tests inject fetching, location, time, and preferences. That folder is an explicit include list in `project.yml`, so a new shared file used by an included source must be added there or the target stops compiling (`iOSTests` compiles all of `shared/Sources` and needs no entry).
 - POIs use a single Canvas with one Core Graphics image pass beneath environmental labels, never the collision solver. Repeated SwiftUI symbol/image draws crashed the GPU encoder in the 10,000-point stress fixture; preserve the batched Core Graphics path. Preserve stable OSM identities, category toggles, all-point rendering, Apple POIs, and region fitting. Project only after geometry/camera changes, using the deferred MapReader registration safeguard.
 - The app delegate owns the POI presenter lifecycle. Keep the 6,666.67-metre radius, one-hour cache within 1 km, minute expiry checks, five-minute failure cooldown, and two-request concurrency limit across cancelled generations. Never start or stop shared location tracking from the POI presenter.
@@ -306,6 +306,7 @@ Controllers → Services → Transformers → Presenters → Views
 - `doom-kit-process` / `DoomKitProcess`: process models, custom units, geographic helpers, open observable presenter and transformer bases, coordinator, generic main-actor scheduler and injected clock; local dependencies on DoomKitLocation and DoomKitNetwork
 - `doom-kit-tools` / `DoomKitTools`: generic Measurement smoothing, ARIMA, polygon/bounding-box helpers, symbols, and mutex-protected synchronous Sendable Trace; depends only on DoomKitLocation
 - `doom-kit-services` / `DoomKitServices`: eight public static API services with trailing injectable NetworkManager defaults; depends on Location, Network, and Tools
+- `doom-kit-secrets` / `DoomKitSecrets`: API keys and tokens, one string per `SecretKey` name, behind the `SecretStore` protocol (`read`, `write`, `delete`, `contains`; writing an empty value deletes). `KeychainSecretStore` files them as generic passwords under one service name, `kSecAttrSynchronizable` so iCloud Keychain carries a key to the user's other devices, `kSecUseDataProtectionKeychain` because that is the keychain that syncs and the one the sandboxed macOS app has, readable after first unlock so background refreshes can use them. `MemorySecretStore` is the double for tests and previews. No dependencies. The app's instance is `AppSecrets.shared` (service `com.panjas.dashboard-of-doom.secrets`), and `SecretField` is the settings row for pasting or removing a named key; nothing consumes a key yet. A source that needs one declares its `SecretKey` beside its service and reads it there. The keychain works only in an entitled process, so the unsigned test runners (`iOSTests`, `PointOfInterestTests`, and the unsigned simulator app) get `errSecMissingEntitlement` (-34018); the package tests cover the memory store and the item query, and `--keychain-check` (Debug, `IOSAppRuntime`) runs a write, replace and remove of a probe key in the app itself, which passed on the signed device build. Never put a key in the repo, `project.yml` or `UserDefaults`.
 - Keep smoothing independent of ProcessValue; app callers rebuild values in order with original metadata, timestamps, quality, units, and new UUIDs
 - Preserve original unit coefficients and base units, numeric algorithms, service URL/date behavior, and failure-to-nil cancellation contract during extraction work
 - All packages use Swift tools 6.2 and Swift 6 language mode; keep the app in Swift 5 mode
