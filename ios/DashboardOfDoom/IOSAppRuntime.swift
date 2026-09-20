@@ -7,6 +7,7 @@ final class IOSAppRuntime {
     let covid = CovidPresenter()
     let levels = LevelPresenter()
     let radiation = RadiationPresenter()
+    let hazards = HazardPresenter()
     let particles = ParticlePresenter()
     let surveys = SurveyPresenter()
     let colors = ColorPresenter()
@@ -15,7 +16,7 @@ final class IOSAppRuntime {
         if IOSPreviewData.isEnabled == true { return IOSPreviewData.points(category: category) }
         #endif
         return try await PointOfInterestController().fetch(category: category, location: location)
-    })
+    }, fetchesWhenHidden: true)
 
     lazy var lifecycle = AppActivityLifecycle(
         start: { [weak self] in

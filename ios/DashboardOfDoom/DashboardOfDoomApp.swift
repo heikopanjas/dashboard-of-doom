@@ -14,6 +14,7 @@ struct DashboardOfDoomApp: App {
                 .environment(self.delegate.runtime.covid)
                 .environment(self.delegate.runtime.levels)
                 .environment(self.delegate.runtime.radiation)
+                .environment(self.delegate.runtime.hazards)
                 .environment(self.delegate.runtime.particles)
                 .environment(self.delegate.runtime.surveys)
                 .environment(self.delegate.runtime.colors)

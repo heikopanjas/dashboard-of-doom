@@ -19,11 +19,22 @@ import Observation
         let result: Result<[PointOfInterest], Error>
     }
 
+    /// What the map shows: filtered by the master switch and the category switches.
     private(set) var points: [PointOfInterest] = []
+    /// Every loaded point near the user, regardless of the switches. Only populated
+    /// beyond `points` when the presenter fetches while hidden.
+    private(set) var allPoints: [PointOfInterest] = []
     private(set) var isEnabled: Bool
     private(set) var categories: Set<PointOfInterestCategory>
+
+    /// True when the map will draw pins: the master switch is on and at least one
+    /// category is selected. Read from the switches, not from `points`, so it holds
+    /// steady while a fetch is in flight instead of flickering with the loaded data.
+    var showsAnyPlaces: Bool { return self.isEnabled == true && self.categories.isEmpty == false }
+
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let fetch: Fetch
+    @ObservationIgnored private let fetchesWhenHidden: Bool
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: @Sendable () async throws -> Void
     @ObservationIgnored private var cache: [PointOfInterestCategory: Cache] = [:]
@@ -36,13 +47,17 @@ import Observation
     @ObservationIgnored private var timerTask: Task<Void, Never>?
     @ObservationIgnored private var refreshTask: Task<Void, Never>?
 
+    /// `fetchesWhenHidden` keeps every category loading while the switches are off, so a
+    /// consumer other than the map (the iOS nearest places row) always has data.
     init(
         defaults: UserDefaults = .standard, fetch: @escaping Fetch,
         now: @escaping () -> Date = Date.init,
-        sleep: @escaping @Sendable () async throws -> Void = { try await Task.sleep(for: .seconds(60)) }
+        sleep: @escaping @Sendable () async throws -> Void = { try await Task.sleep(for: .seconds(60)) },
+        fetchesWhenHidden: Bool = false
     ) {
         self.defaults = defaults
         self.fetch = fetch
+        self.fetchesWhenHidden = fetchesWhenHidden
         self.now = now
         self.sleep = sleep
         self.isEnabled = defaults.object(forKey: "showPlaces") as? Bool ?? true
@@ -125,10 +140,12 @@ import Observation
     }
 
     func refreshIfNeeded() {
-        guard self.running == true, self.isEnabled == true, let location = self.location, self.batchCenter == nil else { return }
+        guard self.running == true, self.isEnabled == true || self.fetchesWhenHidden == true, let location = self.location,
+            self.batchCenter == nil
+        else { return }
         let date = self.now()
         let categories = PointOfInterestCategory.allCases.filter { category in
-            guard self.categories.contains(category) == true else { return false }
+            guard self.fetchesWhenHidden == true || self.categories.contains(category) == true else { return false }
             if let cached = self.cache[category], Self.distance(cached.center, location) < 1000, date.timeIntervalSince(cached.date) < 3600 {
                 return false
             }
@@ -178,15 +195,17 @@ import Observation
     }
 
     private func publish() {
-        guard self.isEnabled == true, let location = self.location else {
+        guard let location = self.location else {
             if self.points.isEmpty == false { self.points = [] }
+            if self.allPoints.isEmpty == false { self.allPoints = [] }
             return
         }
-        let points = PointOfInterestCategory.allCases.flatMap { category -> [PointOfInterest] in
-            guard self.categories.contains(category) == true, let cached = self.cache[category], Self.distance(cached.center, location) < 1000
-            else { return [] }
+        let all = PointOfInterestCategory.allCases.flatMap { category -> [PointOfInterest] in
+            guard let cached = self.cache[category], Self.distance(cached.center, location) < 1000 else { return [] }
             return cached.points
         }
+        let points = self.isEnabled == true ? all.filter { self.categories.contains($0.category) } : []
+        if all != self.allPoints { self.allPoints = all }
         if points != self.points { self.points = points }
     }
 

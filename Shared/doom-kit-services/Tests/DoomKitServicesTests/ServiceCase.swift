@@ -14,7 +14,7 @@ struct ServiceCase: Sendable {
         Self(
             name: "CovidService.fetchDistricts",
             url:
-                #"https://overpass-api.de/api/interpreter?data=%5Bout:json%5D%5Btimeout:25%5D%5Bbbox:52.5089081027668,13.386771272770513,52.5310918972332,13.423228727229485%5D;relation(around:1234.75,52.52,13.405)%5B%22boundary%22=%22administrative%22%5D%5B%22admin_level%22~%224%7C6%7C7%7C8%7C9%22%5D;out%20center%20tags%20qt;"#,
+                #"https://sgx.geodatenzentrum.de/wfs_vg250?service=WFS&version=2.0.0&request=GetFeature&typeNames=vg250:vg250_krs&bbox=13.386771272770513,52.5089081027668,13.423228727229485,52.5310918972332,EPSG:4326&outputFormat=application/json&count=20"#,
             fetch: { manager in
                 return try await CovidService.fetchDistricts(
                     for: Location(latitude: 52.52, longitude: 13.405), radius: 1234.75, networkManager: manager)
@@ -32,28 +32,26 @@ struct ServiceCase: Sendable {
             name: "CovidService.fetchRecovered", url: #"https://api.corona-zahlen.org/districts/fixture-123/history/recovered/1234"#,
             fetch: { manager in return try await CovidService.fetchRecovered(id: "fixture-123", duration: 1234.75, networkManager: manager) }),
         Self(
-            name: "HazardService.fetchCivilProtectionHazards", url: #"https://nina.api.proxy.bund.dev/api31/mowas/mapData.json"#,
-            fetch: { manager in return try await HazardService.fetchCivilProtectionHazards(networkManager: manager) }),
+            name: "HazardService.fetchHazardList(mowas)", url: #"https://warnung.bund.de/api31/mowas/mapData.json"#,
+            fetch: { manager in return try await HazardService.fetchHazardList(feed: .mowas, networkManager: manager) }),
         Self(
-            name: "HazardService.fetchWeatherHazards", url: #"https://nina.api.proxy.bund.dev/api31/dwd/mapData.json"#,
-            fetch: { manager in return try await HazardService.fetchWeatherHazards(networkManager: manager) }),
+            name: "HazardService.fetchHazardList(dwd)", url: #"https://warnung.bund.de/api31/dwd/mapData.json"#,
+            fetch: { manager in return try await HazardService.fetchHazardList(feed: .dwd, networkManager: manager) }),
         Self(
-            name: "HazardService.fetchHazardDetails", url: #"https://nina.api.proxy.bund.dev/api31/warnings/fixture-123.json"#,
+            name: "HazardService.fetchHazardList(katwarn)", url: #"https://warnung.bund.de/api31/katwarn/mapData.json"#,
+            fetch: { manager in return try await HazardService.fetchHazardList(feed: .katwarn, networkManager: manager) }),
+        Self(
+            name: "HazardService.fetchHazardList(biwapp)", url: #"https://warnung.bund.de/api31/biwapp/mapData.json"#,
+            fetch: { manager in return try await HazardService.fetchHazardList(feed: .biwapp, networkManager: manager) }),
+        Self(
+            name: "HazardService.fetchHazardDetails", url: #"https://warnung.bund.de/api31/warnings/fixture-123.json"#,
             fetch: { manager in return try await HazardService.fetchHazardDetails(for: "fixture-123", networkManager: manager) }),
         Self(
-            name: "HazardService.fetchHazardRegion", url: #"https://nina.api.proxy.bund.dev/api31/warnings/fixture-123.geojson"#,
+            name: "HazardService.fetchHazardRegion", url: #"https://warnung.bund.de/api31/warnings/fixture-123.geojson"#,
             fetch: { manager in return try await HazardService.fetchHazardRegion(for: "fixture-123", networkManager: manager) }),
         Self(
             name: "LevelService.fetchStations", url: #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json"#,
             fetch: { manager in return try await LevelService.fetchStations(networkManager: manager) }),
-        Self(
-            name: "LevelService.fetchWaterways",
-            url:
-                #"https://overpass-api.de/api/interpreter?data=%5Bout:json%5D%5Btimeout:25%5D%5Bbbox:52.5089081027668,13.386771272770513,52.5310918972332,13.423228727229485%5D;(way(around:1234.75,52.52,13.405)%5B%22waterway%22=%22river%22%5D;);out%20center%20tags%20qt;"#,
-            fetch: { manager in
-                return try await LevelService.fetchWaterways(
-                    for: Location(latitude: 52.52, longitude: 13.405), radius: 1234.75, networkManager: manager)
-            }),
         Self(
             name: "LevelService.fetchMeasurements",
             url: #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/fixture-123/W/measurements.json?start=P3D"#,

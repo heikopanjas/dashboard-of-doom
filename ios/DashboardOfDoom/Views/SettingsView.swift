@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage("showRadiation") private var showRadiation: Bool = true
+    @AppStorage("showHazards") private var showHazards: Bool = true
 
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var covid
@@ -132,6 +133,13 @@ struct SettingsView: View {
                         .foregroundColor(.gray)
                     Spacer()
                 }
+                Toggle("Warnings", isOn: $showHazards)
+                HStack {
+                    Text("Shows civil protection and weather warnings near you on the Home screen. Turning it off also stops them from updating.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
                 if enableElectionPolls == true {
                     VStack {
                         Toggle("Election Polls", isOn: $showElectionPolls)
@@ -148,7 +156,13 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
-        PointOfInterestSettingsView(presenter: self.pointsOfInterest)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Points of Interest")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            PointOfInterestSettingsView(presenter: self.pointsOfInterest)
+        }
 
         LocationSettingsView()
 

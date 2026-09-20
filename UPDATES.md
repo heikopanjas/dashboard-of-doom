@@ -4,6 +4,49 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, poi master switch reframed and label opacity rule, 02:40)
+
+- the ios points of interest master switch is now labelled "Show on map", since that is all it does once every category loads regardless of the switches; macos keeps "Show points of interest", where it still stops fetching
+- the section gets a "Points of Interest" headline in the ios settings view, so every section has one; it was the only one relying on its first toggle as a title
+- environmental map labels are now opaque when pins will actually be drawn, meaning the master switch is on and at least one category is selected, rather than on the master switch alone; before, master on with all five categories off left the labels opaque over a map with no pins
+- the opacity is read from the switches through a new showsAnyPlaces property, not from the loaded points, so it keeps the no-flicker property the old rule had while a fetch is in flight
+- decision: keep the master switch rather than delete it, and do not move decluttering onto the map; the user pointed out the map is already visually full between the floating sensor labels and a dense pin layer, so a one tap clear that preserves the per category choices earns its row in settings
+- found while verifying: launch arguments cannot drive showPlaces or the category keys, because the presenter reads them with object as Bool to tell unset from false and argument domain values arrive as strings; AppStorage switches like showHazards use bool and do respond; noted in agents.md so the next session does not repeat the attempt
+- validation: iOS and macOS Debug builds, 39 iOS and 28 macOS tests including a new showsAnyPlaces case over all four switch combinations; the three way visual comparison could not be done for the reason above
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, tap a warning to open it on nina, 02:10)
+
+- tapping a warning row on the ios home screen opens the alert's own page on warnung.bund.de in the system browser; the row shows a small open-in-browser symbol and has an accessibility hint
+- the link is the form the nina web app uses itself, meldungen slash list id slash slug, found by reading the site's javascript bundle; the shorter meldung slash id redirect route rendered "meldung nicht mehr vorhanden" for an alert that was live, and the cap web field was not usable either, since dwd sets it to its generic warnings page and some issuers leave it empty
+- validation: iOS Debug and macOS Debug builds, 38 iOS and 27 macOS tests including a url test; both a dwd and a mowas alert opened to their map and text in simulator safari
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, all place categories on home, places always load, 01:55)
+
+- the nearest places row on the ios home screen now lists the closest liquor or convenience store, funeral director and cemetery as well as the pharmacy and hospital, in that order
+- ios keeps loading all five point of interest categories whatever the settings switches say; the switches now change only what the map draws, and the row is populated even with places switched off
+- rationale: the user wants the row always filled; before, switching places off emptied the row and turning a category off dropped it from the row
+- done with a second published list on the shared presenter: points stays the map's filtered set, allPoints is everything cached nearby, and an opt in fetchesWhenHidden flag that only ios sets; macos keeps not fetching what is switched off, since it has no consumer for hidden points
+- the points of interest explainer on ios now says the switches change only the map; macos keeps its old text
+- validation: iOS and macOS Debug builds, 37 iOS tests and 26 macOS tests including a new presenter test for fetching while hidden; simulator screenshots with places off show a clear map and a five entry row
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, home rows below the map and nina warnings, 01:45)
+
+- replace the level and radiation charts below the ios home map, which duplicated the environment tab, with four rows the user chose: an hourly forecast strip, a current conditions row, the nearest pharmacy and hospital, and a warnings card
+- the forecast strip and conditions row show data the app already loaded but never displayed on ios: 111 hourly forecast points with condition symbols and rain chance, and feels-like, humidity, wind, gusts and pressure from the current weather; no controller or transformer changed
+- the nearest places row is a client side minimum over the points of interest already loaded and draws its own leading divider, so nothing remains when places are off
+- revive the dormant nina hazards: the proxy host the app used no longer resolves, so the service now uses the official warnung.bund.de host, which returns the same shapes; live at hkw the card listed two dwd storm warnings, one covering berlin and one 16 km away
+- rationale for the rewrite rather than a host swap: the old view had no empty state, the old presenter was registered nowhere and would have crashed the app on launch, it ran its own location loop outside the coordinator, and the controller fetched detail, geometry and a reverse geocode for every alert in germany, serially
+- the controller now fetches the four list feeds concurrently, then each alert's small geojson to decide relevance, and only then the cap details for alerts inside or within 50 km for dwd and 25 km for civil feeds, with at most 4 region and 2 detail requests in flight; a geojson is a multi feature collection with one polygon per district and the old parser read only the first
+- relevance is decided by expiry rather than a 3 day sent window, since a live mowas drinking water notice was 16 days old; cancellations arrive as their own type and are dropped
+- the presenter is a small ProcessRefreshable with a conditional subscription, a showHazards switch in the home settings, and the same failure cooldown as points of interest; a failed fetch keeps the last list and never shows a false all clear
+- the geojson ring parser moved out of the covid controller into a shared GeoJSON helper used by both
+- the services package tests had not compiled since the waterway change removed LevelService.fetchWaterways and the covid district lookup moved to bkg; the stale case is removed and the covid expectation updated, so the package is green again
+- validation: iOS Debug and Release builds, macOS Debug build, 36 iOS tests including three new suites, 25 macOS tests, the services package; simulator screenshots on iphone and ipad in light and dark with the ui fixture, which now populates the forecast strip, conditions and three sample warnings; live run at hkw against the real feed
+- version bump: ios 6.4.0 (179) to 6.5.0 (180) (MINOR - new home screen content and a revived data source); macOS untouched
+
 ### 2026-09-20 (ios v6.4.0, move the location section down, 01:35)
 
 - move the ios settings location section below points of interest, so the order is general, home, points of interest, location, water, particulate matter, election polls

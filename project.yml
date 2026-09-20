@@ -190,6 +190,10 @@ targets:
       - Presenters/CovidPresenter.swift
       - Transformers/CovidTransformer.swift
       - Controllers/CovidController.swift
+      - Models/GeoJSON.swift
+      - Models/Hazard.swift
+      - Controllers/HazardController.swift
+      - Presenters/HazardPresenter.swift
       - Presenters/LevelPresenter.swift
       - Transformers/LevelTransformer.swift
       - Presenters/RadiationPresenter.swift
@@ -241,8 +245,8 @@ targets:
         PRODUCT_NAME: Dashboard of Doom
         PRODUCT_MODULE_NAME: DashboardOfDoom
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
-        MARKETING_VERSION: 6.4.0
-        CURRENT_PROJECT_VERSION: '179'
+        MARKETING_VERSION: 6.5.0
+        CURRENT_PROJECT_VERSION: '180'
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development
         DEVELOPMENT_TEAM: 8J2G689FCZ
@@ -281,6 +285,10 @@ targets:
       includes:
       - AppActivityLifecycle.swift
       - Views/ActivityIndicator.swift
+      - Views/AccentLabel.swift
+      - Views/ForecastStripView.swift
+      - Views/CurrentConditionsView.swift
+      - Views/NearestPlacesView.swift
     settings:
       base:
         SDKROOT: iphoneos

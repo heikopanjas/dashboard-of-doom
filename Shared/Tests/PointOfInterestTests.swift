@@ -145,6 +145,54 @@ import Testing
         #expect(await server.calls == 15)
     }
 
+    @Test func showsAnyPlacesNeedsTheMasterSwitchAndOneCategory() throws {
+        let suite = "POITests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { UserDefaults.standard.removePersistentDomain(forName: suite) }
+        let presenter = PointOfInterestPresenter(defaults: defaults, fetch: { _, _ in return [] })
+        #expect(presenter.showsAnyPlaces == true)
+        for category in PointOfInterestCategory.allCases { presenter.setCategory(category, enabled: false) }
+        // Master on but nothing selected draws no pins, so the labels must not stay opaque.
+        #expect(presenter.showsAnyPlaces == false)
+        presenter.setCategory(.pharmacies, enabled: true)
+        #expect(presenter.showsAnyPlaces == true)
+        presenter.setEnabled(false)
+        #expect(presenter.showsAnyPlaces == false)
+        presenter.setCategory(.hospitals, enabled: true)
+        #expect(presenter.showsAnyPlaces == false)
+    }
+
+    @Test func fetchingWhileHiddenKeepsAllPointsAndFiltersOnlyTheMap() async throws {
+        let server = Server()
+        let clock = Clock()
+        let suite = "POITests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.set(false, forKey: "showPlaces")
+        defaults.set(false, forKey: PointOfInterestCategory.stores.preferenceKey)
+        let presenter = PointOfInterestPresenter(
+            defaults: defaults,
+            fetch: { category, location in return try await server.fetch(category, location: location) },
+            now: { clock.date }, sleep: { try await Task.sleep(for: .seconds(36000)) },
+            fetchesWhenHidden: true)
+        presenter.start(updates: AsyncStream { $0.finish() })
+        defer {
+            presenter.stop()
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+        }
+        presenter.updateLocation(Self.berlin)
+        // Every category loads although the master switch and one category are off.
+        try await self.eventually { presenter.allPoints.count == 5 }
+        #expect(await server.calls == 5)
+        #expect(presenter.points.isEmpty)
+        presenter.setEnabled(true)
+        #expect(presenter.points.count == 4)
+        #expect(presenter.allPoints.count == 5)
+        presenter.setCategory(.stores, enabled: true)
+        #expect(presenter.points.count == 5)
+        // The switches never cause another fetch; everything was already cached.
+        #expect(await server.calls == 5)
+    }
+
     @Test func failuresRetainCacheAndRetryAfterFiveMinutes() async throws {
         let server = Server()
         let clock = Clock()

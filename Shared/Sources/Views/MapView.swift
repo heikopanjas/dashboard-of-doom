@@ -115,7 +115,8 @@ struct MapView: View {
             else {
                 VStack {
                     CollisionMapView(position: self.viewModel.binding(for: \.region), annotations: self.annotations,
-                                     showsPointsOfInterest: self.pointOfInterestPresenter.isEnabled, pointsOfInterest: self.pointOfInterestPresenter.points)
+                                     showsPointsOfInterest: self.pointOfInterestPresenter.showsAnyPlaces,
+                                     pointsOfInterest: self.pointOfInterestPresenter.points)
                         #if os(macOS)
                         .background(MapAppearanceView(colorScheme: self.colorScheme))
                         #endif

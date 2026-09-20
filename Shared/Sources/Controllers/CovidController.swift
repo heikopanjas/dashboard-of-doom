@@ -183,24 +183,8 @@ class CovidController: ProcessController {
     }
 
     private static func parsePolygons(from geometry: [String: Any]) -> [[Location]]? {
-        guard let type = geometry["type"] as? String else { return nil }
-        switch type {
-            case "Polygon":
-                guard let rings = geometry["coordinates"] as? [[[Double]]], let outer = rings.first else { return nil }
-                return [Self.ring(from: outer)]
-            case "MultiPolygon":
-                guard let parts = geometry["coordinates"] as? [[[[Double]]]] else { return nil }
-                return parts.compactMap { $0.first }.map { Self.ring(from: $0) }
-            default:
-                return nil
-        }
-    }
-
-    private static func ring(from coordinates: [[Double]]) -> [Location] {
-        return coordinates.compactMap { point in
-            guard point.count >= 2 else { return nil }
-            return Location(latitude: point[1], longitude: point[0])
-        }
+        let polygons = GeoJSON.polygons(from: geometry)
+        return polygons.isEmpty ? nil : polygons
     }
 
     // Area-weighted centroid (shoelace formula per ring, combined across a

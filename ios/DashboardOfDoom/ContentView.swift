@@ -25,6 +25,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ColorPresenter.self) private var colors
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
+    @AppStorage("showHazards") private var showHazards: Bool = true
     @State private var selectedScreen = Screen.home
     @State private var navigationVisible = Visibility.hidden
     @State private var navigationTitle = ""
@@ -87,19 +88,25 @@ struct ContentView: View {
                                     .padding(.trailing, 5)
                                     .modifier(MapSizeModifier())
                                 Divider()
-                                LevelView()
+                                ForecastStripView()
                                     .padding(5)
                                     .padding(.trailing, 3)
                                 Divider()
                                     .padding(.horizontal, 5)
                                     .padding(.trailing, 5)
-                                RadiationView()
+                                CurrentConditionsView()
                                     .padding(5)
                                     .padding(.trailing, 3)
-//                                Divider()
-//                                HazardView()
-//                                    .padding(5)
-//                                    .padding(.trailing, 3)
+                                // Draws its own leading Divider, so nothing remains when places are off or empty.
+                                NearestPlacesView()
+                                if self.showHazards == true {
+                                    Divider()
+                                        .padding(.horizontal, 5)
+                                        .padding(.trailing, 5)
+                                    HazardCardView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
                             }
                             .onAppear {
                                 navigationVisible = .visible

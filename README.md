@@ -10,7 +10,7 @@
 
 > **Platforms**: macOS 15+ and iOS 26+. Both apps use the five local DoomKit packages and the app code in `shared/Sources/`. The original iOS history is retained under `ios/`; see [migration and validation](ios/MIGRATION.md).
 
-Current versions: **macOS 6.5.4 (152)** and **iOS 6.4.0 (179)**.
+Current versions: **macOS 6.5.4 (152)** and **iOS 6.5.0 (180)**.
 
 ## iOS development
 
@@ -62,9 +62,11 @@ sources stop fetching when disabled and retain their last successful data. iOS
 keeps `showWater`, `enableElectionPolls` (default off), and `showElectionPolls`
 (default on) as separate persisted preferences. Hiding poll labels does not stop
 poll fetching. POIs retain their independent master/category controls. The map
-can show the fallback location while WeatherKit is unavailable. Hazard UI and
-fetching remain dormant. Accent selection persists, and the theme follows the
-system unless Always Use Dark Theme is enabled.
+can show the fallback location while WeatherKit is unavailable. NINA warnings
+near the user appear in a card at the bottom of the Home screen, with a green
+all-clear when there are none; the Warnings switch turns the card and its
+fetching off. Accent selection persists, and the theme follows the system unless
+Always Use Dark Theme is enabled.
 
 ## Points of interest
 
