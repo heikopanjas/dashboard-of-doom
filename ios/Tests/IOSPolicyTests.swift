@@ -87,6 +87,17 @@ struct IOSPolicyTests {
         #expect(SourcePreferences.pollsEnableKey == "enableElectionPolls")
         #expect(SourcePreferences.pollsEnabledByDefault == false)
         #expect(SourcePreferences.pollsVisible(defaults: defaults) == false)
+        // COVID is the same shape: its own enable key on iOS, off until switched on, and the map label needs both keys.
+        #expect(SourcePreferences.covidEnableKey == "enableCovid")
+        #expect(SourcePreferences.covidEnabledByDefault == false)
+        #expect(SourcePreferences.covidVisible(defaults: defaults) == false)
+        defaults.set(true, forKey: SourcePreferences.covidEnableKey)
+        #expect(SourcePreferences.covidVisible(defaults: defaults) == true)
+        defaults.set(false, forKey: "showCovid")
+        #expect(SourcePreferences.covidVisible(defaults: defaults) == false)
+        // Energy is on by default and has one key, since it has nothing on the map.
+        #expect(SourcePreferences.energyEnableKey == "enableEnergy")
+        #expect(SourcePreferences.energyEnabledByDefault == true)
         var registrations = 0
         var removals = 0
         let presenter = SurveyPresenter(

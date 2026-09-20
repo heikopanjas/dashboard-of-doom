@@ -210,6 +210,9 @@ targets:
       - Presenters/SurveyPresenter.swift
       - Transformers/SurveyTransformer.swift
       - Controllers/SurveyController.swift
+      - Presenters/EnergyPresenter.swift
+      - Transformers/EnergyTransformer.swift
+      - Controllers/EnergyController.swift
       - Presenters/WeatherPresenter.swift
       - Transformers/WeatherTransformer.swift
       - Controllers/WeatherController.swift
@@ -295,7 +298,9 @@ targets:
       - Views/CurrentConditionsView.swift
       - Views/NearestPlacesView.swift
       - Views/SensorHeaderView.swift
+      - Views/SensorMapView.swift
       - Views/EnvironmentMapView.swift
+      - Views/ParticleMapView.swift
     settings:
       base:
         SDKROOT: iphoneos

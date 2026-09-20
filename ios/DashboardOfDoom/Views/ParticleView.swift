@@ -22,7 +22,7 @@ struct ParticleView: View {
                             .padding(.horizontal, 5)
                             .padding(.trailing, 5)
                     }
-                    SensorHeaderView(reading: reading, isNearest: index == 0)
+                    SensorHeaderView(reading: reading, isNearest: index == 0, color: Color.sensor(selector: .particle(.pm10), index: index))
 
                     ForEach(ProcessSelector.Particle.allCases, id: \.self) { selector in
                         if reading.isAvailable(selector: .particle(selector)) {

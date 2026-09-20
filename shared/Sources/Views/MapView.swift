@@ -62,6 +62,7 @@ struct MapView: View {
 
     // Settings - using @AppStorage to observe changes and trigger re-render
     @AppStorage("showWeather") private var showWeather: Bool = true
+    @AppStorage(SourcePreferences.covidEnableKey) private var covidEnabled = SourcePreferences.covidEnabledByDefault
     @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage(SourcePreferences.waterKey) private var showLevels: Bool = true
     @AppStorage("showRadiation") private var showRadiation: Bool = true
@@ -132,8 +133,11 @@ struct MapView: View {
             }
         }
         #endif
+        .onChange(of: self.covidEnabled) { _, newValue in
+            self.updateMapRegion(for: self.incidence, visible: newValue && self.showCovid)
+        }
         .onChange(of: showCovid) { _, newValue in
-            updateMapRegion(for: incidence, visible: newValue)
+            updateMapRegion(for: incidence, visible: newValue && self.covidEnabled)
         }
         .onChange(of: showLevels) { _, newValue in
             updateMapRegion(for: water, visible: newValue)
@@ -160,7 +164,7 @@ struct MapView: View {
         #else
         var result = [MapAnnotationSnapshot(id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true, showsLabel: self.showWeather)]
         #endif
-        if self.showCovid == true {
+        if self.showCovid == true, self.covidEnabled == true {
             result.append(MapAnnotationSnapshot(id: "covid", presenter: self.incidence, selector: .covid(.incidence)))
         }
         if self.showParticles == true, let selector = self.particle.measurements.first?.key {

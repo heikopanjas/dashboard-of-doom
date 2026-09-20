@@ -135,6 +135,7 @@ struct PublicAPITests {
         for value in ProcessSelector.Water.allCases { #expect(ProcessSelector.water(from: value.rawValue) == .water(value)) }
         for value in ProcessSelector.Particle.allCases { #expect(ProcessSelector.particle(from: value.rawValue) == .particle(value)) }
         for value in ProcessSelector.Survey.allCases { #expect(ProcessSelector.survey(from: value.rawValue) == .survey(value)) }
+        for value in ProcessSelector.Energy.allCases { #expect(ProcessSelector.energy(from: value.rawValue) == .energy(value)) }
         #expect(ProcessSelector.particle(.pm25).rawValue == 9)
         #expect(ProcessSelector.survey(.bsw).rawValue == 23)
         #expect(ProcessSelector.weather(.windGust).rawValue == 12)
@@ -144,6 +145,8 @@ struct PublicAPITests {
         #expect(ProcessSelector.water(from: -10) == nil)
         #expect(ProcessSelector.particle(from: -10) == nil)
         #expect(ProcessSelector.survey(from: -10) == nil)
+        #expect(ProcessSelector.energy(from: -10) == nil)
+        #expect(ProcessSelector.energy(.lng).rawValue == 2)
     }
 
     @Test func geography() {

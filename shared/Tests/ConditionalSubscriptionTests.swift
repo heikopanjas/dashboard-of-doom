@@ -6,7 +6,10 @@ import Testing
 @MainActor
 @Suite(.timeLimit(.minutes(1)))
 struct ConditionalSubscriptionTests {
-    nonisolated private static let sources = ["showCovid", SourcePreferences.waterKey, "showRadiation", "showParticles", SourcePreferences.pollsEnableKey]
+    nonisolated private static let sources = [
+        SourcePreferences.covidEnableKey, SourcePreferences.waterKey, "showRadiation", "showParticles", SourcePreferences.pollsEnableKey,
+        SourcePreferences.energyEnableKey
+    ]
 
     @MainActor private final class Fixture {
         let suite = "ConditionalSubscriptionTests.\(UUID())"
@@ -51,7 +54,10 @@ struct ConditionalSubscriptionTests {
                 }
             }
             switch key {
-                case "showCovid": self.presenter = CovidPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
+                case SourcePreferences.covidEnableKey:
+                    self.presenter = CovidPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
+                case SourcePreferences.energyEnableKey:
+                    self.presenter = EnergyPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case SourcePreferences.waterKey: self.presenter = LevelPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case "showRadiation":
                     self.presenter = RadiationPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
@@ -65,7 +71,8 @@ struct ConditionalSubscriptionTests {
 
         static func intervalKey(_ key: String) -> String {
             switch key {
-                case "showCovid": return "covidRefreshInterval"
+                case SourcePreferences.covidEnableKey: return "covidRefreshInterval"
+                case SourcePreferences.energyEnableKey: return "energyRefreshInterval"
                 case SourcePreferences.waterKey: return "levelRefreshInterval"
                 case "showRadiation": return "radiationRefreshInterval"
                 case "showParticles": return "particleRefreshInterval"
@@ -179,13 +186,18 @@ struct ConditionalSubscriptionTests {
 
     @Test(arguments: Self.sources)
     func defaultsTransitionsCancellationAndRetention(key: String) async throws {
-        let fixture = try Fixture(key: key, enabled: key == SourcePreferences.pollsEnableKey && SourcePreferences.pollsEnabledByDefault == false ? true : nil)
+        // A source that is off by default has to be switched on for the transitions to start from an enabled state.
+        let offByDefault =
+            (key == SourcePreferences.pollsEnableKey && SourcePreferences.pollsEnabledByDefault == false)
+            || (key == SourcePreferences.covidEnableKey && SourcePreferences.covidEnabledByDefault == false)
+        let fixture = try Fixture(key: key, enabled: offByDefault == true ? true : nil)
         defer { fixture.close() }
         let presenter = try #require(fixture.presenter)
         var starts = fixture.starts.stream.makeAsyncIterator()
         var finishes = fixture.finishes.stream.makeAsyncIterator()
         await starts.next()
-        let fallback: TimeInterval = key == "showParticles" ? 30 : (["showCovid", SourcePreferences.pollsEnableKey].contains(key) == true ? 360 : 15)
+        let sixHourly = [SourcePreferences.covidEnableKey, SourcePreferences.pollsEnableKey, SourcePreferences.energyEnableKey]
+        let fallback: TimeInterval = key == "showParticles" ? 30 : (sixHourly.contains(key) == true ? 360 : 15)
         #expect(fixture.registrations == [fallback])
         fixture.complete(name: "retained")
         await finishes.next()

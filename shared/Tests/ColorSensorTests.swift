@@ -25,8 +25,18 @@ import Testing
         #expect([0, 1, 2].map { Color.sensor(selector: .water(.level), index: $0) } == [Color.water, Color.particle, Color.weather])
     }
 
+    @Test func theParticleStationsStartWithTheHomeParticleColorAndAreAllDifferent() {
+        #expect(Color.particleSensors.count == 3)
+        #expect(Set(Color.particleSensors).count == 3)
+        #expect(Set(Color.particleSensors).isSubset(of: Set(Self.homeLabelColors)) == true)
+        #expect(Color.sensor(selector: .particle(.pm10), index: 0) == Color.faceplate(selector: .particle(.pm10)))
+        // Every pollutant of a station has the same color: the color belongs to the station.
+        #expect(Color.sensor(selector: .particle(.no2), index: 1) == Color.sensor(selector: .particle(.pm10), index: 1))
+        #expect(Color.sensor(selector: .particle(.pm10), index: 3) == Color.sensor(selector: .particle(.pm10), index: 0))
+    }
+
     @Test func aSourceWithoutAListKeepsItsCategoryColor() {
-        for selector in [ProcessSelector.weather(.temperature), .covid(.incidence), .particle(.pm10), .survey(.fascists)] {
+        for selector in [ProcessSelector.weather(.temperature), .forecast(.temperature), .covid(.incidence), .survey(.fascists)] {
             #expect(Color.sensor(selector: selector, index: 2) == Color.faceplate(selector: selector))
         }
     }

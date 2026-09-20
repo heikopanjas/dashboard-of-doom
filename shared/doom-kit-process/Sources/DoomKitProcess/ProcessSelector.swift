@@ -8,6 +8,7 @@ public enum ProcessSelector: Hashable {
     case particle(Particle)
     case radiation(Radiation)
     case survey(Survey)
+    case energy(Energy)
 
     public enum Weather: Int, CaseIterable {
         case temperature = 0
@@ -154,6 +155,20 @@ public enum ProcessSelector: Hashable {
         return .survey(survey)
     }
 
+    /// Global energy prices: crude oil in US dollars per barrel and liquefied natural gas in euros per megawatt hour.
+    public enum Energy: Int, CaseIterable {
+        case brent = 0
+        case wti = 1
+        case lng = 2
+    }
+
+    public static func energy(from rawValue: Int) -> ProcessSelector? {
+        guard let energy = Energy(rawValue: rawValue) else {
+            return nil
+        }
+        return .energy(energy)
+    }
+
     public var rawValue: Int {
         switch self {
             case .weather(let weatherType):
@@ -170,6 +185,8 @@ public enum ProcessSelector: Hashable {
                 return radiationType.rawValue
             case .survey(let surveyType):
                 return surveyType.rawValue
+            case .energy(let energyType):
+                return energyType.rawValue
         }
     }
 }

@@ -8,12 +8,12 @@ final class NavigationTests: XCTestCase {
         // The multi-sensor switches are off by default, so this launch turns them on to see every sensor. The second launch leaves them off.
         app.launchArguments = [
             "--ui-fixture", "-enableElectionPolls", "YES", "-showPlaces", "YES", "-enableDarkTheme", "NO",
-            "-multiSensorLevel", "YES", "-multiSensorRadiation", "YES", "-multiSensorParticles", "YES"
+            "-multiSensorLevel", "YES", "-multiSensorRadiation", "YES", "-multiSensorParticles", "YES", "-enableCovid", "YES"
         ]
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         self.capture("home-2000")
-        for label in ["Weather", "COVID-19", "Environment", "Particles", "Election Polls", "Settings"] {
+        for label in ["Weather", "Energy", "Environment", "Particles", "COVID-19", "Election Polls", "Settings"] {
             app.buttons[label].tap()
             XCTAssertTrue(app.buttons["Home"].exists)
             self.capture(label)

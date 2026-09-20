@@ -11,6 +11,8 @@ struct SettingsView: View {
 
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage("showCovid") private var showCovid: Bool = true
+    @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
+    @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
     @AppStorage("showRadiation") private var showRadiation: Bool = true
     @AppStorage("showHazards") private var showHazards: Bool = true
 
@@ -109,12 +111,16 @@ struct SettingsView: View {
                         .foregroundColor(.gray)
                     Spacer()
                 }
-                Toggle("COVID-19", isOn: $showCovid)
-                HStack {
-                    Text("Shows incidence on the map. Turning it off also stops COVID-19 from updating.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
+                if enableCovid == true {
+                    VStack {
+                        Toggle("COVID-19", isOn: $showCovid)
+                        HStack {
+                            Text("Shows incidence on the map. The COVID-19 tab keeps it either way.")
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                            Spacer()
+                        }
+                    }
                 }
                 Toggle("Water", isOn: $showWater)
                 HStack {
@@ -271,6 +277,44 @@ struct SettingsView: View {
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Energy")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                Toggle("Enable", isOn: $enableEnergy)
+                HStack {
+                    Text("Downloads the daily Brent and WTI crude oil prices and the EU LNG price, and adds the Energy tab. Nothing appears on the map.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("COVID-19")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                Toggle("Enable", isOn: $enableCovid)
+                HStack {
+                    Text("Downloads COVID-19 data and adds the COVID-19 tab.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
                     Spacer()
                 }
             }

@@ -25,6 +25,8 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ColorPresenter.self) private var colors
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
+    @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
+    @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
     @AppStorage("showHazards") private var showHazards: Bool = true
     @State private var selectedScreen = Screen.home
     @State private var navigationVisible = Visibility.hidden
@@ -46,6 +48,7 @@ struct ContentView: View {
         case home
         case weather
         case covid
+        case energy
         case environment
         case particles
         case surveys
@@ -123,14 +126,28 @@ struct ContentView: View {
                                 navigationTitle = "Weather Forecast"
                             }
                         case .covid:
-                            VStack {
-                                CovidView()
-                                    .padding(5)
-                                    .padding(.trailing, 3)
+                            if enableCovid == true {
+                                VStack {
+                                    CovidView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
+                                .onAppear {
+                                    navigationVisible = .visible
+                                    navigationTitle = "COVID-19 Situation"
+                                }
                             }
-                            .onAppear {
-                                navigationVisible = .visible
-                                navigationTitle = "COVID-19 Situation"
+                        case .energy:
+                            if enableEnergy == true {
+                                VStack {
+                                    EnergyView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
+                                .onAppear {
+                                    navigationVisible = .visible
+                                    navigationTitle = "Energy Prices"
+                                }
                             }
                         case .environment:
                             VStack {
@@ -152,6 +169,8 @@ struct ContentView: View {
                             }
                         case .particles:
                             VStack {
+                                // Draws its own trailing Divider, so nothing remains until a station has loaded.
+                                ParticleMapView()
                                 ParticleView()
                                     .padding(5)
                                     .padding(.trailing, 3)
@@ -209,12 +228,14 @@ struct ContentView: View {
                                     .foregroundColor(selectedScreen == .weather ? .accentColor : .accentColor.opacity(0.5))
                             }
                             .accessibilityLabel("Weather")
-                            Spacer()
-                            Button(action: { selectedScreen = .covid }) {
-                                Image(systemName: selectedScreen == .covid ? "facemask.fill" : "facemask")
-                                    .foregroundColor(selectedScreen == .covid ? .accentColor : .accentColor.opacity(0.5))
+                            if enableEnergy == true {
+                                Spacer()
+                                Button(action: { selectedScreen = .energy }) {
+                                    Image(systemName: selectedScreen == .energy ? "fuelpump.fill" : "fuelpump")
+                                        .foregroundColor(selectedScreen == .energy ? .accentColor : .accentColor.opacity(0.5))
+                                }
+                                .accessibilityLabel("Energy")
                             }
-                            .accessibilityLabel("COVID-19")
                             Spacer()
                             Button(action: { selectedScreen = .environment }) {
                                 Image(systemName: selectedScreen == .environment ? "leaf.fill" : "leaf")
@@ -228,6 +249,14 @@ struct ContentView: View {
                                     .fontWeight(.black)  // Workaround for "aqi.medium" icon being rather thin
                             }
                             .accessibilityLabel("Particles")
+                            if enableCovid == true {
+                                Spacer()
+                                Button(action: { selectedScreen = .covid }) {
+                                    Image(systemName: selectedScreen == .covid ? "facemask.fill" : "facemask")
+                                        .foregroundColor(selectedScreen == .covid ? .accentColor : .accentColor.opacity(0.5))
+                                }
+                                .accessibilityLabel("COVID-19")
+                            }
                             if enableElectionPolls == true {
                                 Spacer()
                                 Button(action: { selectedScreen = .surveys }) {
@@ -262,6 +291,16 @@ struct ContentView: View {
             )
             .onChange(of: self.enableElectionPolls) { _, enabled in
                 if enabled == false && self.selectedScreen == .surveys {
+                    self.selectedScreen = .home
+                }
+            }
+            .onChange(of: self.enableCovid) { _, enabled in
+                if enabled == false && self.selectedScreen == .covid {
+                    self.selectedScreen = .home
+                }
+            }
+            .onChange(of: self.enableEnergy) { _, enabled in
+                if enabled == false && self.selectedScreen == .energy {
                     self.selectedScreen = .home
                 }
             }

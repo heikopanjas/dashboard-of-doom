@@ -91,6 +91,7 @@ extension Color {
     static let particle = Color.green
     static let radiation = Color.orange
     static let survey = Color.pink
+    static let energy = Color.brown
 
     static func faceplate(selector: ProcessSelector) -> Color {
         switch selector {
@@ -108,6 +109,8 @@ extension Color {
                 return Self.radiation
             case .survey:
                 return Self.survey
+            case .energy:
+                return Self.energy
         }
     }
 
@@ -116,6 +119,8 @@ extension Color {
     /// radiation and yellow for level, and the others take the four that are left.
     static let radiationSensors: [Color] = [Self.radiation, Self.survey, Self.covid]
     static let waterSensors: [Color] = [Self.water, Self.particle, Self.weather]
+    /// The Particles tab is a tab of its own, so its stations can reuse colors: the nearest keeps the home particle color.
+    static let particleSensors: [Color] = [Self.particle, Self.survey, Self.weather]
 
     /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
     /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail.
@@ -126,6 +131,8 @@ extension Color {
                 colors = Self.radiationSensors
             case .water:
                 colors = Self.waterSensors
+            case .particle:
+                colors = Self.particleSensors
             default:
                 return Self.faceplate(selector: selector)
         }

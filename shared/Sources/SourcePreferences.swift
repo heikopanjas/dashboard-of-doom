@@ -20,18 +20,33 @@ enum SourcePreferences {
         return 1
     }
 
+    /// Whether energy prices are fetched and their tab shown. On by default; there is nothing of theirs on the map.
+    static let energyEnableKey = "enableEnergy"
+    static let energyEnabledByDefault = true
+
     #if os(iOS)
     static let waterKey = "showWater"
     static let pollsEnableKey = "enableElectionPolls"
     static let pollsEnabledByDefault = false
+    /// COVID is off by default on iOS: fetching and the tab follow this key, the map label follows `showCovid` as well. macOS keeps its one
+    /// switch, on by default, the way polls differ between the platforms.
+    static let covidEnableKey = "enableCovid"
+    static let covidEnabledByDefault = false
     #else
     static let waterKey = "showLevels"
     static let pollsEnableKey = "showElectionPolls"
     static let pollsEnabledByDefault = true
+    static let covidEnableKey = "showCovid"
+    static let covidEnabledByDefault = true
     #endif
 
     static func pollsVisible(defaults: UserDefaults = .standard) -> Bool {
         let enabled = defaults.object(forKey: Self.pollsEnableKey) as? Bool ?? Self.pollsEnabledByDefault
         return enabled && (defaults.object(forKey: "showElectionPolls") as? Bool ?? true)
+    }
+
+    static func covidVisible(defaults: UserDefaults = .standard) -> Bool {
+        let enabled = defaults.object(forKey: Self.covidEnableKey) as? Bool ?? Self.covidEnabledByDefault
+        return enabled && (defaults.object(forKey: "showCovid") as? Bool ?? true)
     }
 }

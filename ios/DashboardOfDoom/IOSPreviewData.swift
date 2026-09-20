@@ -36,7 +36,8 @@ enum IOSPreviewData {
             (runtime.levels, .water(.level), UnitLength.meters, 2.73, "water.waves"),
             (runtime.radiation, .radiation(.total), UnitRadiation.microsieverts, 0.08, "atom"),
             (runtime.particles, .particle(.pm10), UnitConcentrationMass.microgramsPerCubicMeter, 18, "aqi.medium"),
-            (runtime.surveys, .survey(.fascists), UnitPercentage.percent, 20, "chart.bar")
+            (runtime.surveys, .survey(.fascists), UnitPercentage.percent, 20, "chart.bar"),
+            (runtime.energy, .energy(.brent), UnitOilPrice.usDollarsPerBarrel, 80, "fuelpump")
         ]
         // Hour-aligned, so the forecast strip labels read 14:00 rather than 14:37.
         let date = Date.round(from: Date.now, strategy: .previousHour) ?? Date.now
@@ -57,7 +58,10 @@ enum IOSPreviewData {
                     faceplate: [selector: String(format: "%.2f %@", value, unit.symbol)], range: [selector: 0 ... max(value * 1.5, 1)],
                     trend: [selector: "arrow.right"])
             ])
-            if presenter !== runtime.forecast { MapPresenter.shared.updateRegion(for: presenter.id, with: location) }
+            // Forecasts and prices have no place on the map.
+            if presenter !== runtime.forecast && presenter !== runtime.energy {
+                MapPresenter.shared.updateRegion(for: presenter.id, with: location)
+            }
         }
         // A level sensor is named after its waterway and carries the gauge separately; the others are named after their station.
         Self.populateAdditionalSensors(

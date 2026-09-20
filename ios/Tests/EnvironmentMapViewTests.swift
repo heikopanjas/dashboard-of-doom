@@ -94,13 +94,13 @@ import Testing
     }
 
     @Test func noSensorsMeansNoCamera() {
-        #expect(EnvironmentMapView.rect(for: []) == nil)
+        #expect(SensorMapView.rect(for: []) == nil)
         #expect(EnvironmentMapView.annotations(radiation: [], water: []).isEmpty == true)
     }
 
     @Test func aLoneSensorGetsTheMinimumAreaAroundIt() throws {
         let location = Location(latitude: 52.5, longitude: 13.4)
-        let rect = try #require(EnvironmentMapView.rect(for: [location]))
+        let rect = try #require(SensorMapView.rect(for: [location]))
         #expect(rect.contains(MKMapPoint(location.coordinate)) == true)
         // About three kilometres each way, and centred on the sensor.
         let metres = rect.size.width / MKMapPointsPerMeterAtLatitude(52.5)
@@ -111,7 +111,7 @@ import Testing
 
     @Test func identicalSensorsDoNotBreakTheCamera() throws {
         let location = Location(latitude: 52.5, longitude: 13.4)
-        let rect = try #require(EnvironmentMapView.rect(for: [location, location, location]))
+        let rect = try #require(SensorMapView.rect(for: [location, location, location]))
         #expect(rect.size.width.isFinite == true && rect.size.height.isFinite == true)
         #expect(rect.size.width > 0 && rect.size.height > 0)
     }
@@ -119,7 +119,7 @@ import Testing
     @Test func farApartSensorsAreAllInsideWithRoomForTheLabels() throws {
         let north = Location(latitude: 52.6, longitude: 13.4)
         let south = Location(latitude: 52.4, longitude: 13.5)
-        let rect = try #require(EnvironmentMapView.rect(for: [north, south]))
+        let rect = try #require(SensorMapView.rect(for: [north, south]))
         #expect(rect.contains(MKMapPoint(north.coordinate)) == true)
         #expect(rect.contains(MKMapPoint(south.coordinate)) == true)
         // Grown by half its size on each side, so twice the bounding box; the sensors are not on the edge.
