@@ -48,17 +48,27 @@ enum IOSPreviewData {
                     value: Measurement(value: value * (1 + 0.1 * sin(Double(hour))), unit: unit),
                     quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
             }
-            presenter.sensor = ProcessSensor(
+            let sensor = ProcessSensor(
                 name: "HKW fixture", location: location, placemark: "HKW, Berlin",
                 customData: ["icon": icon, "label": "HKW"], measurements: [selector: measurements], timestamp: date)
-            presenter.timestamp = date
-            presenter.measurements = [selector: measurements]
-            presenter.current = [selector: measurements[24]]
-            presenter.faceplate = [selector: String(format: "%.2f %@", value, unit.symbol)]
-            presenter.range = [selector: 0 ... max(value * 1.5, 1)]
-            presenter.trend = [selector: "arrow.right"]
+            presenter.replace(readings: [
+                ProcessReading(
+                    sensor: sensor, measurements: [selector: measurements], current: [selector: measurements[24]],
+                    faceplate: [selector: String(format: "%.2f %@", value, unit.symbol)], range: [selector: 0 ... max(value * 1.5, 1)],
+                    trend: [selector: "arrow.right"])
+            ])
             if presenter !== runtime.forecast { MapPresenter.shared.updateRegion(for: presenter.id, with: location) }
         }
+        // A level sensor is named after its waterway and carries the gauge separately; the others are named after their station.
+        Self.populateAdditionalSensors(
+            runtime.levels, selector: .water(.level), unit: UnitLength.meters, value: 2.73, date: date,
+            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP"], namedAfterStation: false)
+        Self.populateAdditionalSensors(
+            runtime.radiation, selector: .radiation(.total), unit: UnitRadiation.microsieverts, value: 0.08, date: date,
+            stations: ["Berlin-Marzahn", "Berlin-Tegel"], namedAfterStation: true)
+        Self.populateAdditionalSensors(
+            runtime.particles, selector: .particle(.pm10), unit: UnitConcentrationMass.microgramsPerCubicMeter, value: 18, date: date,
+            stations: ["Berlin Neukölln", "Berlin Wedding"], namedAfterStation: true)
         Self.populateForecastStrip(runtime.forecast, date: date)
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
@@ -80,9 +90,55 @@ enum IOSPreviewData {
                 value: Measurement(value: Double((index * 17) % 100), unit: UnitPercentage.percent), quality: value.quality,
                 timestamp: value.timestamp)
         }
-        presenter.measurements[.forecast(.temperature)] = withIcons
-        presenter.measurements[.forecast(.precipitationChance)] = chance
-        presenter.current[.forecast(.temperature)] = withIcons[24]
+        Self.amend(
+            presenter, measurements: [.forecast(.temperature): withIcons, .forecast(.precipitationChance): chance],
+            current: [.forecast(.temperature): withIcons[24]])
+    }
+
+    /// Appends one further sensor per station behind the nearest reading, each a little further away and with its own series, the way a
+    /// source that found several stations reports them. Like the real ones they have no placemark.
+    @MainActor
+    private static func populateAdditionalSensors(
+        _ presenter: ProcessPresenter, selector: ProcessSelector, unit: Dimension, value: Double, date: Date, stations: [String], namedAfterStation: Bool
+    ) -> Void {
+        guard let nearest = presenter.readings.first else { return }
+        var readings = [nearest]
+        for (offset, station) in stations.enumerated() {
+            let position = offset + 1
+            let level = value * (1 + Double(position) * 0.15)
+            let series = (0 ..< 48).map { hour in
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: level * (1 + 0.1 * sin(Double(hour + position))), unit: unit),
+                    quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
+            }
+            let location = Location(latitude: nearest.sensor.location.latitude + Double(position) * 0.01, longitude: nearest.sensor.location.longitude)
+            var customData: [String: Any] = ["icon": nearest.sensor.customData?["icon"] ?? "questionmark.circle"]
+            if namedAfterStation == false {
+                customData["station"] = station
+            }
+            let sensor = ProcessSensor(
+                name: namedAfterStation == true ? station : nearest.sensor.name, location: location, placemark: nil, customData: customData,
+                measurements: [selector: series], timestamp: date, sourceID: "fixture-\(position)-\(station)", distance: 800 + Double(position) * 2_400)
+            readings.append(
+                ProcessReading(
+                    sensor: sensor, measurements: [selector: series], current: [selector: series[24]],
+                    faceplate: [selector: String(format: "%.2f %@", level, unit.symbol)], range: [selector: 0 ... max(level * 1.5, 1)],
+                    trend: [selector: "arrow.right"]))
+        }
+        presenter.replace(readings: readings)
+    }
+
+    /// Merges extra series into the nearest reading, keeping its sensor and everything else already rendered.
+    @MainActor
+    private static func amend(
+        _ presenter: ProcessPresenter, measurements: [ProcessSelector: [ProcessValue<Dimension>]], current: [ProcessSelector: ProcessValue<Dimension>]
+    ) -> Void {
+        guard let reading = presenter.readings.first else { return }
+        presenter.replace(readings: [
+            ProcessReading(
+                sensor: reading.sensor, measurements: reading.measurements.merging(measurements) { $1 },
+                current: reading.current.merging(current) { $1 }, faceplate: reading.faceplate, range: reading.range, trend: reading.trend)
+        ])
     }
 
     /// Single samples for the conditions row. Pressure is in millibars so the
@@ -96,11 +152,14 @@ enum IOSPreviewData {
             (.weather(.windGust), UnitSpeed.kilometersPerHour, 28),
             (.weather(.pressure), UnitPressure.millibars, 1013),
         ]
+        var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+        var current: [ProcessSelector: ProcessValue<Dimension>] = [:]
         for (selector, unit, value) in samples {
             let sample = ProcessValue<Dimension>(value: Measurement(value: value, unit: unit), quality: .good, timestamp: date)
-            presenter.measurements[selector] = [sample]
-            presenter.current[selector] = sample
+            measurements[selector] = [sample]
+            current[selector] = sample
         }
+        Self.amend(presenter, measurements: measurements, current: current)
     }
 
     private static func hazards(sent: Date) -> [Hazard] {

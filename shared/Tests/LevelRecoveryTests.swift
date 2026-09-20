@@ -24,9 +24,11 @@ import Testing
         await network.startMonitoring()
         try await network.waitForConnection(timeout: .seconds(2))
         let controller = LevelController(networkManager: network, nearestSensor: { false })
-        let station = try await controller.fetchNearestStation(location: Location(latitude: 52.51889, longitude: 13.36528))
-        #expect(station?.id == "near")
-        #expect(station?.name == "Spree")
+        // An explicit limit: the default is the platform's sensor cap, which is 1 on macOS.
+        let stations = try await controller.fetchNearestStations(location: Location(latitude: 52.51889, longitude: 13.36528), limit: 3)
+        #expect(stations.map { $0.id } == ["near", "far"])
+        #expect(stations.first?.name == "Spree")
+        #expect(stations.first?.gauge == "SPREE")
         await network.stopMonitoring()
     }
 }

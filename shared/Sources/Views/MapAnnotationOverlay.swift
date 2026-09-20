@@ -23,7 +23,7 @@ struct MapAnnotationOverlay: View {
                         var path = Path()
                         path.move(to: connector.start)
                         path.addLine(to: connector.end)
-                        context.stroke(path, with: .color(Color.faceplate(selector: annotation.selector)), lineWidth: 1)
+                        context.stroke(path, with: .color(annotation.displayColor), lineWidth: 1)
                     }
                 }
             }
@@ -31,7 +31,7 @@ struct MapAnnotationOverlay: View {
             ForEach(self.annotations) { annotation in
                 if let placement = self.placements.first(where: { $0.id == annotation.id }) {
                     MapAnnotationLabel(selector: annotation.selector, icon: annotation.icon, faceplate: annotation.faceplate,
-                                       backgroundOpacity: self.showsPointsOfInterest == true ? 1.0 : 0.5)
+                                       backgroundOpacity: self.showsPointsOfInterest == true ? 1.0 : 0.5, color: annotation.color)
                         .position(x: placement.rect.midX, y: placement.rect.midY)
                 }
             }

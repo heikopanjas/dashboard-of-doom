@@ -5,10 +5,10 @@ import Charts
 import SwiftUI
 
 struct ParticleChartView: View {
-    @Environment(ParticlePresenter.self) private var presenter
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
+    let reading: ProcessReading
 
     enum ParticleSymbol: String, CaseIterable {
         case pm10 = "\u{1D40F}\u{1D40C}\u{2081}\u{2080}"  // PM10, Particulate matter < 10µm
@@ -49,7 +49,7 @@ struct ParticleChartView: View {
             .font(.headline)
             .accentLabel()
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { measurement in
+                ForEach(self.reading.measurements[selector] ?? []) { measurement in
 //                    if selector == .particle(.pm10) {
 //                        LineMark(
 //                            x: .value("Date", measurement.timestamp),
@@ -79,14 +79,14 @@ struct ParticleChartView: View {
 //                    }
                     AreaMark(
                         x: .value("Date", Date.round(from: measurement.timestamp, strategy: .previousHour) ?? Date.now),
-                        yStart: .value("Particle", presenter.range[selector]?.lowerBound ?? 0.0),
+                        yStart: .value("Particle", self.reading.range[selector]?.lowerBound ?? 0.0),
                         yEnd: .value("Particle", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom(alpha: 0.33))
                     .foregroundStyle(Gradient.linear)
                 }
 
-                if let measurement = presenter.current[selector] {
+                if let measurement = self.reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                         .foregroundStyle(self.colorScheme.markerColor)
@@ -102,7 +102,7 @@ struct ParticleChartView: View {
                                 .font(.footnote)
                             HStack {
                                 Text(String(format: "%.0f%@", measurement.value.value, measurement.value.unit.symbol))
-                                if let icon = presenter.trend[selector] {
+                                if let icon = self.reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -115,7 +115,7 @@ struct ParticleChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
+                    if let measurement = self.reading.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", Date.round(from: timestamp, strategy: .previousHour) ?? Date.now))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                             .foregroundStyle(self.colorScheme.markerColor)
@@ -141,7 +141,7 @@ struct ParticleChartView: View {
                     }
                 }
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: self.reading.range[selector] ?? 0.0 ... 0.0)
             .chartInteractiveOverlay(timestamp: $timestamp, roundingStrategy: .previousHour)
         }
     }

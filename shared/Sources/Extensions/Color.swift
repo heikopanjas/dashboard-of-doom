@@ -110,4 +110,25 @@ extension Color {
                 return Self.survey
         }
     }
+
+    /// The colors of the level gauges and radiation stations on the Environment tab, nearest first. Together they are the six label colors of
+    /// the home screen, so no sensor has a color of its own. The nearest of each source keeps the color it has on the home map, orange for
+    /// radiation and yellow for level, and the others take the four that are left.
+    static let radiationSensors: [Color] = [Self.radiation, Self.survey, Self.covid]
+    static let waterSensors: [Color] = [Self.water, Self.particle, Self.weather]
+
+    /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
+    /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail.
+    static func sensor(selector: ProcessSelector, index: Int) -> Color {
+        let colors: [Color]
+        switch selector {
+            case .radiation:
+                colors = Self.radiationSensors
+            case .water:
+                colors = Self.waterSensors
+            default:
+                return Self.faceplate(selector: selector)
+        }
+        return colors[((index % colors.count) + colors.count) % colors.count]
+    }
 }

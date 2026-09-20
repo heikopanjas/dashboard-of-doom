@@ -8,6 +8,8 @@ struct MapAnnotationLabel: View {
     let icon: String
     let faceplate: String
     var backgroundOpacity: Double = 0.5
+    /// Overrides the category color, for a sensor that has a color of its own. Nil keeps the color of the selector.
+    var color: Color? = nil
 
     static var size: CGSize {
         #if os(iOS)
@@ -54,7 +56,7 @@ struct MapAnnotationLabel: View {
         .padding(.horizontal, Self.horizontalPadding)
         .background(
             RoundedRectangle(cornerRadius: 13)
-                .fill(Color.faceplate(selector: self.selector))
+                .fill(self.color ?? Color.faceplate(selector: self.selector))
                 .opacity(self.backgroundOpacity)
         )
         .foregroundStyle(.black)

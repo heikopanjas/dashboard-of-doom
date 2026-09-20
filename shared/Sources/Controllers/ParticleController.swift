@@ -13,7 +13,18 @@ class ParticleController: ProcessController {
     private static let smoothingFactor = 4
     #endif
 
-    init() {
+    /// The station series come from separate requests, so this many are fetched at a time.
+    static let fetchConcurrency = 2
+
+    private let nearestSensor: @Sendable () -> Bool
+    private let sensorLimit: @Sendable () -> Int
+
+    init(
+        nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: "nearestParticleSensor") },
+        sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorParticlesKey) }
+    ) {
+        self.nearestSensor = nearestSensor
+        self.sensorLimit = sensorLimit
         self.measurementDuration = 21 * 24 * 60 * 60  // 21 days
         self.forecastDuration = 7 * 24 * 60 * 60  // 7 days
     }
@@ -24,42 +35,15 @@ class ParticleController: ProcessController {
         do {
             if let interval = Self.calculateMeasurementTimeInterval(span: self.measurementDuration) {
                 try Task.checkCancellation()
-                if let result = await Self.fetchNearestStation(location: location, from: interval.from, to: interval.to) {
-                    try Task.checkCancellation()
-                    if let placemark = await GeocodingService.reverseGeocodeLocation(location: result.station.location) {
-                        try Task.checkCancellation()
-                        // Use cached measurements if available, otherwise fetch them
-                        var measurements: [ProcessSelector: [ProcessValue<Dimension>]]?
-                        if let cached = result.cachedMeasurements {
-                            trace.debug("Using cached measurements for station: \(result.station.code)")
-                            measurements = cached
-                        } else {
-                            try Task.checkCancellation()
-                            measurements = try await Self.fetchMeasurements(station: result.station, from: interval.from, to: interval.to)
-                        }
-
-                        if var measurements = measurements {
-                            if let forecastInterval = Self.calculateForecastTimeInterval(span: self.forecastDuration) {
-                                try Task.checkCancellation()
-                                if let forecast = try await Self.fetchForecasts(
-                                    station: result.station, from: forecastInterval.from, to: forecastInterval.to)
-                                {
-                                    for (selector, values) in measurements {
-                                        var actual = self.interpolateMeasurement(measurements: values)
-                                        actual.append(contentsOf: forecast[selector] ?? [])
-                                        measurements[selector] = actual
-                                    }
-                                }
-                                try Task.checkCancellation()
-                                let sensor = ProcessSensor(
-                                    name: result.station.name, location: result.station.location, placemark: placemark,
-                                    customData: ["icon": "aqi.medium"],
-                                    measurements: measurements,
-                                    timestamp: Date.now)
-                                data.append(sensor)
-                            }
-                        }
-                    }
+                let results = await self.fetchStationResults(location: location, from: interval.from, to: interval.to)
+                try Task.checkCancellation()
+                let candidates = try await results.concurrentCompactMap(limit: Self.fetchConcurrency) { result in
+                    return try await self.candidate(for: result, from: interval.from, to: interval.to)
+                }
+                // Without data for the nearest station nothing is published, so the last values stay, rather than showing a farther
+                // station as if it were the nearest.
+                if let first = results.first, candidates.first?.id == first.station.code {
+                    data = try await SensorCandidate.sensors(from: candidates, near: location)
                 }
             }
         }
@@ -69,6 +53,45 @@ class ParticleController: ProcessController {
             trace.error("Error refreshing particulate matter: %@", error.localizedDescription)
         }
         return data
+    }
+
+    /// One station's measurements and forecast, or nil when it has none. A failure drops that station only.
+    private func candidate(for result: StationResult, from: Date, to: Date) async throws -> SensorCandidate? {
+        do {
+            try Task.checkCancellation()
+            // Use cached measurements if available, otherwise fetch them
+            var measurements: [ProcessSelector: [ProcessValue<Dimension>]]?
+            if let cached = result.cachedMeasurements {
+                trace.debug("Using cached measurements for station: \(result.station.code)")
+                measurements = cached
+            }
+            else {
+                measurements = try await Self.fetchMeasurements(station: result.station, from: from, to: to)
+            }
+
+            if var measurements = measurements {
+                if let forecastInterval = Self.calculateForecastTimeInterval(span: self.forecastDuration) {
+                    try Task.checkCancellation()
+                    if let forecast = try await Self.fetchForecasts(station: result.station, from: forecastInterval.from, to: forecastInterval.to) {
+                        for (selector, values) in measurements {
+                            var actual = self.interpolateMeasurement(measurements: values)
+                            actual.append(contentsOf: forecast[selector] ?? [])
+                            measurements[selector] = actual
+                        }
+                    }
+                    try Task.checkCancellation()
+                    return SensorCandidate(
+                        id: result.station.code, name: result.station.name, location: result.station.location,
+                        customData: ["icon": "aqi.medium", "station": result.station.name], measurements: measurements)
+                }
+            }
+        }
+        catch is CancellationError { throw CancellationError() }
+        catch {
+            guard Task.isCancelled == false else { throw CancellationError() }
+            trace.error("Error refreshing station %@: %@", result.station.code, error.localizedDescription)
+        }
+        return nil
     }
 
     private func interpolateMeasurement(measurements: [ProcessValue<Dimension>]) -> [ProcessValue<Dimension>] {
@@ -125,7 +148,7 @@ class ParticleController: ProcessController {
         return nil
     }
 
-    struct Station {
+    struct Station: ProcessLocatable {
         let id: String
         let code: String
         let name: String
@@ -137,42 +160,32 @@ class ParticleController: ProcessController {
         let cachedMeasurements: [ProcessSelector: [ProcessValue<Dimension>]]?
     }
 
-    private static func fetchNearestStation(location: Location, from: Date, to: Date) async -> StationResult? {
-        guard Task.isCancelled == false else { return nil }
-        var result: StationResult? = nil
+    private func fetchStationResults(location: Location, from: Date, to: Date) async -> [StationResult] {
+        if Task.isCancelled == true {
+            return []
+        }
+        var results: [StationResult] = []
         do {
             if let data = try await ParticleService.fetchStations(from: from, to: to) {
-                guard Task.isCancelled == false else { return nil }
-                let unsortedStations = try await Self.parseStations(from: data)
-                guard Task.isCancelled == false else { return nil }
-                if unsortedStations.count > 0 {
-                    let sortedStations = unsortedStations.sorted {
-                        haversineDistance(location_0: location, location_1: $0.location)
-                            < haversineDistance(location_0: location, location_1: $1.location)
-                    }
-
-                    if UserDefaults.standard.bool(forKey: "nearestParticleSensor") == true {
-                        if let station = sortedStations.first {
-                            result = StationResult(station: station, cachedMeasurements: nil)
-                        }
-                    }
-                    else {
-                        if let stationResult = await Self.selectStation(stations: sortedStations, from: from, to: to) {
-                            result = stationResult
-                        }
-                        else if let station = sortedStations.first {
-                            guard Task.isCancelled == false else { return nil }
-                            result = StationResult(station: station, cachedMeasurements: nil)
-                        }
-                    }
+                if Task.isCancelled == true {
+                    return []
+                }
+                let stations = sortByDistance(try await Self.parseStations(from: data), from: location)
+                if Task.isCancelled == true {
+                    return []
+                }
+                results = await Self.selectStations(from: stations, nearest: self.nearestSensor(), limit: self.sensorLimit()) { station in
+                    return try? await Self.fetchMeasurements(station: station, from: from, to: to)
                 }
             }
         }
         catch {
-            guard Task.isCancelled == false else { return nil }
+            if Task.isCancelled == true {
+                return []
+            }
             trace.error("Error fetching stations: %@", error.localizedDescription)
         }
-        return result
+        return results
     }
 
     private static func parseStations(from data: Data) async throws -> [Station] {
@@ -196,22 +209,41 @@ class ParticleController: ProcessController {
         return stations
     }
 
-    private static func selectStation(stations: [Station], from: Date, to: Date) async -> StationResult? {
-        // Fetch measurements for the full range and check if the station has relevant data
-        for station in stations {
-            guard Task.isCancelled == false else { return nil }
-            if let measurements = try? await fetchMeasurements(station: station, from: from, to: to) {
-                guard Task.isCancelled == false else { return nil }
-                if stationHasRelevantMeasurements(measurements) == true {
-                    trace.debug("Selected station \(station.code) with cached measurements")
-                    return StationResult(station: station, cachedMeasurements: measurements)
+    /// The stations to report, nearest first, from `stations` ordered by distance.
+    ///
+    /// By default the first is the nearest station that reports every relevant pollutant, found by probing in order, and the others are the
+    /// stations that follow it, whatever they report, so the order by distance holds. With `nearest` they are simply the nearest stations.
+    /// When no station qualifies they are the nearest as well. `probe` returns a station's measurements, or nil; the qualifying station
+    /// carries what it returned so it is not fetched twice.
+    static func selectStations(
+        from stations: [Station], nearest: Bool, limit: Int, probe: (Station) async -> [ProcessSelector: [ProcessValue<Dimension>]]?
+    ) async -> [StationResult] {
+        let count = Swift.max(limit, 1)
+        if nearest == false {
+            for (index, station) in stations.enumerated() {
+                if Task.isCancelled == true {
+                    return []
+                }
+                if let measurements = await probe(station) {
+                    if Task.isCancelled == true {
+                        return []
+                    }
+                    if Self.stationHasRelevantMeasurements(measurements) == true {
+                        trace.debug("Selected station \(station.code) with cached measurements")
+                        var results = [StationResult(station: station, cachedMeasurements: measurements)]
+                        results.append(contentsOf: stations.dropFirst(index + 1).prefix(count - 1).map { StationResult(station: $0, cachedMeasurements: nil) })
+                        return results
+                    }
                 }
             }
         }
-        return nil
+        if Task.isCancelled == true {
+            return []
+        }
+        return stations.prefix(count).map { StationResult(station: $0, cachedMeasurements: nil) }
     }
 
-    private static func stationHasRelevantMeasurements(_ measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> Bool {
+    static func stationHasRelevantMeasurements(_ measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> Bool {
         let relevantSelectors: Set<ProcessSelector> = [
             .particle(.pm10), .particle(.pm25), .particle(.no2), .particle(.o3)
         ]

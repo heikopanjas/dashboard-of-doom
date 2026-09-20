@@ -17,14 +17,18 @@ struct SettingsView: View {
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var covid
     @Environment(RadiationPresenter.self) private var radiation
+    @AppStorage(SourcePreferences.multiSensorRadiationKey) private var multiSensorRadiation: Bool = false
 
     @Environment(LevelPresenter.self) private var level
     @AppStorage("showWater") private var showWater: Bool = true
     @AppStorage("nearestLevelSensor") private var nearestLevelSensor: Bool = false
+    @AppStorage(SourcePreferences.multiSensorLevelKey) private var multiSensorLevel: Bool = false
+    @AppStorage(SourcePreferences.multiSensorLevelOtherWaterwaysKey) private var multiSensorLevelOtherWaterways: Bool = false
 
     @Environment(ParticlePresenter.self) private var particles
     @AppStorage("showParticles") private var showParticles: Bool = true
     @AppStorage("nearestParticleSensor") private var nearestParticleSensor: Bool = false
+    @AppStorage(SourcePreferences.multiSensorParticlesKey) private var multiSensorParticles: Bool = false
 
     @Environment(SurveyPresenter.self) private var electionPolls
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
@@ -184,6 +188,56 @@ struct SettingsView: View {
                     .foregroundColor(.gray)
                     Spacer()
                 }
+                Toggle("Multiple Sensors", isOn: $multiSensorLevel)
+                    .onChange(of: multiSensorLevel) { _, _ in
+                        AppProcess.shared.refreshSubscription(subscriber: level)
+                    }
+                HStack {
+                    Text(
+                        "Show up to \(ProcessSensor.maximumPerSource) gauges, nearest first, on the Environment tab. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    Spacer()
+                }
+                // Without multiple sensors there are no extra gauges, so there is nothing for this to change.
+                if multiSensorLevel == true {
+                    Toggle("Other Waterways", isOn: $multiSensorLevelOtherWaterways)
+                        .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: level)
+                        }
+                    HStack {
+                        Text(
+                            "Let the extra gauges be on other rivers and canals, nearest first. Otherwise they are on the same waterway as the first gauge. The map on the home screen always shows the first gauge."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        Spacer()
+                    }
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Radiation")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
+                    .onChange(of: multiSensorRadiation) { _, _ in
+                        AppProcess.shared.refreshSubscription(subscriber: radiation)
+                    }
+                HStack {
+                    Text(
+                        "Show up to \(ProcessSensor.maximumPerSource) measuring stations, nearest first, on the Environment tab. Otherwise only the nearest station is loaded. The map on the home screen shows only the nearest one."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    Spacer()
+                }
             }
             .padding()
             .background(Color(.systemGray6))
@@ -202,6 +256,18 @@ struct SettingsView: View {
                 HStack {
                     Text(
                         "Use the closest station, even if it measures only some pollutants. Otherwise a station reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} is preferred."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+                    Spacer()
+                }
+                Toggle("Multiple Sensors", isOn: $multiSensorParticles)
+                    .onChange(of: multiSensorParticles) { _, _ in
+                        AppProcess.shared.refreshSubscription(subscriber: particles)
+                    }
+                HStack {
+                    Text(
+                        "Show up to \(ProcessSensor.maximumPerSource) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The map on the home screen shows only the nearest one."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)

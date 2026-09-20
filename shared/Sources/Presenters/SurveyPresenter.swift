@@ -76,36 +76,17 @@ import SwiftUI
         guard self.subscription?.isEnabled == true, Task.isCancelled == false else { return }
         trace.debug("SurveyPresenter.refreshData() called, ID: \(self.id)")
         do {
-            if let sensor = try await self.fetch(location).first {
-                try Task.checkCancellation()
-                let transformer = SurveyTransformer()
-                try transformer.renderData(sensor: sensor)
-                try Task.checkCancellation()
-                guard self.subscription?.isEnabled == true else { return }
-                self.publishData(sensor: sensor, transformer: transformer)
-            }
+            let sensors = try await self.fetch(location)
+            try Task.checkCancellation()
+            let readings = try ProcessReading.render(sensors: sensors, transformer: { SurveyTransformer() })
+            try Task.checkCancellation()
+            guard self.subscription?.isEnabled == true else { return }
+            self.publish(readings: readings, map: .conditional { SourcePreferences.pollsVisible() == true })
         }
         catch is CancellationError { return }
         catch {
             guard Task.isCancelled == false else { return }
             trace.error("Error refreshing data: %@", error.localizedDescription)
-        }
-    }
-
-    @MainActor func publishData(sensor: ProcessSensor, transformer: SurveyTransformer) -> Void {
-        self.sensor = sensor
-        self.timestamp = sensor.timestamp
-        self.measurements = transformer.measurements
-        self.current = transformer.current
-        self.faceplate = transformer.faceplate
-        self.range = transformer.range
-        self.trend = transformer.trend
-
-        if SourcePreferences.pollsVisible() == true {
-            MapPresenter.shared.updateRegion(for: self.id, with: sensor.location)
-        }
-        else {
-            MapPresenter.shared.updateRegion(remove: self.id)
         }
     }
 }

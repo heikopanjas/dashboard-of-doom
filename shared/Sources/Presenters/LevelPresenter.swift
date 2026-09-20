@@ -30,36 +30,17 @@ import SwiftUI
     func refreshData(location: Location) async -> Void {
         guard self.subscription?.isEnabled == true, Task.isCancelled == false else { return }
         do {
-            if let sensor = try await self.fetch(location).first {
-                try Task.checkCancellation()
-                let transformer = LevelTransformer()
-                try transformer.renderData(sensor: sensor)
-                try Task.checkCancellation()
-                guard self.subscription?.isEnabled == true else { return }
-                self.publishData(sensor: sensor, transformer: transformer)
-            }
+            let sensors = try await self.fetch(location)
+            try Task.checkCancellation()
+            let readings = try ProcessReading.render(sensors: sensors, transformer: { LevelTransformer() })
+            try Task.checkCancellation()
+            guard self.subscription?.isEnabled == true else { return }
+            self.publish(readings: readings, map: .conditional { UserDefaults.standard.bool(forKey: SourcePreferences.waterKey) == true })
         }
         catch is CancellationError { return }
         catch {
             guard Task.isCancelled == false else { return }
             trace.error("Error refreshing data: %@", error.localizedDescription)
-        }
-    }
-
-    @MainActor func publishData(sensor: ProcessSensor, transformer: LevelTransformer) -> Void {
-        self.sensor = sensor
-        self.timestamp = sensor.timestamp
-        self.measurements = transformer.measurements
-        self.current = transformer.current
-        self.faceplate = transformer.faceplate
-        self.range = transformer.range
-        self.trend = transformer.trend
-
-        if UserDefaults.standard.bool(forKey: SourcePreferences.waterKey) == true {
-            MapPresenter.shared.updateRegion(for: self.id, with: sensor.location)
-        }
-        else {
-            MapPresenter.shared.updateRegion(remove: self.id)
         }
     }
 }

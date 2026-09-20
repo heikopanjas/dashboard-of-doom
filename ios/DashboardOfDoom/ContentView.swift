@@ -134,6 +134,8 @@ struct ContentView: View {
                             }
                         case .environment:
                             VStack {
+                                // Draws its own trailing Divider, so nothing remains until a sensor has loaded.
+                                EnvironmentMapView()
                                 RadiationView()
                                     .padding(5)
                                     .padding(.trailing, 3)

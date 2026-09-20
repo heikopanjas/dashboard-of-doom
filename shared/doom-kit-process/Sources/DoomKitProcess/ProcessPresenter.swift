@@ -4,14 +4,10 @@ import Observation
 
 @MainActor @Observable open class ProcessPresenter {
     public nonisolated let id = UUID()
-    public var sensor: ProcessSensor?
-    public var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
-    public var timestamp: Date? = nil
 
-    public var current: [ProcessSelector: ProcessValue<Dimension>] = [:]
-    public var faceplate: [ProcessSelector: String] = [:]
-    public var range: [ProcessSelector: ClosedRange<Double>] = [:]
-    public var trend: [ProcessSelector: String] = [:]
+    /// Rendered sensors, nearest first. Everything below reads the first element, so a consumer that only wants the nearest sensor never
+    /// has to know there are more.
+    public private(set) var readings: [ProcessReading] = []
 
     @ObservationIgnored private weak var coordinator: ProcessCoordinator?
 
@@ -21,6 +17,45 @@ import Observation
 
     isolated deinit {
         self.coordinator?.remove(id: self.id)
+    }
+
+    public var sensor: ProcessSensor? {
+        return self.readings.first?.sensor
+    }
+
+    public var measurements: [ProcessSelector: [ProcessValue<Dimension>]] {
+        return self.readings.first?.measurements ?? [:]
+    }
+
+    public var timestamp: Date? {
+        return self.readings.first?.sensor.timestamp
+    }
+
+    public var current: [ProcessSelector: ProcessValue<Dimension>] {
+        return self.readings.first?.current ?? [:]
+    }
+
+    public var faceplate: [ProcessSelector: String] {
+        return self.readings.first?.faceplate ?? [:]
+    }
+
+    public var range: [ProcessSelector: ClosedRange<Double>] {
+        return self.readings.first?.range ?? [:]
+    }
+
+    public var trend: [ProcessSelector: String] {
+        return self.readings.first?.trend ?? [:]
+    }
+
+    /// Publishes the readings of a refresh. An empty array is ignored, so a failed or cancelled refresh keeps the last good values.
+    public func publish(readings: [ProcessReading]) -> Void {
+        guard readings.isEmpty == false else { return }
+        self.readings = readings
+    }
+
+    /// Replaces the readings unconditionally, including with none. For fixtures and tests; refresh paths use `publish(readings:)`.
+    public func replace(readings: [ProcessReading]) -> Void {
+        self.readings = readings
     }
 
     public var label: String {
@@ -53,16 +88,8 @@ import Observation
         return self.sensor?.placemark ?? "<Unknown>"
     }
 
+    /// Whether the nearest sensor has data for `selector`; see `ProcessReading.isAvailable(selector:treshold:)`.
     public func isAvailable(selector: ProcessSelector, treshold: Double = 0.0) -> Bool {
-        if let measurements = self.measurements[selector] {
-            if measurements.count > 0 {
-                for measurement in measurements where measurement.quality != .unknown {
-                    if measurement.value.value > treshold {
-                        return true
-                    }
-                }
-            }
-        }
-        return false
+        return self.readings.first?.isAvailable(selector: selector, treshold: treshold) ?? false
     }
 }

@@ -7,38 +7,38 @@ import Foundation
 class RadiationController: ProcessController {
     private let measurementDistance: TimeInterval
     private let forecastDuration: TimeInterval
+    private let sensorLimit: @Sendable () -> Int
 
-    init() {
+    init(sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorRadiationKey) }) {
+        self.sensorLimit = sensorLimit
         self.measurementDistance = 3600  // 1 hour
         self.forecastDuration = 1 * 24 * self.measurementDistance  // 1 day
     }
 
+    /// The station series come from separate requests, so this many are fetched at a time.
+    static let fetchConcurrency = 2
+
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
-        var data: [ProcessSensor] = []
         try Task.checkCancellation()
-        let nearestStations = try await Self.fetchNearestStations(location: location)
+        let nearestStations = try await Self.fetchNearestStations(location: location, limit: self.sensorLimit())
         try Task.checkCancellation()
-        for nearestStation in nearestStations {
-            var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
-            try Task.checkCancellation()
-            if let radiation = try await Self.fetchMeasurements(station: nearestStation) {
-                try Task.checkCancellation()
-                var measurement: [ProcessValue<Dimension>] = []
-                measurement.append(contentsOf: self.interpolateMeasurements(measurements: radiation, distance: self.measurementDistance))
-                measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
-                measurements[.radiation(.total)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
-            }
-            try Task.checkCancellation()
-            if let placemark = await GeocodingService.reverseGeocodeLocation(location: nearestStation.location) {
-                try Task.checkCancellation()
-                let sensor = ProcessSensor(
-                    name: nearestStation.name, location: nearestStation.location, placemark: placemark, customData: ["icon": "atom"],
-                    measurements: measurements,
-                    timestamp: Date.now)
-                data.append(sensor)
-            }
+        let candidates = try await nearestStations.concurrentCompactMap(limit: Self.fetchConcurrency) { station in
+            return try await self.candidate(for: station)
         }
-        return data
+        return try await SensorCandidate.sensors(from: candidates, near: location)
+    }
+
+    private func candidate(for station: Station) async throws -> SensorCandidate {
+        var measurement: [ProcessValue<Dimension>] = []
+        try Task.checkCancellation()
+        if let radiation = try await Self.fetchMeasurements(station: station) {
+            try Task.checkCancellation()
+            measurement.append(contentsOf: self.interpolateMeasurements(measurements: radiation, distance: self.measurementDistance))
+            measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
+        }
+        return SensorCandidate(
+            id: station.id, name: station.name, location: station.location, customData: ["icon": "atom"],
+            measurements: [.radiation(.total): measurement.sorted(by: { $0.timestamp < $1.timestamp })])
     }
 
     struct Station: ProcessLocatable {
@@ -47,13 +47,13 @@ class RadiationController: ProcessController {
         let location: Location
     }
 
-    private static func fetchNearestStations(location: Location) async throws -> [Station] {
+    private static func fetchNearestStations(location: Location, limit: Int) async throws -> [Station] {
         var nearestStations: [Station] = []
         try Task.checkCancellation()
         if let data = try await RadiationService.fetchStations() {
             try Task.checkCancellation()
             let stations = try await Self.parseStations(from: data)
-            nearestStations = Self.nearestStations(stations: stations, location: location)
+            nearestStations = Self.nearestStations(stations: stations, location: location, limit: limit)
         }
         return nearestStations
     }
@@ -82,8 +82,8 @@ class RadiationController: ProcessController {
         return stations
     }
 
-    private static func nearestStations(stations: [Station], location: Location) -> [Station] {
-        return sortByDistance(stations, from: location, limit: 3)
+    static func nearestStations(stations: [Station], location: Location, limit: Int) -> [Station] {
+        return sortByDistance(stations, from: location, limit: limit)
     }
 
     private static func fetchMeasurements(station: Station) async throws -> [ProcessValue<Dimension>]? {

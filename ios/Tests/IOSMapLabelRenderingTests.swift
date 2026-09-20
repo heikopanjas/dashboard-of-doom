@@ -15,10 +15,10 @@ struct IOSMapLabelRenderingTests {
         let icons = ["thermometer", "cross.case", "aqi.medium", "water.waves", "atom", "chart.bar"]
         let annotations = selectors.enumerated().map { index, selector in
             let presenter = ProcessPresenter()
-            presenter.sensor = ProcessSensor(
+            let sensor = ProcessSensor(
                 name: "Fixture", location: Location(latitude: 52.51889, longitude: 13.36528),
                 placemark: "Berlin", customData: ["icon": icons[index]], measurements: [:], timestamp: nil)
-            presenter.faceplate[selector] = values[index]
+            presenter.replace(readings: [ProcessReading(sensor: sensor, faceplate: [selector: values[index]])])
             return MapAnnotationSnapshot(id: String(index), presenter: presenter, selector: selector)
         }
         let items: [AnnotationLayout.Item] = selectors.indices.map { index in

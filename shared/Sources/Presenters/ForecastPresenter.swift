@@ -19,29 +19,16 @@ import SwiftUI
 
     func refreshData(location: Location) async -> Void {
         do {
-            if let sensor = try await self.fetch(location).first {
-                try Task.checkCancellation()
-                let transformer = ForecastTransformer()
-                try transformer.renderData(sensor: sensor)
-                try Task.checkCancellation()
-                self.publishData(sensor: sensor, transformer: transformer)
-            }
+            let sensors = try await self.fetch(location)
+            try Task.checkCancellation()
+            let readings = try ProcessReading.render(sensors: sensors, transformer: { ForecastTransformer() })
+            try Task.checkCancellation()
+            self.publish(readings: readings, map: .never)
         }
         catch is CancellationError { return }
         catch {
             guard Task.isCancelled == false else { return }
             trace.error("Error refreshing data: %@", error.localizedDescription)
         }
-    }
-
-    @MainActor func publishData(sensor: ProcessSensor, transformer: ForecastTransformer) -> Void {
-        self.sensor = sensor
-        self.timestamp = sensor.timestamp
-
-        self.measurements = transformer.measurements
-        self.current = transformer.current
-        self.faceplate = transformer.faceplate
-        self.range = transformer.range
-        self.trend = transformer.trend
     }
 }

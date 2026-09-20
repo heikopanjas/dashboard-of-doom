@@ -5,10 +5,10 @@ import Charts
 import SwiftUI
 
 struct RadiationChartView: View {
-    @Environment(RadiationPresenter.self) private var presenter
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     let selector: ProcessSelector
+    let reading: ProcessReading
 
     private let labels: [ProcessSelector: String] = [
         .radiation(.total): "Radiation"
@@ -17,13 +17,13 @@ struct RadiationChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text("\(self.presenter.name) \(self.labels[selector] ?? "<Unknown>")")
+                Text("\(self.reading.sensor.name) \(self.labels[selector] ?? "<Unknown>")")
                 Spacer()
             }
             .font(.headline)
             .accentLabel()
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { radiation in
+                ForEach(self.reading.measurements[selector] ?? []) { radiation in
                     LineMark(
                         x: .value("Date", radiation.timestamp),
                         y: .value("Radiation", radiation.value.value)
@@ -39,7 +39,7 @@ struct RadiationChartView: View {
                     .foregroundStyle(Gradient.linear)
                 }
 
-                if let measurement = presenter.current[selector] {
+                if let measurement = self.reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                         .foregroundStyle(self.colorScheme.markerColor)
@@ -55,7 +55,7 @@ struct RadiationChartView: View {
                                 .font(.footnote)
                             HStack {
                                 Text(String(format: "%.3f%@", measurement.value.value, measurement.value.unit.symbol))
-                                if let icon = presenter.trend[selector] {
+                                if let icon = self.reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -68,7 +68,7 @@ struct RadiationChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
+                    if let measurement = self.reading.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                             .foregroundStyle(self.colorScheme.markerColor)
@@ -95,7 +95,7 @@ struct RadiationChartView: View {
                 }
 
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: self.reading.range[selector] ?? 0.0 ... 0.0)
             .chartInteractiveOverlay(timestamp: $timestamp, roundingStrategy: .previousHour)
         }
     }

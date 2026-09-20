@@ -34,8 +34,7 @@ struct PublicAPITests {
         #expect(transformer.range[.water(.level)] == 1...2)
         #expect(transformer.trend[.water(.level)] == "arrow.up.forward.circle")
         let presenter = Presenter()
-        presenter.sensor = sensor
-        presenter.measurements = transformer.measurements
+        presenter.replace(readings: [ProcessReading(sensor: sensor, transformer: transformer)])
         #expect(presenter.label == "Level")
         #expect(presenter.icon == "water.waves")
         #expect(presenter.placemark == "Berlin")
@@ -49,6 +48,86 @@ struct PublicAPITests {
         #expect(ProcessSensor(name: "Empty", location: location, measurements: [:], timestamp: nil).customData == nil)
         #expect(ProcessSensor(name: "Empty", location: location, placemark: "Address", measurements: [:], timestamp: nil).placemark == "Address")
         _ = Controller()
+    }
+
+    @MainActor @Test func readingsForwardTheNearestSensor() throws {
+        let origin = Location(latitude: 52, longitude: 13)
+        let date = Date.now.addingTimeInterval(-60)
+        let sensors = (0 ..< 3).map { index in
+            let value = ProcessValue<Dimension>(value: Measurement(value: Double(index + 1), unit: UnitLength.meters), quality: .good, timestamp: date)
+            return ProcessSensor(
+                name: "Station \(index)", location: Location(latitude: 52 + Double(index) * 0.01, longitude: 13), placemark: index == 0 ? "Berlin" : nil,
+                customData: ["icon": "water.waves"], measurements: [.water(.level): [value]], timestamp: date, sourceID: "id-\(index)", distance: Double(index) * 1000)
+        }
+        let readings = try sensors.map { sensor in
+            let transformer = ProcessTransformer()
+            try transformer.renderData(sensor: sensor)
+            return ProcessReading(sensor: sensor, transformer: transformer)
+        }
+        let presenter = Presenter()
+        #expect(presenter.sensor == nil)
+        #expect(presenter.measurements.isEmpty == true)
+        #expect(presenter.timestamp == nil)
+
+        presenter.publish(readings: readings)
+        #expect(presenter.readings.map { $0.sensor.sourceID } == ["id-0", "id-1", "id-2"])
+        #expect(presenter.sensor?.sourceID == "id-0")
+        #expect(presenter.timestamp == date)
+        #expect(presenter.faceplate[.water(.level)] == "1.00m")
+        #expect(presenter.placemark == "Berlin")
+        #expect(presenter.location == sensors[0].location)
+        #expect(presenter.sensor?.distance == 0)
+
+        presenter.publish(readings: [])
+        #expect(presenter.readings.count == 3)
+        #expect(presenter.sensor?.sourceID == "id-0")
+
+        presenter.replace(readings: [])
+        #expect(presenter.readings.isEmpty == true)
+        #expect(presenter.sensor == nil)
+        #expect(presenter.timestamp == nil)
+    }
+
+    @MainActor @Test func readingsReportTheirOwnAvailabilityAndIdentity() {
+        let location = Location(latitude: 52, longitude: 13)
+        let date = Date.now.addingTimeInterval(-60)
+        func reading(sourceID: String?, values: [(Double, ProcessQuality)]) -> ProcessReading {
+            let series = values.enumerated().map { index, entry in
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: entry.0, unit: UnitLength.meters), quality: entry.1, timestamp: date.addingTimeInterval(Double(index)))
+            }
+            let sensor = ProcessSensor(
+                name: "Station", location: location, placemark: nil, customData: nil, measurements: [.water(.level): series], timestamp: date,
+                sourceID: sourceID)
+            return ProcessReading(sensor: sensor, measurements: [.water(.level): series])
+        }
+        let real = reading(sourceID: "gauge-1", values: [(0, .good), (2, .good)])
+        #expect(real.isAvailable(selector: .water(.level)) == true)
+        #expect(real.isAvailable(selector: .water(.level), treshold: 2) == false)
+        #expect(real.isAvailable(selector: .water(.electricalConductivity)) == false)
+        // A forecast placeholder is zero with unknown quality; a series of only those has nothing to show.
+        #expect(reading(sourceID: nil, values: [(5, .unknown)]).isAvailable(selector: .water(.level)) == false)
+        #expect(reading(sourceID: nil, values: []).isAvailable(selector: .water(.level)) == false)
+
+        // The presenter answers for its nearest reading only.
+        let presenter = Presenter()
+        #expect(presenter.isAvailable(selector: .water(.level)) == false)
+        presenter.replace(readings: [reading(sourceID: "far", values: [(0, .good)]), real])
+        #expect(presenter.isAvailable(selector: .water(.level)) == false)
+        presenter.replace(readings: [real, reading(sourceID: "far", values: [(0, .good)])])
+        #expect(presenter.isAvailable(selector: .water(.level)) == true)
+
+        #expect(real.id == "gauge-1")
+        let anonymous = reading(sourceID: nil, values: [])
+        #expect(anonymous.id == anonymous.sensor.id.uuidString)
+    }
+
+    @Test func sensorsSortByDistance() {
+        let user = Location(latitude: 52, longitude: 13)
+        let sensors = [0.03, 0.01, 0.02].map { offset in
+            return ProcessSensor(name: "\(offset)", location: Location(latitude: 52 + offset, longitude: 13), measurements: [:], timestamp: nil)
+        }
+        #expect(sortByDistance(sensors, from: user, limit: 2).map { $0.name } == ["0.01", "0.02"])
     }
 
     @Test func selectors() {

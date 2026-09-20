@@ -161,7 +161,10 @@ struct ConditionalSubscriptionTests {
         fixture.scheduler.updateContext(Location(latitude: 48, longitude: 11))
         fixture.scheduler.refreshAll()
         #expect(fixture.scheduler.refresh(id: presenter.id) == nil)
-        for setting in ["nearestLevelSensor", "nearestParticleSensor", "electionPollScope", "showWeather"] {
+        for setting in [
+            "nearestLevelSensor", "nearestParticleSensor", "electionPollScope", "showWeather", "multiSensorLevel", "multiSensorRadiation",
+            "multiSensorParticles", "multiSensorLevelOtherWaterways"
+        ] {
             fixture.defaults.set(1, forKey: setting)
             fixture.notify()
         }

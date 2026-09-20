@@ -7,48 +7,31 @@ import SwiftUI
 struct ParticleView: View {
     @ScaledMetric(relativeTo: .body) private var chartHeight = 167.0
     @Environment(ParticlePresenter.self) private var presenter
+    @AppStorage(SourcePreferences.multiSensorParticlesKey) private var multiSensor: Bool = false
 
     var body: some View {
         VStack {
-            if self.presenter.sensor?.timestamp == nil {
+            if self.presenter.timestamp == nil {
                 ActivityIndicator()
             }
             else {
-                #if os(macOS)
-                HStack(alignment: .bottom) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text(String(format: "%@", self.presenter.sensor?.placemark ?? "<Unknown>"))
+                // Keyed by the source id, so a station keeps its identity, and its drag selection, across refreshes.
+                ForEach(Array(self.presenter.visibleReadings(multiSensor: self.multiSensor).enumerated()), id: \.element.id) { index, reading in
+                    if index > 0 {
+                        Divider()
+                            .padding(.horizontal, 5)
+                            .padding(.trailing, 5)
                     }
-                    Spacer()
-                    Text("Last update: \(Date.absoluteString(date: self.presenter.sensor?.timestamp))")
-                        .foregroundColor(.gray)
-                }
-                .font(.footnote)
-                #else
-                VStack(alignment: .leading) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text(String(format: "%@", self.presenter.placemark))
-                        Spacer()
-                    }
-                    .accentLabel()
-                    HStack {
-                        Text("Last update: \(Date.absoluteString(date: self.presenter.timestamp))")
-                        Spacer()
-                    }
-                    .foregroundColor(.gray)
-                }
-                .font(.footnote)
-                #endif
-                
-                ForEach(ProcessSelector.Particle.allCases, id: \.self) { selector in
-                    if self.presenter.isAvailable(selector: .particle(selector)) {
-                        VStack {
-                            ParticleChartView(selector: .particle(selector))
+                    SensorHeaderView(reading: reading, isNearest: index == 0)
+
+                    ForEach(ProcessSelector.Particle.allCases, id: \.self) { selector in
+                        if reading.isAvailable(selector: .particle(selector)) {
+                            VStack {
+                                ParticleChartView(selector: .particle(selector), reading: reading)
+                            }
+                            .padding(.vertical, 5)
+                            .frame(height: self.chartHeight)
                         }
-                        .padding(.vertical, 5)
-                        .frame(height: self.chartHeight)
                     }
                 }
             }

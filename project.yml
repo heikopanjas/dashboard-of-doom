@@ -184,6 +184,11 @@ targets:
       - Views/PointOfInterestOverlay.swift
       - Views/PointOfInterestCategory+Appearance.swift
       - Presenters/MapPresenter.swift
+      - Presenters/ProcessMapVisibility.swift
+      - Extensions/Array+ConcurrentCompactMap.swift
+      - Controllers/SensorCandidate.swift
+      - Presenters/ProcessPresenter+Map.swift
+      - Presenters/ProcessPresenter+Readings.swift
       - Extensions/Color.swift
       - Extensions/Gradient.swift
       - Extensions/Date.swift
@@ -289,6 +294,8 @@ targets:
       - Views/ForecastStripView.swift
       - Views/CurrentConditionsView.swift
       - Views/NearestPlacesView.swift
+      - Views/SensorHeaderView.swift
+      - Views/EnvironmentMapView.swift
     settings:
       base:
         SDKROOT: iphoneos

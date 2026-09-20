@@ -39,10 +39,10 @@ private struct MapAnnotationPreview: View {
                 separated == true
                 ? Location(latitude: 52.505 + Double(index / 3) * 0.03, longitude: 13.365 + Double(index % 3) * 0.04)
                 : Location(latitude: 52.52 + (coincident == true ? 0 : Double(index) * 0.001), longitude: 13.405)
-            presenter.sensor = ProcessSensor(
+            let sensor = ProcessSensor(
                 name: "Fixture", location: location,
                 placemark: "Berlin", customData: ["icon": icons[index]], measurements: [:], timestamp: nil)
-            presenter.faceplate[selector] = values[index]
+            presenter.replace(readings: [ProcessReading(sensor: sensor, faceplate: [selector: values[index]])])
             return MapAnnotationSnapshot(id: String(index), presenter: presenter, selector: selector, user: index == 0)
         }
     }

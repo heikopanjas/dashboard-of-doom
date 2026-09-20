@@ -56,7 +56,7 @@ struct CollisionMapView: View {
                                     Circle().fill(.white).frame(width: 15, height: 15)
                                 }
                                 Circle()
-                                    .fill(Color.faceplate(selector: annotation.selector))
+                                    .fill(annotation.displayColor)
                                     .frame(width: 11, height: 11)
                             }
                             .accessibilityHidden(true)
