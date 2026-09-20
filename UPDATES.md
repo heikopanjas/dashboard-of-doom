@@ -4,6 +4,43 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, the fuel map pins take the six label colors, 23:05)
+
+- the six filling station pins were all `Color.energy`, the tab's brown, and read muddy over map terrain at half opacity; they now take the six home label colors, one per rank, as the home and environment maps do
+- decision: warm first, orange, pink, yellow, green, blue, purple, so the dearest end of the list reads hot and the cheapest end cool
+- decision: the color marks the rank, not the price level, so switching dearest to cheapest keeps the same six colors in the same order and only the stations under them change. the numbered icon is what says which rank a pin is; the color is there to tell six pins apart
+- consequence: the palette has exactly as many colors as the map shows stations, which is a second reason six is the right count. a seventh would have had to repeat a color
+- `Color.fuelStations` is a separate array rather than a case in `Color.sensor(selector:index:)`, because fuel uses all six while the per-source lists use three each and the nearest of each keeps its own home color; there is no home color for a filling station to keep
+- validation: 87 macos and 133 ios unit tests, both apps build, ui test passes; the screenshot shows six distinct pills with their dots matching, still placed without a connector line
+
+### 2026-09-20 (ios v6.5.0, filling stations as a map instead of a list, 22:50)
+
+- the filling stations moved from a list at the bottom of the energy tab to a map at the top, above the crude charts, where the other tabs put theirs; the list is gone
+- rationale: a price list says how much but not where, and where is the useful half. the fuel, order and radius pickers still drive the selection exactly as before
+- decision: six stations, not seven, because six is the documented limit of the label placement solver; seven would have been one past what it was built for
+- decision: the rank rides in the label's icon slot as a numbered circle rather than being squeezed into the text, which leaves the price at full size in a fixed width label
+- the station model gained coordinates, which it never had because a list did not need them; a station the api sends without them is skipped, since it cannot be mapped
+- the cc by credit line moved with the feature to sit under the map, attribution being a licence condition rather than decoration
+- consequence: station names are gone entirely, since a map label holds one icon and one value. position now identifies a station
+- the spoken price helper went with the list rows; the map label carries its own accessibility, so nothing called it any more
+- validation: 86 macos and 132 ios unit tests, both apps build, ui test passes; the screenshot shows six numbered pins laid out without overlap or connectors and the closed fixture station correctly absent. the crowded case, six labels at a 5 km radius, is still only testable on the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, dearest filling stations on the energy tab, 21:45)
+
+- the energy tab now ends with the seven dearest filling stations around the user, from tankerkoenig, which redistributes the bundeskartellamt's mts-k price data; settings gain a key field, a fuel picker, an order picker and a radius picker
+- this is the first source that needs an api key, so it is the first user of the keychain store; the key goes in through settings and never near the repository, and the service takes it as a parameter rather than reading a store, because the services package cannot see the app layer, the golden url test needs a reproducible value and unsigned test runners cannot read the keychain anyway
+- decision, forced by the api: sort by price is rejected while asking for all fuels, so the request always sorts by distance and every ranking happens locally. that is why the fuel and order pickers reorder instantly with no request, while the radius picker refetches
+- decision: the radius offers 5, 10 and 25 km because the api caps at 25, checked directly: 26 and 50 return exactly the same stations
+- decision: closed stations are dropped, as asked, even though they still report a price; equal prices are broken by distance, nearest first, so the list does not wobble between refreshes
+- prices are written german pump style, 2,40 with a raised 9 and a euro sign, rather than the 2,41 the request sketched: the tenth of a cent is the digit the ranking turns on, so rounding it away would show stations the list ranks apart as identically priced. voiceover gets plain digits instead of the raised one
+- the presenter copies the hazard one, a refreshable holding models rather than readings, with the generation counter and a five minute, one kilometre failure cooldown, since ios refreshes on every movement and tankerkoenig asks for at most one request every five minutes. it rides the energy enable key, so one switch governs the whole tab
+- the secret field gained an onchange callback: a keychain write is not a userdefaults change, so nothing would otherwise notice a new key until the next hourly refresh
+- the preference keys live in source preferences rather than on the ios view, because the controller needs the radius and the macos test target compiles the controller but not ios views
+- known cosmetic wrinkle: station names are re-cased with the gauge name formatter, which fixes shouting names like berlin - westhafenstrasse but turns the company suffix ohg into ohg
+- validation: 86 macos and 131 ios unit tests, all six packages, both apps build, ui test passes; the fixture screenshot shows seven stations with the closed one correctly absent, and the expected live top seven was computed from the api for comparison on the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
 ### 2026-09-20 (ios v6.5.0, keychain store for api keys and tokens, 19:00)
 
 - a sixth local package, doomkitsecrets, keeps api keys and tokens in the keychain, one string per named key, behind a small store protocol with a memory double for tests; the app's instance is appsecrets shared, and a secretfield settings row lets a key be pasted or removed. nothing consumes a key yet; it is there for the first source that needs one
