@@ -98,6 +98,8 @@ packages:
     path: shared/doom-kit-network
   DoomKitLocation:
     path: shared/doom-kit-location
+  DoomKitSecrets:
+    path: shared/doom-kit-secrets
   LaunchAtLogin-Modern:
     url: https://github.com/sindresorhus/LaunchAtLogin-Modern
     branch: main
@@ -155,6 +157,7 @@ targets:
     - package: DoomKitProcess
     - package: DoomKitNetwork
     - package: DoomKitLocation
+    - package: DoomKitSecrets
     - package: LaunchAtLogin-Modern
       product: LaunchAtLogin
     - package: KeyboardShortcuts
@@ -175,6 +178,8 @@ targets:
       - Controllers/PointOfInterestController.swift
       - Presenters/PointOfInterestPresenter.swift
       - AppProcess.swift
+      - AppSecrets.swift
+      - Views/SecretField.swift
       - AppLocation.swift
       - SourcePreferences.swift
       - Presenters/ConditionalSubscription.swift
@@ -229,6 +234,7 @@ targets:
         CODE_SIGNING_ALLOWED: 'NO'
     dependencies:
     - package: DoomKitLocation
+    - package: DoomKitSecrets
     - package: DoomKitServices
     - package: DoomKitProcess
     - package: DoomKitNetwork
@@ -275,6 +281,7 @@ targets:
         - '@executable_path/Frameworks'
     dependencies:
     - package: DoomKitLocation
+    - package: DoomKitSecrets
     - package: DoomKitNetwork
     - package: DoomKitProcess
     - package: DoomKitTools
@@ -311,6 +318,7 @@ targets:
         CODE_SIGNING_ALLOWED: 'NO'
     dependencies:
     - package: DoomKitLocation
+    - package: DoomKitSecrets
     - package: DoomKitNetwork
     - package: DoomKitProcess
     - package: DoomKitTools

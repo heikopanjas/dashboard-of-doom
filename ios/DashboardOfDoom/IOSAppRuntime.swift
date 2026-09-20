@@ -23,6 +23,7 @@ final class IOSAppRuntime {
         start: { [weak self] in
             self?.pointsOfInterest.start(updates: AppLocation.shared.updates())
             #if DEBUG
+            AppSecrets.runSelfCheckIfRequested()
             if IOSPreviewData.isEnabled == true {
                 if let self { IOSPreviewData.populate(self) }
                 return
