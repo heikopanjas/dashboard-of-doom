@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, rename Shared to shared, 03:30)
+
+- the shared code directory is now lowercase, matching ios, macos and every other tracked path at the root
+- rationale: project.yml and README.md already spelled it shared, and only the case insensitive mac filesystem kept that working; a case sensitive checkout or a linux ci runner would not have found the sources
+- done as two git mv steps through a temporary name, since core.ignorecase is true and a direct rename is a no-op there; git recorded all 152 files as pure renames rather than delete plus add, so blame survives
+- two agents.md path references to bundled resources were the only stale spellings left in the repo
+- validation: xcodegen regenerate, macOS and iOS Debug builds, all five local packages build
+- version bump: none; a path rename with no behavior change
+
 ### 2026-09-20 (ios v6.5.0, poi master switch reframed and label opacity rule, 02:40)
 
 - the ios points of interest master switch is now labelled "Show on map", since that is all it does once every category loads regardless of the switches; macos keeps "Show points of interest", where it still stops fetching
