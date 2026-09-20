@@ -35,6 +35,12 @@ import Testing
         #expect(Color.sensor(selector: .particle(.pm10), index: 3) == Color.sensor(selector: .particle(.pm10), index: 0))
     }
 
+    @Test func theFuelStationsUseAllSixHomeColoursOnce() {
+        #expect(Color.fuelStations.count == 6)
+        #expect(Set(Color.fuelStations).count == 6)
+        #expect(Set(Color.fuelStations) == Set(Self.homeLabelColors))
+    }
+
     @Test func aSourceWithoutAListKeepsItsCategoryColor() {
         for selector in [ProcessSelector.weather(.temperature), .forecast(.temperature), .covid(.incidence), .survey(.fascists)] {
             #expect(Color.sensor(selector: selector, index: 2) == Color.faceplate(selector: selector))

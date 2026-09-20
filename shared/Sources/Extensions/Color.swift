@@ -122,6 +122,10 @@ extension Color {
     /// The Particles tab is a tab of its own, so its stations can reuse colors: the nearest keeps the home particle color.
     static let particleSensors: [Color] = [Self.particle, Self.survey, Self.weather]
 
+    /// The six filling stations on the Energy map, one colour each, which is why the map shows six. All six home label colours, warm
+    /// first, so the dearest end of the list reads hot and the cheapest end cool. The colour marks the rank, not the price itself.
+    static let fuelStations: [Color] = [Self.radiation, Self.survey, Self.water, Self.particle, Self.weather, Self.covid]
+
     /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
     /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail.
     static func sensor(selector: ProcessSelector, index: Int) -> Color {

@@ -140,6 +140,8 @@ struct ContentView: View {
                         case .energy:
                             if enableEnergy == true {
                                 VStack {
+                                    // Renders nothing until a key is stored and stations have loaded.
+                                    FuelMapView()
                                     EnergyView()
                                         .padding(5)
                                         .padding(.trailing, 3)

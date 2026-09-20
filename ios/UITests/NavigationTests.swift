@@ -17,7 +17,7 @@ final class NavigationTests: XCTestCase {
             app.buttons[label].tap()
             XCTAssertTrue(app.buttons["Home"].exists)
             self.capture(label)
-            if label == "Environment" || label == "Particles" || label == "Settings" {
+            if label == "Environment" || label == "Particles" || label == "Settings" || label == "Energy" {
                 // Up to three sections per source, and a settings card per source, so these tabs are taller than the screen. Scroll back
                 // afterwards: the offset would carry over.
                 let steps = label == "Settings" ? ["middle", "lower", "bottom"] : ["middle", "bottom"]

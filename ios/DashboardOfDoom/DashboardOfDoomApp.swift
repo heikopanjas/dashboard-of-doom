@@ -18,6 +18,7 @@ struct DashboardOfDoomApp: App {
                 .environment(self.delegate.runtime.particles)
                 .environment(self.delegate.runtime.surveys)
                 .environment(self.delegate.runtime.energy)
+                .environment(self.delegate.runtime.fuel)
                 .environment(self.delegate.runtime.colors)
                 .environment(self.delegate.runtime.pointsOfInterest)
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in

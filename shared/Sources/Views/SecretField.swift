@@ -7,6 +7,9 @@ struct SecretField: View {
     let label: String
     let key: SecretKey
     var store: any SecretStore = AppSecrets.shared
+    /// Called after the stored key changed. A keychain write is not a `UserDefaults` change, so a source that needs the key has to be
+    /// told to refresh; nothing observes it on its own.
+    var onChange: (() -> Void)? = nil
 
     @State private var draft = ""
     @State private var isStored = false
@@ -53,6 +56,7 @@ struct SecretField: View {
             self.draft = ""
             self.isStored = true
             self.failure = nil
+            self.onChange?()
         }
         catch {
             self.failure = "The key could not be stored: \(error)"
@@ -64,6 +68,7 @@ struct SecretField: View {
             try self.store.delete(self.key)
             self.isStored = false
             self.failure = nil
+            self.onChange?()
         }
         catch {
             self.failure = "The key could not be removed: \(error)"

@@ -20,6 +20,23 @@ enum SourcePreferences {
         return 1
     }
 
+    /// Which fuel the station list ranks and shows, which way round it ranks, and how far it looks. Raw values are stored, so the
+    /// orders of `FuelStation.Fuel` and the list's own order enum must not be renumbered.
+    static let fuelTypeKey = "fuelType"
+    static let fuelOrderKey = "fuelOrder"
+    static let fuelRadiusKey = "fuelRadius"
+
+    /// The radii the settings offer. Tankerkoenig caps the search at 25 km: a larger radius returns exactly the same stations.
+    static let fuelRadiusChoices = [5, 10, 25]
+    static let fuelRadiusDefault = 10
+
+    /// The stored search radius in kilometres, clamped to something the API will answer. Unset reads as the default.
+    static func fuelRadius(defaults: UserDefaults = .standard) -> Double {
+        let stored = defaults.integer(forKey: Self.fuelRadiusKey)
+        let kilometres = stored > 0 ? stored : Self.fuelRadiusDefault
+        return Double(min(max(kilometres, 1), 25))
+    }
+
     /// Whether energy prices are fetched and their tab shown. On by default; there is nothing of theirs on the map.
     static let energyEnableKey = "enableEnergy"
     static let energyEnabledByDefault = true

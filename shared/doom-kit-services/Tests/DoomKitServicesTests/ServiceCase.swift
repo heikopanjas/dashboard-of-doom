@@ -149,7 +149,15 @@ struct ServiceCase: Sendable {
             fetch: { manager in return try await EnergyService.fetchWTI(networkManager: manager) }),
         Self(
             name: "EnergyService.fetchLNG", url: #"https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"#,
-            fetch: { manager in return try await EnergyService.fetchLNG(networkManager: manager) })
+            fetch: { manager in return try await EnergyService.fetchLNG(networkManager: manager) }),
+        // A fixture key, never a real one: the secret belongs in the keychain, not in a test.
+        Self(
+            name: "FuelService.fetchStations",
+            url: #"https://creativecommons.tankerkoenig.de/json/list.php?lat=52.52&lng=13.405&rad=10.0&sort=dist&type=all&apikey=fixture-key"#,
+            fetch: { manager in
+                return try await FuelService.fetchStations(
+                    location: Location(latitude: 52.52, longitude: 13.405), radius: 10.0, apiKey: "fixture-key", networkManager: manager)
+            })
     ]
 
     static var startDate: Date {

@@ -76,6 +76,7 @@ enum IOSPreviewData {
         Self.populateForecastStrip(runtime.forecast, date: date)
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
+        runtime.fuel.publish(stations: Self.stations(), timestamp: date)
     }
 
     /// Per-hour condition symbols and a rain chance series, the two things the
@@ -164,6 +165,24 @@ enum IOSPreviewData {
             current[selector] = sample
         }
         Self.amend(presenter, measurements: measurements, current: current)
+    }
+
+    /// A key lives in the keychain and cannot be set by a launch argument, so the stations are seeded straight into the presenter.
+    /// They are spread around HKW so the map has something to lay out, and one is shut to keep proving the open-only filter.
+    private static func stations() -> [FuelStation] {
+        let names = [
+            "HANS ENGELKE ENERGIE OHG", "BERLIN - WESTHAFENSTRASSE 1", "Aral Tankstelle", "TotalEnergies Berlin", "Shell Berlin",
+            "ESSO TANKSTELLE", "Sprint Berlin"
+        ]
+        return names.enumerated().map { index, name in
+            let e5 = 2.389 - Double(index) * 0.017
+            let angle = Double(index) / Double(names.count) * 2 * Double.pi
+            let location = Location(
+                latitude: 52.51889 + cos(angle) * 0.022, longitude: 13.36528 + sin(angle) * 0.034)
+            return FuelStation(
+                id: "fixture-\(index)", name: name, brand: nil, street: "Fixturestr.", houseNumber: "\(index + 1)", location: location,
+                distance: 1.2 + Double(index) * 0.9, isOpen: index != 3, prices: [.e5: e5, .e10: e5 - 0.06, .diesel: e5 + 0.08])
+        }
     }
 
     private static func hazards(sent: Date) -> [Hazard] {

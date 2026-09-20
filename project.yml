@@ -218,6 +218,9 @@ targets:
       - Presenters/EnergyPresenter.swift
       - Transformers/EnergyTransformer.swift
       - Controllers/EnergyController.swift
+      - Models/FuelStation.swift
+      - Controllers/FuelController.swift
+      - Presenters/FuelPresenter.swift
       - Presenters/WeatherPresenter.swift
       - Transformers/WeatherTransformer.swift
       - Controllers/WeatherController.swift
@@ -305,6 +308,7 @@ targets:
       - Views/CurrentConditionsView.swift
       - Views/NearestPlacesView.swift
       - Views/SensorHeaderView.swift
+      - Views/FuelMapView.swift
       - Views/SensorMapView.swift
       - Views/EnvironmentMapView.swift
       - Views/ParticleMapView.swift

@@ -11,6 +11,7 @@ final class IOSAppRuntime {
     let particles = ParticlePresenter()
     let surveys = SurveyPresenter()
     let energy = EnergyPresenter()
+    let fuel = FuelPresenter()
     let colors = ColorPresenter()
     let pointsOfInterest = PointOfInterestPresenter(fetch: { category, location in
         #if DEBUG

@@ -13,6 +13,11 @@ struct SettingsView: View {
     @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
+    @Environment(FuelPresenter.self) private var fuel
+    @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
+    @AppStorage(SourcePreferences.fuelOrderKey) private var fuelOrder: Int = FuelMapView.Order.dearest.rawValue
+    @AppStorage(SourcePreferences.fuelRadiusKey) private var fuelRadius: Int = SourcePreferences.fuelRadiusDefault
+    @State private var hasFuelKey = false
     @AppStorage("showRadiation") private var showRadiation: Bool = true
     @AppStorage("showHazards") private var showHazards: Bool = true
 
@@ -298,10 +303,68 @@ struct SettingsView: View {
                         .foregroundColor(.gray)
                     Spacer()
                 }
+                if enableEnergy == true {
+                    VStack(spacing: 12) {
+                        // Saving a key is a keychain write, which nothing observes, so the stations are refreshed by hand.
+                        SecretField(
+                            label: "Tankerkoenig API key", key: FuelController.apiKeyName,
+                            onChange: {
+                                self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
+                                AppProcess.shared.refreshSubscription(subscriber: self.fuel)
+                            })
+                        HStack {
+                            Text(
+                                "Puts a map of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                            Spacer()
+                        }
+                        if hasFuelKey == true {
+                            Picker("Fuel", selection: $fuelType) {
+                                ForEach(FuelStation.Fuel.allCases, id: \.rawValue) { fuel in
+                                    Text(fuel.label).tag(fuel.rawValue)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            Picker("Order", selection: $fuelOrder) {
+                                ForEach(FuelMapView.Order.allCases, id: \.rawValue) { order in
+                                    Text(order.label).tag(order.rawValue)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            HStack {
+                                Text("Which fuel the map shows and which end of the price range. All three prices are already loaded, so these change the map at once.")
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                            }
+                            // A new radius is a different request, so this one refetches.
+                            Picker("Radius", selection: $fuelRadius) {
+                                ForEach(SourcePreferences.fuelRadiusChoices, id: \.self) { kilometres in
+                                    Text("\(kilometres) km").tag(kilometres)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .onChange(of: fuelRadius) { _, _ in
+                                AppProcess.shared.refreshSubscription(subscriber: self.fuel)
+                            }
+                            HStack {
+                                Text("How far around you to look. Tankerkoenig searches at most 25 km.")
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                            }
+                        }
+                    }
+                }
             }
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(10)
+            .onAppear {
+                self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
+            }
         }
 
         VStack(alignment: .leading, spacing: 8) {
