@@ -4,6 +4,34 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, energy prices tab and covid behind a switch, 18:00)
+
+- a new ios energy tab shows daily brent and wti crude oil prices in usd per barrel and the eu lng spot price in eur per mwh, one chart each over the last year, a quarter at first and widened on request; it takes the slot the covid tab had
+- a short footnote under each chart says what the price is and where it comes from, since the tab is for people who do not follow the markets; flush against the chart it blended into the axis labels, and a gray card was not wanted either, so it is inset with a card's padding but no visible box, and a divider separates the chart sections; the range headroom went from five to two percent so the prices fill their chart. the actual cause of the blending, found from a device screenshot, was the chart's area fill: drawn from zero on an axis that starts near the prices, it ran out of the plot and was painted behind the explainer, so the area is now anchored at the range's floor, the way the particle chart already does it
+- the covid tab stays in the app behind a new enable switch, off by default on ios, and appears next to polls when switched on; macos keeps its covid tab and its single switch, on by default, the way polls already differ between the platforms
+- sources: brent and wti come from the datasets oil-prices github mirror of the us eia daily series, plain csv, public domain, no key; lng comes from acer, the eu energy regulator, which has published a daily eu lng price since 2023 as a quoted latin-1 csv, no key
+- decision: the mirror rather than the eia api, which needs a key that would have to live in settings or outside the repo; if the volunteer mirror ever stops, switching the url to the eia api is a small change and was written up as such
+- decision: no free api exists for ttf or jkm, the european and asian lng benchmarks; every candidate was paid, a yahoo finance scrape, or dead, and dbnomics' ttf dataset was checked directly and stops in 2024. acer's own daily eu lng assessment is the one real free lng source and is what the tab shows; the benchmark column is a spread that goes negative and is left out
+- decision: prices have no place, so the source is not on the map at all; the home map's label solver is sized for exactly six labels and stays there
+- the selector, two single-unit dimensions, a service with three golden url entries, a controller with pure tested parsers, a transformer, a presenter and the tab; adding the selector case needed two exhaustive switches and nothing else
+- dates parse as utc midnight so the chart drag lands on days; weekends and holidays carry the last price forward as uncertain, since markets are closed
+- covid copies the polls two key shape on ios, an enable key for fetching and the tab and the old show key for the map label only; this also replaces the presenter's bool read of the show key, which treated an unset key as off for the map, with the same object read the other sources use
+- fixtures, the subscription tests, the policy test and the ui test now enumerate the new source and the covid enable key; the ui test enables covid so its screenshot survives
+- validation: all five packages, 82 macos and 117 ios unit tests, both apps build, ui test passes; the real app in the simulator fetched all three files without error, and the parsers are pinned to rows copied verbatim from those files. the tab was seen with fixture data only; real charts are for the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible and adds a tab, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, map of the particulate stations on the particles tab, 17:00)
+
+- the ios particles tab now starts with a map of its stations, a dot and a label for each, with the same colored header pills under it, as the environment tab has
+- the map itself moved into a shared view holding the camera, the height, the divider and the empty state; the environment and particles maps only build their annotations. the environment map is unchanged, which the screenshot confirms
+- decision: a station reports up to a dozen pollutants and a label has room for one, so the label shows the first pollutant in the tab's chart order that has a value, pm10 then pm25, ozone and no2, so it always matches the first chart under it. the alternative, picking by the fewest gaps or a fixed pollutant, was not needed; pm10 with n/a is the fallback for a station with no values
+- decision: particle colors are green for the nearest, the home particle color, then pink and blue. the tab is separate from environment, so the colors are reused across tabs and no color is spent on telling the tabs apart
+- the pollutant chooser skips the marker for all pollutants, which is the first case of the enum but never reported
+- known and untouched: the home map's particle label still takes an arbitrary pollutant, the first key of an unordered dictionary
+- tests: the station annotations, ids, colors, order and text, the pollutant order and its fallbacks, the switch off and on, and that the map and the sections agree on each station's color; the palette test now covers the particle colors. an existing test that treated particles as a source without a color list was corrected
+- validation: 76 macos and 111 ios unit tests, both apps build, ui test passes; the screenshots show three labels in green, pink and blue with matching pills on the particles tab and the environment tab unchanged. real uba stations on a real map are not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
 ### 2026-09-20 (ios v6.5.0, environment header pills use the map label transparency, 16:05)
 
 - the coloured pill above each environment chart now has the same half transparent fill as the map label, so the pill and its label are the same tint; it was opaque before
