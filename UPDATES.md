@@ -4,6 +4,119 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-20 (ios v6.5.0, environment header pills use the map label transparency, 16:05)
+
+- the coloured pill above each environment chart now has the same half transparent fill as the map label, so the pill and its label are the same tint; it was opaque before
+- rationale: requested, so a pill and its label match in tone as well as in hue
+- known consequence, seen in the screenshots: in light mode the pill is pastel with legible black text, but in dark mode the tint sits on a black page and comes out dark brown or olive, and the black text on it is hard to read. the map label has the same weakness over a dark map. this was the reason the pill had been opaque
+- options left open: an opaque pill again, or light text on the pill in dark mode only, which keeps the same transparency; not done, since neither was asked for
+- validation: build and ui test pass; light and dark screenshots checked
+- version bump: none; folded into the pending ios 6.5.0
+
+### 2026-09-20 (ios v6.5.0, per sensor colors on the environment map and headers, 15:50)
+
+- every level and radiation sensor on the environment tab now has one of the six label colors from the home screen, on its map label, dot and connector and on the header above its chart, so a label can be matched to its chart
+- the palette is one function, color sensor: radiation orange, pink, purple and level yellow, green, blue, nearest first. the nearest of each keeps its home color, orange for radiation and yellow for level, and the extras take the four that are left; the six are exactly the colors of the home labels and no new color values were added. the survey color is pink, not red, which the question offered had wrong
+- decision: charts get a colored header pill only. the plots keep their accent gradient, which is one shared value used by ten chart views on both platforms and so is not touched here; the price is that in dark mode the accent can be orange or blue, which are also sensor colors, so a fill can resemble another sensor's pill
+- the map annotation snapshot carries an optional color, nil by default, and its display color falls back to the selector's, so the home map and macos are unchanged; the label, the dot and the connector read it in the three places that used the selector color. the label type gets a defaulted color so its existing callers and tests compile as before
+- the header view gets an optional color; with one, the address row is a rounded pill in it with black text, and without one it is plain, so the particles tab is unchanged. the pill is opaque where the map label is half transparent, because half transparent on a black page in dark mode reads dark
+- the color is applied with multiple sensors off as well, so the two nearest sensors are still orange and yellow and match their labels
+- the map and the sections work out each sensor's color from its position separately, so a test pins that they agree
+- known limits: color is the only link between a label and a chart, since the labels carry no station name, so people who cannot tell the colors apart cannot make the match; pink beside orange and yellow beside green are close in hue at half opacity over map tiles
+- tests: the palette is the six home colors, all different, nearest keep theirs, other selectors keep their category color, and indices wrap; the map annotations carry the colors in tab order and match the sections; the snapshot falls back to the selector color
+- validation: 75 macos and 102 ios unit tests, both apps build, ui test passes; the screenshots show six different colors on the map with matching pills, legible black text on all six in light mode and on orange in dark mode at the largest text size, plain particles headers, and the earlier home map look unchanged
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, map of level and radiation sensors on the environment tab, 15:30)
+
+- the ios environment tab now starts with a map showing only level and radiation sensors, a dot and a label for every sensor the tab lists below it, so the extra sensors from multiple sensors finally have a place on a map; the home map still labels only the nearest sensor of each source and is unchanged
+- decision: a new view rather than reuse of the home map view, which hard codes the six home categories and takes its camera from a shared singleton keyed by presenter with one point each; changing that would have touched the home camera, which the map rules say not to do to fit labels. the collision map view underneath needs only a camera and a list of annotations, so the new view uses it directly with its own camera
+- the camera is a rectangle around the sensors, grown by half its size on each side for the labels and never smaller than about three kilometres, so a lone sensor does not zoom in to nothing; it is recomputed from the data and its setter ignores writes, so it follows the sensors as they load and refresh
+- labels are built from each reading rather than a presenter, through a second initialiser on the annotation snapshot; ids are the category plus the reading's source id, since ids must be unique within a map and an id used twice silently drops a label
+- the map reads the same visible readings as the sections, so turning a source's multiple sensors off removes its extra labels at once and the map re-fits around what is left
+- decision: sensors only, as asked; no points of interest, weather label, user marker or header, and it cannot be panned, like the home map, so it does not fight the scrolling. it renders nothing until a sensor has loaded, so the spinners below stay the only loading sign
+- the settings footnotes said the map always shows the nearest sensor, which stopped being true with two maps, so all four now say the map on the home screen shows only the nearest one; the plan named three, particulates was changed too so they read the same
+- known limits: labels sit at half opacity as on the home map with places off, so street names show through them; six close labels are what the placement solver was sized for; the labels carry the icon and value only, and the station names are in the sections below
+- tests: annotation building, ids, order and the fallbacks, the camera rectangle for none, one, identical and distant sensors, the snapshot initialiser, and that the map follows each source's switch; the ui test now scrolls further on this tab
+- validation: 69 macos and 93 ios unit tests, both apps build, ui test passes; the screenshots show six labels and dots clear of each other with a connector where one is displaced, two labels after re-fitting with the switches off at the largest text size, and the home map unchanged. real gauges and stations on a real map are not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, level other waterways setting, 15:10)
+
+- new ios setting for level, other waterways, that lets the extra gauges be on other rivers and canals instead of only the first gauge's waterway
+- decision: it changes only the extra gauges; the first gauge keeps its rule, the nearest on the nearest natural waterway or the plain nearest with nearest sensor on. the alternative, all three strictly nearest, is what nearest sensor plus multiple sensors already gives, so a new switch would have duplicated it
+- consequence: the extras come after the first, so one can be nearer than the first when it sits on another waterway, and the distances down the stack do not always increase; the first stays first because the map pin, the address and the menu label read the first reading
+- decision: default off, ios only, and shown in the water card only while multiple sensors is on, since without extra gauges it would change nothing, the same way the poll scope picker only appears when polls are enabled
+- selection: the existing waterway then nearest rule is factored out unchanged and used for the first gauge with a limit of one; the extras are the nearest remaining gauges, through the same nearest function so the 1000 km cutoff still applies. with the setting off, or a limit of one, the result is exactly what it was, so the default and macos are untouched
+- the extras carry their own waterway name, so their chart titles now read their own river, which also tells them apart
+- the controller reads the setting per refresh through an injectable closure, like nearest sensor and the sensor limit; the toggle refreshes the level source so the change takes effect at once
+- tests: seven cases for the selection, using a spree, havel and canal layout in which two extras are nearer than the first, plus the default, a limit of one, no matching waterway, no repeats, fewer gauges than the limit and the cutoff; the new key is pinned and listed in the unrelated key loop
+- validation: 67 macos and 82 ios unit tests, both apps build, ui test passes; the settings screenshot shows the toggle in the standard card style under multiple sensors, off. the fixtures seed readings directly, so the effect on real gauges is not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, multiple sensors setting per source, default off, 14:45)
+
+- level, radiation and particles each get an ios setting, multiple sensors, that turns the multi-sensor behaviour on; off means the previous behaviour: one sensor, the nearest, one station's data fetched, one section shown
+- decision: three switches, one per source, rather than one for all; particulates are the expensive one, about seven requests against three, so the switches can be used independently
+- decision: the default is off, so out of the box nothing is multi-sensor and the extra sections appear only after a switch is turned on. the build that was on the phone showed three sections and shows one again until the switches are turned on
+- decision: ios only; macos already fetches and shows one sensor, so a switch there would do nothing
+- keys are multisensorlevel, multisensorradiation and multisensorparticles, only ever read with bool for key, so unset is off and launch arguments reach them, which the ui test uses
+- one function, source preferences sensor limit, turns a key into a limit: one when off, the platform cap when on. each controller takes it as an injectable closure re-read on every refresh, the same shape as the nearest sensor closure, so a switch takes effect on the next refresh without restarting anything
+- radiation was the one source with no seam for the limit, its station count was hard coded in a private function; it now takes a limit, and with the switch off it fetches one station where the old code fetched three and threw two away, so off is slightly cheaper than the previous behaviour, with the same result on screen
+- the three views list visible readings, which trims to the nearest when the switch is off. the presenter keeps its last readings until a refresh replaces them, so trimming only the fetch would leave the extra sections on screen after switching off, for good if the refresh failed. trimming in the view makes the switch immediate
+- each toggle refreshes its source, so turning it on loads the extra sensors at once
+- radiation had no ios settings section; it got one, between water and particulate matter, matching the order on the home screen
+- footnotes say what the switch does to the data and to the map, which always shows the nearest sensor, and interpolate the cap so the text cannot go stale
+- tests: source preferences limit per key, including a launch argument string, visible readings on and off, and the radiation station limit, which gives radiation its first controller test; the unrelated key loop in the conditional subscription test lists the three new keys. the ui test turns the switches on for its first launch and leaves them off for the large text launch, and now also captures the settings tab
+- validation: 60 macos and 75 ios unit tests, both apps build, ui test passes; the screenshots show the settings cards in the standard style, three sections per source with the switches on, and a single radiation section with them off
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, sensor cap is three and particulate matter is multi-sensor, 14:20)
+
+- the per source sensor cap drops from five to three, and is one on macos: macos shows only the nearest sensor, so it no longer downloads the extra ones, for level and radiation as well; the cap is one constant with a platform condition, and the level and radiation controllers already derived from it
+- particulate matter now reports up to three stations and the ios particles tab shows each as a section, the same way as the environment tab; the nearest section is unchanged
+- decision: the first sensor is still the nearest station reporting pm10, pm25, no2 and o3, and the others are the stations that follow it by distance whatever they report; the other reading, three nearest stations that all qualify, was offered and not chosen, so sensors 2 and 3 can show fewer pollutants. following it, rather than the next nearest overall, keeps the array in distance order when the first sensor is not the nearest station
+- the particulate probe is left as it was, sequential and unbounded, so a source with no qualifying station can still probe every station; bounding it is a follow up, not part of this change
+- decision: the nearest station with no data still publishes nothing, so the last values stay, as before; level and radiation keep publishing an empty first sensor. the difference is deliberate, each keeps what it did
+- particulate errors are now isolated per station, so one bad forecast drops that station instead of the whole refresh, and a failed geocode of the nearest station no longer discards the refresh, the next station with an address becomes the first sensor
+- sensor candidate holds a dictionary of series per station and takes an injectable geocoder, which made the geocode in order rules testable for the first time; the particle controller takes an injectable nearest preference like level does, and its station selection is a pure function under test
+- requests per refresh on ios go from 3 to 7 in the best case for particles; macos stays at 3
+- tests: level selection and process package expectations moved from five ids to three; the level recovery test passes an explicit limit because the default is now the platform cap and is one on macos, which is how it failed once. new suites for the particle station selection and the sensor candidate rules
+- fixtures and ui test: level, radiation and particles get three sensors each, and the ui test captures the middle and bottom of the environment and particles tabs
+- validation: all five packages in debug and process, tools and services in release; 50 macos and 65 ios unit tests; both apps build; ui test passes and its screenshots show three sections per source in distance order with no unknown placeholder. real uba data was not checked, only the fixtures
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, environment tab shows up to five sensors per source, 13:55)
+
+- the ios environment tab now shows every reading of level and radiation, nearest first, each as its own section with a header and its charts, with a divider between sensors; the nearest section is unchanged
+- the two chart views take a reading instead of reading the presenter, and the container views loop over the readings keyed by the source id, so a gauge keeps its identity and its drag selection across refreshes
+- processreading is now identifiable and owns the availability check; the presenter's version delegates to it for the nearest reading, so macos behaves as before
+- sensors 2 to 5 have no address because only the nearest is geocoded, so their header shows the station name and the distance instead; the level station name is the gauge, carried in custom data, since the sensor name is the waterway and identical for all five
+- decision: pegelonline writes names in capitals, so the display name re-cases only names written that way and keeps a two letter last word as it is, which turns BERLIN-CHARLOTTENBURG OP into Berlin-Charlottenburg OP and leaves mixed case bfs names alone; a token rule was chosen over a fixed list of suffixes so new gauges need nothing
+- decision: every level chart keeps the waterway in its title, so five charts read the same; the header above each one tells them apart, and changing the title was left out of this change
+- decision: all five sections are stacked rather than collapsed or paged, as asked; the tab is now several screens tall
+- removed the dead macos branches from the two ios container views, since the ios folder is never compiled for macos and they could not fit the loop
+- fixtures: level and radiation get five sensors in the ui fixture; the ui test captures the middle and bottom of the tab and the tab at the largest accessibility size, which is how the names, distances and text wrapping were checked
+- project.yml: the header view is on the ios unit test include list
+- validation: all five packages in debug and process, tools and services in release; 37 macos and 52 ios unit tests; both apps build without warnings from the new code; ui test passes; the screenshots show five sections with distances increasing, no unknown placeholder, and no clipping at the largest accessibility size. real gauge and station names were not seen yet, only the fixture ones
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, doomkit reports up to five sensors per source, 13:35)
+
+- a source can now report up to five sensors, nearest first; level and radiation produce several, the other five sources still produce one and everything reads the first
+- processpresenter stores readings, an array of sensor plus its rendered series, and sensor, measurements, current, faceplate, range, trend and timestamp are now get only forwards to the first reading; no view, chart or map code changed
+- publish ignores an empty array, so a failed or cancelled refresh keeps the last good values and never moves the map camera; an app side overload also drives the map region through a visibility policy, because the seven publish bodies were not one shape: forecast never touches the map, weather always does, the rest follow their switch
+- replace is the unconditional variant for fixtures and tests; the two preview helpers that read then mutated the dictionaries now merge into the first reading
+- processsensor gains a stable source id and a distance in metres, and conforms to processlocatable; the per refresh uuid id stays and is documented as ephemeral
+- level: the gauges on the nearest natural waterway, up to five, not padded with other rivers when it has fewer; no waterway means the five nearest overall; the 1000 km cutoff of the old single lookup is kept so a user outside germany still gets nothing; the gauge name is carried in custom data because the station name is the waterway and would be identical for all five
+- radiation: three stations become five
+- series are fetched two at a time through a new ordered concurrent compact map, then assembled by one shared sensor candidate step; only the first sensor is geocoded, so geocoding cost is unchanged; candidates are tried in order until one geocodes, which keeps radiation's old skip on failure and makes level degrade the same way instead of returning nothing
+- decision: the nearest station is emitted even when it has no data, as before, so an outage shows an empty chart instead of silently moving the pin to another station; later stations with no data are dropped. the known consequence is that a transient fetch failure still blanks the chart, which was already true and is left for a separate change
+- decision: the scalar forwards are get only rather than write through to the first reading; write through would have avoided six fixture edits but reintroduces the single sensor assumption this change removes
+- project.yml: the macos unit test target lists its sources, so the two new presenter files, the array extension and the sensor candidate were added to it
+- validation: all five packages in debug and process, tools and services in release; 37 macos and 48 ios unit tests; both apps build without warnings from the new code; new tests cover waterway selection, the distance cutoff, ordering under out of order completion, the concurrency bound, empty publish and the scalar forwarding. the simulator run at hkw showed level choosing five gauges on the spree in distance order and radiation fetching five stations two at a time; the map labels matched develop, but the location prompt could not be dismissed from the command line, so the level and radiation labels themselves were not seen in either build
+- version bump: none; plumbing with no visible change, folded into the pending ios 6.5.0
+
 ### 2026-09-20 (ios v6.5.0, rename Shared to shared, 03:30)
 
 - the shared code directory is now lowercase, matching ios, macos and every other tracked path at the root
