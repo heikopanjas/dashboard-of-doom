@@ -278,7 +278,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Show up to \(ProcessSensor.maximumPerSource) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The map on the home screen shows only the nearest one."
+                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey)) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The map on the home screen shows only the nearest one."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)

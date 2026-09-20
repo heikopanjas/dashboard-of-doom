@@ -11,11 +11,27 @@ enum SourcePreferences {
     /// Whether the extra level gauges may be on other waterways than the first. Off, and unset, keeps them on the same waterway.
     static let multiSensorLevelOtherWaterwaysKey = "multiSensorLevelOtherWaterways"
 
-    /// How many sensors a source fetches: the platform cap when its multi-sensor preference is on, otherwise one, which is what every
-    /// source did before it could report several.
+    /// How many stations the Particles tab reports where level and radiation report three. It is a tab of its own, so its stations share
+    /// no colors with the Environment tab and can have all six label colors, one each, and six is exactly what the label placement solver
+    /// was built for. It costs one request per station, so twice as many as before.
+    static let particlesSensorMaximum = 6
+
+    /// The most sensors a source reports with its switch on. Every source takes the platform cap except particles, which take more on iOS.
+    /// macOS shows only the nearest whatever the source, so there it stays at the platform cap.
+    static func sensorMaximum(forKey key: String) -> Int {
+        #if os(iOS)
+        if key == Self.multiSensorParticlesKey {
+            return Self.particlesSensorMaximum
+        }
+        #endif
+        return ProcessSensor.maximumPerSource
+    }
+
+    /// How many sensors a source fetches: its cap when its multi-sensor preference is on, otherwise one, which is what every source did
+    /// before it could report several.
     static func sensorLimit(forKey key: String, defaults: UserDefaults = .standard) -> Int {
         if defaults.bool(forKey: key) == true {
-            return ProcessSensor.maximumPerSource
+            return Self.sensorMaximum(forKey: key)
         }
         return 1
     }

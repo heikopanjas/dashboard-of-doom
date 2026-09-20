@@ -26,13 +26,13 @@ import Testing
     }
 
     @Test func theParticleStationsStartWithTheHomeParticleColorAndAreAllDifferent() {
-        #expect(Color.particleSensors.count == 3)
-        #expect(Set(Color.particleSensors).count == 3)
-        #expect(Set(Color.particleSensors).isSubset(of: Set(Self.homeLabelColors)) == true)
+        #expect(Color.particleSensors.count == 6)
+        #expect(Set(Color.particleSensors).count == 6)
+        #expect(Set(Color.particleSensors) == Set(Self.homeLabelColors))
         #expect(Color.sensor(selector: .particle(.pm10), index: 0) == Color.faceplate(selector: .particle(.pm10)))
         // Every pollutant of a station has the same color: the color belongs to the station.
         #expect(Color.sensor(selector: .particle(.no2), index: 1) == Color.sensor(selector: .particle(.pm10), index: 1))
-        #expect(Color.sensor(selector: .particle(.pm10), index: 3) == Color.sensor(selector: .particle(.pm10), index: 0))
+        #expect(Color.sensor(selector: .particle(.pm10), index: 6) == Color.sensor(selector: .particle(.pm10), index: 0))
     }
 
     @Test func theFuelStationsUseAllSixHomeColoursOnce() {

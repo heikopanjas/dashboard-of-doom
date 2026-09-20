@@ -72,7 +72,8 @@ enum IOSPreviewData {
             stations: ["Berlin-Marzahn", "Berlin-Tegel"], namedAfterStation: true)
         Self.populateAdditionalSensors(
             runtime.particles, selector: .particle(.pm10), unit: UnitConcentrationMass.microgramsPerCubicMeter, value: 18, date: date,
-            stations: ["Berlin Neukölln", "Berlin Wedding"], namedAfterStation: true)
+            stations: ["Berlin Neukölln", "Berlin Wedding", "Berlin Mitte", "Berlin Buch", "Berlin Friedrichshagen"],
+            namedAfterStation: true)
         Self.populateForecastStrip(runtime.forecast, date: date)
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
@@ -116,7 +117,9 @@ enum IOSPreviewData {
                     value: Measurement(value: level * (1 + 0.1 * sin(Double(hour + position))), unit: unit),
                     quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
             }
-            let location = Location(latitude: nearest.sensor.location.latitude + Double(position) * 0.01, longitude: nearest.sensor.location.longitude)
+            let location = Location(
+                latitude: nearest.sensor.location.latitude + Double(position) * 0.01,
+                longitude: nearest.sensor.location.longitude + Double((position % 3) - 1) * 0.015)
             var customData: [String: Any] = ["icon": nearest.sensor.customData?["icon"] ?? "questionmark.circle"]
             if namedAfterStation == false {
                 customData["station"] = station

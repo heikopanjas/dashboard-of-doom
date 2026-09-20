@@ -119,8 +119,10 @@ extension Color {
     /// radiation and yellow for level, and the others take the four that are left.
     static let radiationSensors: [Color] = [Self.radiation, Self.survey, Self.covid]
     static let waterSensors: [Color] = [Self.water, Self.particle, Self.weather]
-    /// The Particles tab is a tab of its own, so its stations can reuse colors: the nearest keeps the home particle color.
-    static let particleSensors: [Color] = [Self.particle, Self.survey, Self.weather]
+    /// The Particles tab is a tab of its own, so its stations share no color with the Environment tab's and can have all six: the tab
+    /// shows up to six stations, one color each, and the nearest keeps the home particle color. A seventh would have to repeat, and two
+    /// stations in one color would break the only link there is between a label and its chart.
+    static let particleSensors: [Color] = [Self.particle, Self.survey, Self.weather, Self.radiation, Self.water, Self.covid]
 
     /// The six filling stations on the Energy map, one colour each, which is why the map shows six. All six home label colours, warm
     /// first, so the dearest end of the list reads hot and the cheapest end cool. The colour marks the rank, not the price itself.
