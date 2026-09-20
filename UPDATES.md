@@ -4,6 +4,17 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-21 (ios v6.5.0, six particle stations instead of three, 00:20)
+
+- the particles tab now reports six measuring stations with its multiple sensors switch on, where level and radiation still report three
+- decision: the cap became per source rather than one platform constant. `sensorLimit(forKey:)` was already the single place the limit is decided, so `sensorMaximum(forKey:)` went behind it and no controller changed
+- decision: six and not more, for two reasons that happen to agree. six is what the label placement solver was built for, and the palette has six colors, one per station, so a seventh would have to repeat a color. color is the only link between a map label and its chart, so a repeat would break the feature rather than just look odd
+- `Color.particleSensors` grew from three colors to all six home label colors; the nearest still keeps green, the home particle color. it no longer wraps, so the wrap test moved to index six
+- macos still fetches only the nearest whatever the source, so the particles cap is platform guarded and stays at one there
+- cost: one request per station, so particles now make twice as many as before. the settings footnote reads the cap rather than hard coding it, so it says six by itself
+- the ui fixture gained three more stations and now spreads them across both axes instead of stacking them in one column, which was an unrealistic worst case for the solver
+- validation: 88 macos and 134 ios unit tests, both apps build, ui test passes; the screenshot shows six labels in six colors placed without a connector line, the nearest green and matching its header pill
+
 ### 2026-09-20 (ios v6.5.0, the fuel map pins take the six label colors, 23:05)
 
 - the six filling station pins were all `Color.energy`, the tab's brown, and read muddy over map terrain at half opacity; they now take the six home label colors, one per rank, as the home and environment maps do
