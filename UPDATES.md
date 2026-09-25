@@ -4,6 +4,21 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (ios v6.5.0, a black dot for the reader on the three tab maps, 00:05)
+
+- the energy, environment and particles maps now show where the reader is, as a black dot with the white halo the home map gives the user, and no label
+- rationale: the three maps showed where the readings are but not where the reader is, so the distance under each chart had nothing to point at
+- decision: the marker joins the camera fit rather than only appearing when it happens to fall inside the sensors' box. a dot that can be off screen is not worth having, and the cost is the right answer anyway: when the nearest gauge on a natural waterway is far away, the map zooms out until both fit and that distance is the reading
+- decision: black with the halo, not a bare black dot. the dark mode screenshot is the argument, black alone disappears into a dark basemap
+- decision: it lives in `SensorMapView`, so all three tabs got it at once and the three `annotations(...)` builders still return exactly the sensor arrays their tests assert on
+- the gate moved from the fitted rectangle to the sensor array, so the marker can never be enough to make an empty map appear; the map still shows nothing until a sensor has loaded
+- the marker shows whatever the location origin, including the berlin fallback, because that is what the home map does; telling `.fallback` from `.measured` would be a behaviour the rest of the app does not have
+- `MapAnnotationSnapshot`'s value init gained a defaulted `user` parameter, which only the presenter init could set before. `CollisionMapView` needed nothing: it already drew the halo and already treated a label-less annotation as a dot that reserves clearance
+- `Color.user` is black and deliberately outside the six label colors, since it marks where the reader is rather than what a sensor measures
+- consequence: the marker reserves 15 points of clearance in the layout solver, so labels near the reader shift a few points. none is dropped
+- validation: 88 macos and 138 ios unit tests, both apps build, ui test passes; the screenshots show one unlabelled black dot at HKW on all three tabs, and the dark mode environment shot shows the halo earning its place
+- version bump: none; folded into the pending ios 6.5.0 (180), but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
 ### 2026-09-21 (ios v6.5.0, six particle stations instead of three, 00:20)
 
 - the particles tab now reports six measuring stations with its multiple sensors switch on, where level and radiation still report three
