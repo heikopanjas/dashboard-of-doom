@@ -93,6 +93,10 @@ extension Color {
     static let survey = Color.pink
     static let energy = Color.brown
 
+    /// The user's own marker, which is not a category and deliberately none of the six label colors: it marks where the reader is, not what a
+    /// sensor measures, so it must not be mistaken for one of them.
+    static let user = Color.black
+
     static func faceplate(selector: ProcessSelector) -> Color {
         switch selector {
             case .weather:

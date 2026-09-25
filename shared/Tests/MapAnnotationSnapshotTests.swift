@@ -17,6 +17,8 @@ import Testing
         #expect(snapshot.showsLabel == true)
         #expect(snapshot.user == false)
         #expect(MapAnnotationSnapshot(id: "a", location: location, selector: .water(.level), icon: "x", faceplate: "y", showsLabel: false).showsLabel == false)
+        // The user's own marker belongs to no presenter, so the value init has to be able to flag it.
+        #expect(MapAnnotationSnapshot(id: "user", location: location, selector: .water(.level), icon: "x", faceplate: "y", user: true).user == true)
     }
 
     @Test func aSnapshotUsesItsSelectorColorUnlessItHasOneOfItsOwn() {

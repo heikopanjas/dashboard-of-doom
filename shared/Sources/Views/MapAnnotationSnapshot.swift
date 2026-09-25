@@ -29,14 +29,18 @@ struct MapAnnotationSnapshot: Identifiable {
         self.color = nil
     }
 
-    /// A snapshot from explicit values, for a sensor that is not the nearest one of its presenter, such as a further reading.
-    init(id: String, location: Location, selector: ProcessSelector, icon: String, faceplate: String, showsLabel: Bool = true, color: Color? = nil) {
+    /// A snapshot from explicit values, for a sensor that is not the nearest one of its presenter, such as a further reading, or for the
+    /// user's own marker, which belongs to no presenter at all.
+    init(
+        id: String, location: Location, selector: ProcessSelector, icon: String, faceplate: String, user: Bool = false, showsLabel: Bool = true,
+        color: Color? = nil
+    ) {
         self.id = id
         self.location = location
         self.selector = selector
         self.icon = icon
         self.faceplate = faceplate
-        self.user = false
+        self.user = user
         self.showsLabel = showsLabel
         self.color = color
     }
