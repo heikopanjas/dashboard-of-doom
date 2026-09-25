@@ -4,6 +4,22 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (ios v6.5.0, the covid tab draws its district, 00:40)
+
+- the covid tab now starts with a map of the reporting district: the boundary shaded purple with a stroke, one label at the centroid with the incidence, and the reader's black dot
+- rationale: the tab gave four charts and an address, and that address is the districts computed centroid rather than a sensor site, so nothing said what area the numbers covered or whether the reader was inside it
+- the boundary was already being fetched and thrown away. `CovidController` resolves the district by point in polygon containment against bkg vg250, and inside berlin against the bundled bezirk file, then kept only the centroid
+- decision: the ring travels in `customData`, which is a dictionary of `Any` and exists for exactly this. neither `ProcessSensor` nor the process package changed
+- decision: `CollisionMapView` got `polygons` and a `polygonColor` defaulting to the covid purple, rather than the colour being hard coded in the render path, so the next source with an area passes its own. first use of `MapPolygon` in the repo
+- the polygon is map content and needs no projection, so it stays out of the layout request and label placement is untouched
+- decision: `rect(for:)` gained a `padding` factor. the default doubling is the room six labels need; a district fills its own frame, so the covid map passes 1.15 and the other three maps keep their framing and their tests
+- the label id is the fixed string covid rather than one built from the reading, because the covid sensor carries no `sourceID` and so the reading id changes every refresh, which would move the labels placement with it
+- checked rather than assumed: a berlin bezirk ring is 734 to 2124 vertices, so no decimation was needed
+- the ui fixture gained a stand in district, a lopsided ring rather than a circle, so the screenshot exercises the shape and the camera fit
+- two pre existing problems found and deliberately left alone: the covid sensor sets neither `sourceID` nor `distance`, and there is no district cache, so a moving reader re-downloads and re-parses every neighbouring kreis on each location update
+- validation: 88 macos and 145 ios unit tests, both apps build, ui test passes; the screenshot shows the shaded district, the label at its centroid and the reader's dot. the live bkg and berlin bezirk path is unchanged upstream of the one line that carries the ring, and was not separately re-verified on screen
+- version bump: none; folded into the pending ios 6.5.0 (180), but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
 ### 2026-09-26 (ios v6.5.0, a black dot for the reader on the three tab maps, 00:05)
 
 - the energy, environment and particles maps now show where the reader is, as a black dot with the white halo the home map gives the user, and no label
