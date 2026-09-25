@@ -27,6 +27,17 @@ enum IOSPreviewData {
         return result
     }
 
+    /// A stand-in district boundary: a lopsided ring a few kilometres across, so the COVID map has a shape to fit its camera to and the
+    /// screenshot shows something a real Kreis outline would resemble. Deliberately not a circle, which no district is.
+    static func district(around center: Location) -> [Location] {
+        let radii: [Double] = [0.9, 1.25, 1.0, 1.4, 0.85, 1.15, 1.3, 0.95]
+        return radii.enumerated().map { index, radius in
+            let angle = Double(index) / Double(radii.count) * 2 * .pi
+            return Location(
+                latitude: center.latitude + 0.022 * radius * cos(angle), longitude: center.longitude + 0.036 * radius * sin(angle))
+        }
+    }
+
     @MainActor
     static func populate(_ runtime: IOSAppRuntime) {
         let entries: [(ProcessPresenter, ProcessSelector, Dimension, Double, String)] = [
@@ -49,9 +60,14 @@ enum IOSPreviewData {
                     value: Measurement(value: value * (1 + 0.1 * sin(Double(hour))), unit: unit),
                     quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
             }
+            var customData: [String: Any] = ["icon": icon, "label": "HKW"]
+            // COVID alone carries a boundary, which is what its tab draws instead of a pin.
+            if presenter === runtime.covid {
+                customData["polygons"] = [Self.district(around: location)]
+            }
             let sensor = ProcessSensor(
                 name: "HKW fixture", location: location, placemark: "HKW, Berlin",
-                customData: ["icon": icon, "label": "HKW"], measurements: [selector: measurements], timestamp: date)
+                customData: customData, measurements: [selector: measurements], timestamp: date)
             presenter.replace(readings: [
                 ProcessReading(
                     sensor: sensor, measurements: [selector: measurements], current: [selector: measurements[24]],

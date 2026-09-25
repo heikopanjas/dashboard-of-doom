@@ -312,6 +312,7 @@ targets:
       - Views/SensorMapView.swift
       - Views/EnvironmentMapView.swift
       - Views/ParticleMapView.swift
+      - Views/CovidMapView.swift
     settings:
       base:
         SDKROOT: iphoneos

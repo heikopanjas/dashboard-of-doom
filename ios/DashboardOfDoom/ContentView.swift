@@ -128,6 +128,8 @@ struct ContentView: View {
                         case .covid:
                             if enableCovid == true {
                                 VStack {
+                                    // Draws its own trailing Divider, so nothing remains until the district has loaded.
+                                    CovidMapView()
                                     CovidView()
                                         .padding(5)
                                         .padding(.trailing, 3)

@@ -60,8 +60,12 @@ class CovidController: ProcessController {
             try Task.checkCancellation()
             if let placemark = await GeocodingService.reverseGeocodeLocation(location: district.location) {
                 try Task.checkCancellation()
+                // The boundary rides along so the COVID tab can draw the district. It is the only thing that says what area these numbers
+                // cover: the location above is the polygon's centroid, a computed point, not a sensor site.
                 let sensor = ProcessSensor(
-                    name: district.name, location: district.location, placemark: placemark, customData: ["name": "COVID-19", "icon": "facemask"], measurements: measurements, timestamp: Date.now)
+                    name: district.name, location: district.location, placemark: placemark,
+                    customData: ["name": "COVID-19", "icon": "facemask", "polygons": district.polygons], measurements: measurements,
+                    timestamp: Date.now)
                 data.append(sensor)
             }
         }

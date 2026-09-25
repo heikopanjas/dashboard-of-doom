@@ -10,6 +10,11 @@ import SwiftUI
 /// weather label. Like the home map it cannot be panned, so it does not fight the scrolling of the tab.
 struct SensorMapView: View {
     let annotations: [MapAnnotationSnapshot]
+    /// Areas to shade under the dots, such as the COVID district, which the camera also fits.
+    var polygons: [[Location]] = []
+    /// How much room to leave around what the map shows, as a factor on the bounding box. The default doubles it, which is the room six
+    /// labels need; a map showing one district needs far less, or the shape would sit in the middle of an empty frame.
+    var padding: Double = 2
 
     /// Where the reader is, so the distance under each chart has something to point at. The home map shows this as its weather annotation
     /// flagged `user`; here it is a marker of its own, because these tabs have no weather label to hang it on.
@@ -27,12 +32,14 @@ struct SensorMapView: View {
         // Nothing until a sensor has loaded, so the spinners below are the only sign of loading and the map appears with the data. The gate
         // is the sensors alone: the user marker must never be enough to make an empty map appear.
         if self.annotations.isEmpty == false,
-            let rect = Self.rect(for: self.annotations.map { $0.location } + [self.userLocation])
+            let rect = Self.rect(
+                for: self.polygons.flatMap { $0 } + self.annotations.map { $0.location } + [self.userLocation], padding: self.padding)
         {
             VStack {
                 CollisionMapView(
                     position: Binding(get: { MapCameraPosition.rect(rect) }, set: { _ in }),
-                    annotations: self.annotations + [Self.userAnnotation(at: self.userLocation)]
+                    annotations: self.annotations + [Self.userAnnotation(at: self.userLocation)],
+                    polygons: self.polygons
                 )
                 .frame(height: Self.height)
                 .padding(5)
@@ -60,12 +67,12 @@ struct SensorMapView: View {
             showsLabel: false, color: .user)
     }
 
-    /// The camera rectangle for the points it is given, the sensors and the reader: their bounding box grown by half its size on every side,
-    /// to leave room for the labels, and not smaller than `minimumSpan`. Nil when there are no points.
+    /// The camera rectangle for the points it is given, the sensors, any district outline and the reader: their bounding box scaled by
+    /// `padding` about its centre, to leave room for the labels, and not smaller than `minimumSpan`. Nil when there are no points.
     ///
     /// The reader's position is one of them, so the marker is always on screen. A far sensor therefore zooms the camera out until both fit,
     /// which is the right answer: when the nearest gauge on a natural waterway is a hundred kilometres away, that distance is the reading.
-    static func rect(for locations: [Location]) -> MKMapRect? {
+    static func rect(for locations: [Location], padding: Double = 2) -> MKMapRect? {
         if locations.isEmpty == true {
             return nil
         }
@@ -75,8 +82,8 @@ struct SensorMapView: View {
         }
         let center = MKMapPoint(x: box.midX, y: box.midY)
         let minimum = Self.minimumSpan * MKMapPointsPerMeterAtLatitude(center.coordinate.latitude)
-        let width = max(box.size.width * 2, minimum)
-        let height = max(box.size.height * 2, minimum)
+        let width = max(box.size.width * padding, minimum)
+        let height = max(box.size.height * padding, minimum)
         return MKMapRect(x: center.x - width / 2, y: center.y - height / 2, width: width, height: height)
     }
 }

@@ -21,9 +21,9 @@ import Testing
 
     @Test func theUserMarkerSharesNoIdWithASensor() {
         let location = Location(latitude: 52.5, longitude: 13.4)
-        // A duplicate id silently drops a label, so the marker must not collide with the prefixes the three tabs use.
-        let prefixes = ["radiation-", "water-", "particles-", "fuel-"]
-        #expect(prefixes.contains(where: { SensorMapView.userAnnotation(at: location).id.hasPrefix($0) }) == false)
+        // A duplicate id silently drops a label, so the marker must not collide with the ids the four tabs use.
+        let ids = ["radiation-", "water-", "particles-", "fuel-", "covid"]
+        #expect(ids.contains(where: { SensorMapView.userAnnotation(at: location).id.hasPrefix($0) }) == false)
     }
 
     @Test func theReaderIsInsideTheCamera() throws {
@@ -32,6 +32,20 @@ import Testing
         let rect = try #require(SensorMapView.rect(for: [sensor, reader]))
         #expect(rect.contains(MKMapPoint(sensor.coordinate)) == true)
         #expect(rect.contains(MKMapPoint(reader.coordinate)) == true)
+    }
+
+    @Test func tighterPaddingFramesTheSamePointsMoreClosely() throws {
+        let north = Location(latitude: 52.6, longitude: 13.4)
+        let south = Location(latitude: 52.4, longitude: 13.5)
+        let loose = try #require(SensorMapView.rect(for: [north, south]))
+        let snug = try #require(SensorMapView.rect(for: [north, south], padding: 1.15))
+        // The COVID map passes a smaller factor: a district fills its own frame and needs room for one label, not six.
+        #expect(snug.size.height < loose.size.height)
+        #expect(snug.contains(MKMapPoint(north.coordinate)) == true)
+        #expect(snug.contains(MKMapPoint(south.coordinate)) == true)
+        // The default is unchanged, which is what keeps the other three maps framed as they were.
+        let explicit = try #require(SensorMapView.rect(for: [north, south], padding: 2))
+        #expect(loose.size.height == explicit.size.height)
     }
 
     @Test func aFarReaderWidensTheCamera() throws {

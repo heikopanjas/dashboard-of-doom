@@ -1,3 +1,4 @@
+import DoomKitLocation
 import DoomKitTools
 import MapKit
 import SwiftUI
@@ -7,6 +8,12 @@ struct CollisionMapView: View {
     let annotations: [MapAnnotationSnapshot]
     var showsPointsOfInterest = false
     var pointsOfInterest: [PointOfInterest] = []
+    /// Areas to shade, as rings of coordinates, such as the COVID district. They are map content and need no projection, so they take no
+    /// part in label placement.
+    var polygons: [[Location]] = []
+    /// The color of those areas. It defaults to the only source that has one today, so the next one can pass its own rather than change
+    /// this view.
+    var polygonColor: Color = .covid
     @State private var poiProjection = PointOfInterestProjection(symbols: [], projectedCount: 0)
 
     private struct POITrigger: Equatable {
@@ -49,6 +56,12 @@ struct CollisionMapView: View {
                             user: $0.user, size: $0.showsLabel == true ? MapAnnotationLabel.size : nil)
                     }, size: geometry.size)
                 Map(position: self.$position, interactionModes: []) {
+                    // First, so the shading stays under the dots. A ring is not Identifiable, hence the offset key.
+                    ForEach(Array(self.polygons.enumerated()), id: \.offset) { _, ring in
+                        MapPolygon(coordinates: ring.map { $0.coordinate })
+                            .foregroundStyle(self.polygonColor.opacity(0.18))
+                            .stroke(self.polygonColor, lineWidth: 2)
+                    }
                     ForEach(self.annotations) { annotation in
                         Annotation("", coordinate: annotation.location.coordinate, anchor: .center) {
                             ZStack {
