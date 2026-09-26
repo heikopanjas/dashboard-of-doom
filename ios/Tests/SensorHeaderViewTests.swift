@@ -30,10 +30,11 @@ import Testing
         #expect(SensorHeaderView.title(for: self.reading(placemark: nil), isNearest: true) == "<Unknown>")
     }
 
-    @Test func otherSensorsShowTheirStationNotTheWaterway() {
-        let gauge = self.reading(customData: ["station": "BERLIN-KÖPENICK"])
+    @Test func otherSensorsShowTheStationTheyAreNamedAfter() {
+        // A level sensor is named after its gauge, like every other source, and PEGELONLINE writes those in capitals. The waterway it
+        // carries in customData is the chart title, never the header.
+        let gauge = self.reading(name: "BERLIN-KÖPENICK", customData: ["waterway": "Spree"])
         #expect(SensorHeaderView.title(for: gauge, isNearest: false) == "Berlin-Köpenick")
-        // A radiation sensor has no separate gauge and is named after its station.
         #expect(SensorHeaderView.title(for: self.reading(name: "Berlin-Marzahn"), isNearest: false) == "Berlin-Marzahn")
         // An address, when there is one, is not used for the others.
         #expect(SensorHeaderView.title(for: self.reading(name: "Teltow", placemark: "Somewhere"), isNearest: false) == "Teltow")

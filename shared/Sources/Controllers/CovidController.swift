@@ -64,7 +64,7 @@ class CovidController: ProcessController {
                 // cover: the location above is the polygon's centroid, a computed point, not a sensor site.
                 let sensor = ProcessSensor(
                     name: district.name, location: district.location, placemark: placemark,
-                    customData: ["name": "COVID-19", "icon": "facemask", "polygons": district.polygons], measurements: measurements,
+                    customData: ["icon": "facemask", "polygons": district.polygons], measurements: measurements,
                     timestamp: Date.now)
                 data.append(sensor)
             }

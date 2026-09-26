@@ -53,9 +53,8 @@ struct SensorHeaderView: View {
         if isNearest == true {
             return reading.sensor.placemark ?? "<Unknown>"
         }
-        // A level sensor is named after its waterway, which all of its neighbours share, so the gauge name is carried separately.
-        let name = (reading.sensor.customData?["station"] as? String) ?? reading.sensor.name
-        return Self.displayName(name)
+        // Every source names its sensor after its station, level included, where that is the gauge.
+        return Self.displayName(reading.sensor.name)
     }
 
     static func subtitle(for reading: ProcessReading, isNearest: Bool) -> String {

@@ -11,10 +11,16 @@ struct LevelChartView: View {
         .water(.level): "Level"
     ]
 
+    /// The chart is titled with the waterway, not the gauge the sensor is named after. macOS reports only the nearest gauge, so there is one
+    /// chart, but the title stays the river as it has always been.
+    private var waterway: String {
+        return (self.presenter.sensor?.customData?["waterway"] as? String) ?? self.presenter.name
+    }
+
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text("\(self.presenter.name) \(self.labels[selector] ?? "<Unknown>")")
+                Text("\(self.waterway) \(self.labels[selector] ?? "<Unknown>")")
                 Spacer()
             }
             Chart {

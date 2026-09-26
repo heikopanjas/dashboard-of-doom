@@ -58,15 +58,6 @@ import Observation
         self.readings = readings
     }
 
-    public var label: String {
-        if let customData = self.sensor?.customData {
-            if let label = customData["label"] as? String {
-                return label
-            }
-        }
-        return "<Unknown>"
-    }
-
     public var icon: String {
         if let customData = self.sensor?.customData {
             if let icon = customData["icon"] as? String {

@@ -60,13 +60,17 @@ enum IOSPreviewData {
                     value: Measurement(value: value * (1 + 0.1 * sin(Double(hour))), unit: unit),
                     quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
             }
-            var customData: [String: Any] = ["icon": icon, "label": "HKW"]
+            var customData: [String: Any] = ["icon": icon]
             // COVID alone carries a boundary, which is what its tab draws instead of a pin.
             if presenter === runtime.covid {
                 customData["polygons"] = [Self.district(around: location)]
             }
+            // Level alone carries a waterway, which titles its charts, and its sensor is named after a gauge like the two behind it.
+            if presenter === runtime.levels {
+                customData["waterway"] = "Spree"
+            }
             let sensor = ProcessSensor(
-                name: "HKW fixture", location: location, placemark: "HKW, Berlin",
+                name: presenter === runtime.levels ? "BERLIN-HKW UP" : "HKW fixture", location: location, placemark: "HKW, Berlin",
                 customData: customData, measurements: [selector: measurements], timestamp: date)
             presenter.replace(readings: [
                 ProcessReading(
@@ -79,17 +83,17 @@ enum IOSPreviewData {
                 MapPresenter.shared.updateRegion(for: presenter.id, with: location)
             }
         }
-        // A level sensor is named after its waterway and carries the gauge separately; the others are named after their station.
+        // Every sensor is named after its station. Level gauges arrive from PEGELONLINE in capitals, which the header re-cases, and carry
+        // the waterway their charts are titled with separately.
         Self.populateAdditionalSensors(
             runtime.levels, selector: .water(.level), unit: UnitLength.meters, value: 2.73, date: date,
-            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP"], namedAfterStation: false)
+            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP"], waterway: "Spree")
         Self.populateAdditionalSensors(
             runtime.radiation, selector: .radiation(.total), unit: UnitRadiation.microsieverts, value: 0.08, date: date,
-            stations: ["Berlin-Marzahn", "Berlin-Tegel"], namedAfterStation: true)
+            stations: ["Berlin-Marzahn", "Berlin-Tegel"])
         Self.populateAdditionalSensors(
             runtime.particles, selector: .particle(.pm10), unit: UnitConcentrationMass.microgramsPerCubicMeter, value: 18, date: date,
-            stations: ["Berlin Neukölln", "Berlin Wedding", "Berlin Mitte", "Berlin Buch", "Berlin Friedrichshagen"],
-            namedAfterStation: true)
+            stations: ["Berlin Neukölln", "Berlin Wedding", "Berlin Mitte", "Berlin Buch", "Berlin Friedrichshagen"])
         Self.populateForecastStrip(runtime.forecast, date: date)
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
@@ -121,7 +125,8 @@ enum IOSPreviewData {
     /// source that found several stations reports them. Like the real ones they have no placemark.
     @MainActor
     private static func populateAdditionalSensors(
-        _ presenter: ProcessPresenter, selector: ProcessSelector, unit: Dimension, value: Double, date: Date, stations: [String], namedAfterStation: Bool
+        _ presenter: ProcessPresenter, selector: ProcessSelector, unit: Dimension, value: Double, date: Date, stations: [String],
+        waterway: String? = nil
     ) -> Void {
         guard let nearest = presenter.readings.first else { return }
         var readings = [nearest]
@@ -137,11 +142,12 @@ enum IOSPreviewData {
                 latitude: nearest.sensor.location.latitude + Double(position) * 0.01,
                 longitude: nearest.sensor.location.longitude + Double((position % 3) - 1) * 0.015)
             var customData: [String: Any] = ["icon": nearest.sensor.customData?["icon"] ?? "questionmark.circle"]
-            if namedAfterStation == false {
-                customData["station"] = station
+            // Level alone carries a waterway, which is what its charts are titled with; every source names its sensor after its station.
+            if let waterway = waterway {
+                customData["waterway"] = waterway
             }
             let sensor = ProcessSensor(
-                name: namedAfterStation == true ? station : nearest.sensor.name, location: location, placemark: nil, customData: customData,
+                name: station, location: location, placemark: nil, customData: customData,
                 measurements: [selector: series], timestamp: date, sourceID: "fixture-\(position)-\(station)", distance: 800 + Double(position) * 2_400)
             readings.append(
                 ProcessReading(

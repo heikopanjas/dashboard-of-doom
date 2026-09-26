@@ -45,7 +45,8 @@ class LevelController: ProcessController {
         return try await SensorCandidate.sensors(from: candidates, near: location)
     }
 
-    private func candidate(for station: Station) async throws -> SensorCandidate {
+    /// Internal rather than private so a test can pin which of the two names ends up where.
+    func candidate(for station: Station) async throws -> SensorCandidate {
         var measurement: [ProcessValue<Dimension>] = []
         try Task.checkCancellation()
         if let level = try await self.fetchMeasurements(station: station) {
@@ -53,15 +54,19 @@ class LevelController: ProcessController {
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: level, distance: self.measurementDistance))
             measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
         }
+        // The sensor is named after its gauge, as every other source is named after its station. The waterway is what a level chart is
+        // titled with, and it does not fit the standard interface, so it travels in customData.
         return SensorCandidate(
-            id: station.id, name: station.name, location: station.location, customData: ["icon": "water.waves", "station": station.gauge],
+            id: station.id, name: station.gauge, location: station.location,
+            customData: ["icon": "water.waves", "waterway": station.waterway],
             measurements: [.water(.level): measurement.sorted(by: { $0.timestamp < $1.timestamp })])
     }
 
     struct Station: ProcessLocatable {
         let id: String
-        /// The waterway the gauge is on, so all the gauges of one river share it. `gauge` names the gauge itself.
-        let name: String
+        /// The waterway the gauge is on, so all the gauges of one river share it.
+        let waterway: String
+        /// The gauge itself, which is what the sensor is named after.
         let gauge: String
         let location: Location
     }
@@ -84,7 +89,11 @@ class LevelController: ProcessController {
             let selected = Self.selectStations(
                 from: stations, near: location, waterwayName: waterwayName, limit: limit, otherWaterways: self.otherWaterways())
             nearestStations = selected.map { station in
-                return Station(id: station.id, name: self.capitalizeGerman(text: station.name), gauge: station.gauge, location: station.location)
+                // Only the waterway is re-cased here. A gauge such as BERLIN-MÜHLENDAMM UP needs the hyphen and the suffix kept, which
+                // capitalizeGerman does not do; SensorHeaderView.displayName handles gauges instead.
+                return Station(
+                    id: station.id, waterway: self.capitalizeGerman(text: station.waterway), gauge: station.gauge,
+                    location: station.location)
             }
             if nearestStations.isEmpty == true {
                 trace.error("No station found")
@@ -112,7 +121,7 @@ class LevelController: ProcessController {
         var selected: [Station] = []
         if let waterwayName = waterwayName {
             // Only the gauges of that waterway: mixing in gauges of other rivers would break the order by distance along one water body.
-            let matching = stations.filter { $0.name.caseInsensitiveCompare(waterwayName) == .orderedSame }
+            let matching = stations.filter { $0.waterway.caseInsensitiveCompare(waterwayName) == .orderedSame }
             selected = Self.nearestStations(stations: matching, location: location, limit: limit)
             if selected.isEmpty == true {
                 trace.warning("No stations found for waterway \(waterwayName), falling back to nearest stations")
@@ -134,10 +143,10 @@ class LevelController: ProcessController {
                     if let latitude = item["latitude"] as? Double {
                         if let longitude = item["longitude"] as? Double {
                             if let water = item["water"] as? [String: Any] {
-                                if let name = water["longname"] as? String {
+                                if let waterway = water["longname"] as? String {
                                     let location = Location(latitude: latitude, longitude: longitude)
-                                    let gauge = (item["longname"] as? String) ?? (item["shortname"] as? String) ?? name
-                                    stations.append(Station(id: id, name: name, gauge: gauge, location: location))
+                                    let gauge = (item["longname"] as? String) ?? (item["shortname"] as? String) ?? waterway
+                                    stations.append(Station(id: id, waterway: waterway, gauge: gauge, location: location))
                                 }
                             }
                         }

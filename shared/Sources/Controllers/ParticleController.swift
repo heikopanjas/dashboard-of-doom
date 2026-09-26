@@ -82,7 +82,7 @@ class ParticleController: ProcessController {
                     try Task.checkCancellation()
                     return SensorCandidate(
                         id: result.station.code, name: result.station.name, location: result.station.location,
-                        customData: ["icon": "aqi.medium", "station": result.station.name], measurements: measurements)
+                        customData: ["icon": "aqi.medium"], measurements: measurements)
                 }
             }
         }

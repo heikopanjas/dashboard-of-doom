@@ -7,7 +7,7 @@ import Testing
 
     /// A gauge `north` degrees of latitude from the user, so a larger value is further away.
     private static func station(_ id: String, _ waterway: String, north: Double) -> LevelController.Station {
-        return LevelController.Station(id: id, name: waterway, gauge: id, location: Location(latitude: 52.5 + north, longitude: 13.4))
+        return LevelController.Station(id: id, waterway: waterway, gauge: id, location: Location(latitude: 52.5 + north, longitude: 13.4))
     }
 
     private static func ids(_ stations: [LevelController.Station]) -> [String] {
