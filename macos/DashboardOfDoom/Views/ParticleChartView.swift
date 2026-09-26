@@ -3,7 +3,7 @@ import Charts
 import SwiftUI
 
 struct ParticleChartView: View {
-    @Environment(ParticlePresenter.self) private var presenter
+    let reading: ProcessReading
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -44,7 +44,7 @@ struct ParticleChartView: View {
                 Spacer()
             }
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { measurement in
+                ForEach(reading.measurements[selector] ?? []) { measurement in
                    if selector == .particle(.pm10) {
                        LineMark(
                            x: .value("Date", measurement.timestamp),
@@ -83,14 +83,14 @@ struct ParticleChartView: View {
                    }
                     AreaMark(
                         x: .value("Date", Date.round(from: measurement.timestamp, strategy: .previousHour) ?? Date.now),
-                        yStart: .value("Particle", presenter.range[selector]?.lowerBound ?? 0.0),
+                        yStart: .value("Particle", reading.range[selector]?.lowerBound ?? 0.0),
                         yEnd: .value("Particle", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom(alpha: 0.33))
                     .foregroundStyle(Gradient.linear)
                 }
 
-                if let measurement = presenter.current[selector] {
+                if let measurement = reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                     PointMark(
@@ -104,7 +104,7 @@ struct ParticleChartView: View {
                                 .font(.footnote)
                             HStack {
                                 Text(String(format: "%.0f%@", measurement.value.value, measurement.value.unit.symbol))
-                                if let icon = presenter.trend[selector] {
+                                if let icon = reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -117,7 +117,7 @@ struct ParticleChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
+                    if let measurement = reading.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", Date.round(from: timestamp, strategy: .previousHour) ?? Date.now))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                         PointMark(
@@ -141,7 +141,7 @@ struct ParticleChartView: View {
                     }
                 }
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: reading.range[selector] ?? 0.0 ... 0.0)
             .chartOverlay { geometryProxy in
                 GeometryReader { geometryReader in
                     Rectangle()

@@ -18,19 +18,6 @@ struct EnvironmentMapView: View {
 
     /// One annotation per reading, radiation before level as on the tab, which is also the order the label solver gives priority.
     static func annotations(radiation: [ProcessReading], water: [ProcessReading]) -> [MapAnnotationSnapshot] {
-        return Self.snapshots(of: radiation, category: "radiation", selector: .radiation(.total))
-            + Self.snapshots(of: water, category: "water", selector: .water(.level))
-    }
-
-    /// Ids come from the reading, which is the source's own id, so a sensor keeps its label placement across refreshes; the category keeps a
-    /// level gauge and a radiation station apart, and an id used twice would silently drop a label.
-    private static func snapshots(of readings: [ProcessReading], category: String, selector: ProcessSelector) -> [MapAnnotationSnapshot] {
-        // The position in the list picks the color, the same one the section for that sensor below the map uses for its header.
-        return readings.enumerated().map { index, reading in
-            return MapAnnotationSnapshot(
-                id: "\(category)-\(reading.id)", location: reading.sensor.location, selector: selector,
-                icon: (reading.sensor.customData?["icon"] as? String) ?? "questionmark.circle", faceplate: reading.faceplate[selector] ?? "n/a",
-                color: Color.sensor(selector: selector, index: index))
-        }
+        return SensorAnnotations.radiation(radiation) + SensorAnnotations.water(water)
     }
 }

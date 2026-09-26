@@ -30,7 +30,7 @@ struct NearestPlacesView: View {
 
     /// Metric by hand, so the device locale cannot switch to miles.
     static func distanceString(_ metres: Double) -> String {
-        return metres < 1000 ? String(format: "%.0f m", metres) : String(format: "%.1f km", metres / 1000)
+        return SensorLabels.distanceString(metres)
     }
 
     static func singular(_ category: PointOfInterestCategory) -> String {

@@ -8,8 +8,8 @@ import SwiftUI
 struct SensorHeaderView: View {
     let reading: ProcessReading
     let isNearest: Bool
-    /// The color of the sensor's label on the Environment map. With one, the location row is a pill in that color, like the label, so the
-    /// chart below can be matched to its label. Without one the row is plain text, as on the Particles tab.
+    /// The color of the sensor's label on its map. With one, the location row is a pill in that color, like the label, so the
+    /// chart below can be matched to its label. Without one the row is plain text.
     var color: Color? = nil
 
     var body: some View {
@@ -50,43 +50,14 @@ struct SensorHeaderView: View {
     }
 
     static func title(for reading: ProcessReading, isNearest: Bool) -> String {
-        if isNearest == true {
-            return reading.sensor.placemark ?? "<Unknown>"
-        }
-        // Every source names its sensor after its station, level included, where that is the gauge.
-        return Self.displayName(reading.sensor.name)
+        return SensorLabels.title(for: reading, isNearest: isNearest)
     }
 
     static func subtitle(for reading: ProcessReading, isNearest: Bool) -> String {
-        let update = "Last update: \(Date.absoluteString(date: reading.sensor.timestamp))"
-        if isNearest == false, let distance = reading.sensor.distance {
-            return "\(NearestPlacesView.distanceString(distance)) away · \(update)"
-        }
-        return update
+        return SensorLabels.subtitle(for: reading, isNearest: isNearest)
     }
 
-    /// PEGELONLINE writes names in capitals, such as `BERLIN-MÜHLENDAMM UP`. Words written that way are capitalized, except a short last
-    /// word, which is a gauge suffix (`UP`, `OP`) and stays. Words that already have lower case letters are left alone.
     static func displayName(_ text: String) -> String {
-        var tokens: [(text: String, isWord: Bool)] = []
-        for character in text {
-            let isWord = character.isLetter
-            if let last = tokens.last, last.isWord == isWord {
-                tokens[tokens.count - 1].text.append(character)
-            }
-            else {
-                tokens.append((text: String(character), isWord: isWord))
-            }
-        }
-        let lastWord = tokens.lastIndex(where: { $0.isWord })
-        return tokens.enumerated().map { index, token in
-            if token.isWord == false || token.text != token.text.uppercased() {
-                return token.text
-            }
-            if token.text.count <= 2 && index == lastWord {
-                return token.text
-            }
-            return String(token.text.prefix(1)) + token.text.dropFirst().lowercased()
-        }.joined()
+        return SensorLabels.displayName(text)
     }
 }

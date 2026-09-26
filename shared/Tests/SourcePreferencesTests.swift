@@ -46,25 +46,55 @@ import Testing
                 == SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey))
     }
 
-    @Test func particlesReportMoreStationsThanTheOtherSources() {
-        // The Particles tab is its own tab with its own six colors, so it shows six where the Environment tab's sources show three.
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey) == ProcessSensor.maximumPerSource)
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey) == ProcessSensor.maximumPerSource)
+    @Test func eachPlatformHasItsOwnCaps() {
         #expect(SourcePreferences.sensorMaximum(forKey: "somethingElse") == ProcessSensor.maximumPerSource)
         #if os(iOS)
+        // Level and radiation share the Environment map, three each; the Particles tab is its own tab with its own six colors.
+        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey) == 3)
+        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey) == 3)
         #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey) == 6)
         // One color per station, so the palette and the cap must not drift apart.
         #expect(SourcePreferences.particlesSensorMaximum == Color.particleSensors.count)
         #else
-        // macOS shows only the nearest, so fetching more would download data nobody sees.
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey) == 1)
+        // Each source has a tab and a map of its own on macOS, so each takes all six label colors.
+        for key in [SourcePreferences.multiSensorLevelKey, SourcePreferences.multiSensorRadiationKey, SourcePreferences.multiSensorParticlesKey] {
+            #expect(SourcePreferences.sensorMaximum(forKey: key) == 6)
+        }
+        #expect(SourcePreferences.macOSSensorMaximum == Color.waterTabSensors.count)
+        #expect(SourcePreferences.macOSSensorMaximum == Color.radiationTabSensors.count)
         #endif
+    }
+
+    @Test func theHistoricalSensorKeysStay() {
+        // The settings now say Any Waterway and Any Station, but the stored names stay so nobody's choice resets.
+        #expect(SourcePreferences.nearestLevelSensorKey == "nearestLevelSensor")
+        #expect(SourcePreferences.nearestParticleSensorKey == "nearestParticleSensor")
+    }
+
+    @Test(arguments: SourcePreferences.LevelWaterways.allCases)
+    func aWaterwayChoiceSurvivesTheRoundTripThroughItsSwitches(choice: SourcePreferences.LevelWaterways) {
+        let switches = choice.switches
+        #expect(SourcePreferences.LevelWaterways(nearest: switches.nearest, otherWaterways: switches.otherWaterways, multiSensor: true) == choice)
+    }
+
+    @Test func theStoredSwitchesMapToOneChoice() {
+        typealias Choice = SourcePreferences.LevelWaterways
+        #expect(Choice(nearest: false, otherWaterways: false, multiSensor: true) == .natural)
+        #expect(Choice(nearest: false, otherWaterways: true, multiSensor: true) == .naturalFirst)
+        // Any waterway ties nothing to one waterway, so it wins over the extra gauges' switch.
+        #expect(Choice(nearest: true, otherWaterways: true, multiSensor: true) == .any)
+        // Without extra gauges Natural First changes nothing, so it shows as Natural and is not offered.
+        #expect(Choice(nearest: false, otherWaterways: true, multiSensor: false) == .natural)
+        #expect(Choice.choices(multiSensor: false) == [.natural, .any])
+        #expect(Choice.choices(multiSensor: true) == [.natural, .naturalFirst, .any])
     }
 
     @Test func aLaunchArgumentStringTurnsTheSwitchOn() {
         // Launch arguments arrive as strings in the argument domain; bool(forKey:) reads them, which the UI test relies on.
         let defaults = self.defaults()
         defaults.set("YES", forKey: SourcePreferences.multiSensorLevelKey)
-        #expect(SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorLevelKey, defaults: defaults) == ProcessSensor.maximumPerSource)
+        #expect(
+            SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorLevelKey, defaults: defaults)
+                == SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey))
     }
 }

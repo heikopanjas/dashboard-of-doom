@@ -132,15 +132,29 @@ extension Color {
     /// first, so the dearest end of the list reads hot and the cheapest end cool. The colour marks the rank, not the price itself.
     static let fuelStations: [Color] = [Self.radiation, Self.survey, Self.water, Self.particle, Self.weather, Self.covid]
 
+    /// The six level gauges and six radiation stations on their macOS tabs. Each source has a tab and a map of its own there, so each takes
+    /// all six label colors. The first three are the iOS palettes, so the nearest sensor keeps its home color on both platforms.
+    static let waterTabSensors: [Color] = [Self.water, Self.particle, Self.weather, Self.radiation, Self.survey, Self.covid]
+    static let radiationTabSensors: [Color] = [Self.radiation, Self.survey, Self.covid, Self.water, Self.particle, Self.weather]
+
     /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
-    /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail.
+    /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail. macOS gives level and radiation
+    /// six colors each, one tab each; iOS gives them three, since they share one map.
     static func sensor(selector: ProcessSelector, index: Int) -> Color {
         let colors: [Color]
         switch selector {
             case .radiation:
+                #if os(macOS)
+                colors = Self.radiationTabSensors
+                #else
                 colors = Self.radiationSensors
+                #endif
             case .water:
+                #if os(macOS)
+                colors = Self.waterTabSensors
+                #else
                 colors = Self.waterSensors
+                #endif
             case .particle:
                 colors = Self.particleSensors
             default:

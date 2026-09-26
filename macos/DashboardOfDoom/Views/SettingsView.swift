@@ -79,6 +79,7 @@ struct SettingsView: View {
 
     // Presenters for triggering refreshes when settings change
     let levelPresenter: LevelPresenter
+    let radiationPresenter: RadiationPresenter
     let particlePresenter: ParticlePresenter
     let surveyPresenter: SurveyPresenter
     let fuelPresenter: FuelPresenter
@@ -101,8 +102,13 @@ struct SettingsView: View {
     @State private var hasFuelKey = false
 
     // Sensor preferences
-    @AppStorage("nearestLevelSensor") private var nearestLevelSensor: Bool = false
-    @AppStorage("nearestParticleSensor") private var nearestParticleSensor: Bool = false
+    @AppStorage(SourcePreferences.nearestLevelSensorKey) private var nearestLevelSensor: Bool = false
+    @AppStorage(SourcePreferences.nearestParticleSensorKey) private var nearestParticleSensor: Bool = false
+    // Off, and unset, fetch only the nearest sensor; on fetches up to six for that source's tab.
+    @AppStorage(SourcePreferences.multiSensorLevelKey) private var multiSensorLevel: Bool = false
+    @AppStorage(SourcePreferences.multiSensorLevelOtherWaterwaysKey) private var multiSensorLevelOtherWaterways: Bool = false
+    @AppStorage(SourcePreferences.multiSensorRadiationKey) private var multiSensorRadiation: Bool = false
+    @AppStorage(SourcePreferences.multiSensorParticlesKey) private var multiSensorParticles: Bool = false
 
     // Election poll scope
     @AppStorage("electionPollScope") private var electionPollScope: Int = 1
@@ -120,6 +126,19 @@ struct SettingsView: View {
     @AppStorage("hazardRefreshInterval") private var hazardRefreshInterval: Int = 15
     @AppStorage("energyRefreshInterval") private var energyRefreshInterval: Int = 360
     @AppStorage("fuelRefreshInterval") private var fuelRefreshInterval: Int = 60
+
+    /// The waterway choice over the two stored level switches, which keep their historical keys.
+    private var levelWaterways: Binding<SourcePreferences.LevelWaterways> {
+        return Binding(
+            get: {
+                SourcePreferences.LevelWaterways(
+                    nearest: self.nearestLevelSensor, otherWaterways: self.multiSensorLevelOtherWaterways, multiSensor: self.multiSensorLevel)
+            },
+            set: { choice in
+                self.nearestLevelSensor = choice.switches.nearest
+                self.multiSensorLevelOtherWaterways = choice.switches.otherWaterways
+            })
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -177,6 +196,19 @@ struct SettingsView: View {
             AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
         }
         .onChange(of: nearestParticleSensor) { _, _ in
+            AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
+        }
+        // Each switch changes how many sensors are fetched, so it refreshes its source at once rather than at the next interval.
+        .onChange(of: multiSensorLevel) { _, _ in
+            AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
+        }
+        .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
+            AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
+        }
+        .onChange(of: multiSensorRadiation) { _, _ in
+            AppProcess.shared.refreshSubscription(subscriber: self.radiationPresenter)
+        }
+        .onChange(of: multiSensorParticles) { _, _ in
             AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
         }
         .onChange(of: electionPollScope) { _, _ in
@@ -251,8 +283,18 @@ struct SettingsView: View {
                 Toggle("Enable Water Level Data", isOn: $showLevels)
             }
             Section("Sensor") {
-                Toggle("Use Nearest Sensor", isOn: $nearestLevelSensor)
-                    .help("When enabled, shows data from the closest water level sensor to your location")
+                Toggle("Multiple Sensors", isOn: $multiSensorLevel)
+                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
+                // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
+                Picker("Waterways", selection: self.levelWaterways) {
+                    ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: self.multiSensorLevel), id: \.self) { choice in
+                        Text(choice.label).tag(choice)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                Text(self.levelWaterways.wrappedValue.explanation)
+                    .font(.footnote)
+                    .foregroundColor(.gray)
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $levelRefreshInterval)
@@ -266,6 +308,10 @@ struct SettingsView: View {
         Form {
             Section("Data Source") {
                 Toggle("Enable Radiation Data", isOn: $showRadiation)
+            }
+            Section("Sensor") {
+                Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
+                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one.")
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $radiationRefreshInterval)
@@ -281,8 +327,10 @@ struct SettingsView: View {
                 Toggle("Enable Particulate Matter Data", isOn: $showParticles)
             }
             Section("Sensor") {
-                Toggle("Use Nearest Sensor", isOn: $nearestParticleSensor)
-                    .help("When enabled, shows data from the closest air quality sensor to your location")
+                Toggle("Any Station", isOn: $nearestParticleSensor)
+                    .help("Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting PM10, PM2.5, O3 and NO2 are shown, nearest first, which can mean fewer of them.")
+                Toggle("Multiple Sensors", isOn: $multiSensorParticles)
+                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one.")
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $particleRefreshInterval)

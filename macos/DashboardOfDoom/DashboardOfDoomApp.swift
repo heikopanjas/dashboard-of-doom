@@ -111,9 +111,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let energyPresenter = EnergyPresenter()
     let fuelPresenter = FuelPresenter()
     let colorPresenter = ColorPresenter()
+    // Every category keeps loading whatever the map shows, for the nearest places row on the Home tab, as on iOS.
     let pointOfInterestPresenter = PointOfInterestPresenter(fetch: { category, location in
         return try await PointOfInterestController().fetch(category: category, location: location)
-    })
+    }, fetchesWhenHidden: true)
 
     let settingsSelection = SettingsSelection()
     var settingsPanel: NSPanel?
@@ -251,6 +252,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let settingsView = SettingsView(
                 selection: self.settingsSelection,
                 levelPresenter: self.levelPresenter,
+                radiationPresenter: self.radiationPresenter,
                 particlePresenter: self.particlePresenter,
                 surveyPresenter: self.surveyPresenter,
                 fuelPresenter: self.fuelPresenter,

@@ -31,7 +31,7 @@ struct CovidMapView: View {
     }
 
     /// The district's outline, which `CovidController` puts in `customData` after using it to resolve which district the reader is in. A
-    /// sensor without one simply draws no shape, which is what macOS and any other source would give.
+    /// sensor without one simply draws no shape, which is what any other source would give.
     static func polygons(covid readings: [ProcessReading]) -> [[Location]] {
         return (readings.first?.sensor.customData?["polygons"] as? [[Location]]) ?? []
     }

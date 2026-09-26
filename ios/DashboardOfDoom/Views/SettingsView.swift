@@ -28,19 +28,32 @@ struct SettingsView: View {
 
     @Environment(LevelPresenter.self) private var level
     @AppStorage("showWater") private var showWater: Bool = true
-    @AppStorage("nearestLevelSensor") private var nearestLevelSensor: Bool = false
+    @AppStorage(SourcePreferences.nearestLevelSensorKey) private var nearestLevelSensor: Bool = false
     @AppStorage(SourcePreferences.multiSensorLevelKey) private var multiSensorLevel: Bool = false
     @AppStorage(SourcePreferences.multiSensorLevelOtherWaterwaysKey) private var multiSensorLevelOtherWaterways: Bool = false
 
     @Environment(ParticlePresenter.self) private var particles
     @AppStorage("showParticles") private var showParticles: Bool = true
-    @AppStorage("nearestParticleSensor") private var nearestParticleSensor: Bool = false
+    @AppStorage(SourcePreferences.nearestParticleSensorKey) private var nearestParticleSensor: Bool = false
     @AppStorage(SourcePreferences.multiSensorParticlesKey) private var multiSensorParticles: Bool = false
 
     @Environment(SurveyPresenter.self) private var electionPolls
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
     @AppStorage("showElectionPolls") private var showElectionPolls: Bool = true
     @AppStorage("electionPollScope") private var electionPollScope: Int = 1
+
+    /// The waterway choice over the two stored level switches, which keep their historical keys.
+    private var levelWaterways: Binding<SourcePreferences.LevelWaterways> {
+        return Binding(
+            get: {
+                SourcePreferences.LevelWaterways(
+                    nearest: self.nearestLevelSensor, otherWaterways: self.multiSensorLevelOtherWaterways, multiSensor: self.multiSensorLevel)
+            },
+            set: { choice in
+                self.nearestLevelSensor = choice.switches.nearest
+                self.multiSensorLevelOtherWaterways = choice.switches.otherWaterways
+            })
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -189,18 +202,6 @@ struct SettingsView: View {
                 .foregroundColor(.primary)
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
-                Toggle("Nearest Sensor", isOn: $nearestLevelSensor)
-                    .onChange(of: nearestLevelSensor) { _, _ in
-                        AppProcess.shared.refreshSubscription(subscriber: level)
-                    }
-                HStack {
-                    Text(
-                        "Use the closest gauge, even on a canal. Otherwise a gauge on the nearest river or stream is preferred."
-                    )
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    Spacer()
-                }
                 Toggle("Multiple Sensors", isOn: $multiSensorLevel)
                     .onChange(of: multiSensorLevel) { _, _ in
                         AppProcess.shared.refreshSubscription(subscriber: level)
@@ -213,20 +214,24 @@ struct SettingsView: View {
                     .foregroundColor(.gray)
                     Spacer()
                 }
-                // Without multiple sensors there are no extra gauges, so there is nothing for this to change.
-                if multiSensorLevel == true {
-                    Toggle("Other Waterways", isOn: $multiSensorLevelOtherWaterways)
-                        .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
-                            AppProcess.shared.refreshSubscription(subscriber: level)
-                        }
-                    HStack {
-                        Text(
-                            "Let the extra gauges be on other rivers and canals, nearest first. Otherwise they are on the same waterway as the first gauge. The map on the home screen always shows the first gauge."
-                        )
+                // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
+                Picker("Waterways", selection: self.levelWaterways) {
+                    ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: multiSensorLevel), id: \.self) { choice in
+                        Text(choice.label).tag(choice)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: nearestLevelSensor) { _, _ in
+                    AppProcess.shared.refreshSubscription(subscriber: level)
+                }
+                .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
+                    AppProcess.shared.refreshSubscription(subscriber: level)
+                }
+                HStack {
+                    Text("\(self.levelWaterways.wrappedValue.explanation) The map on the home screen always shows the first gauge.")
                         .font(.footnote)
                         .foregroundColor(.gray)
-                        Spacer()
-                    }
+                    Spacer()
                 }
             }
             .padding()
@@ -262,13 +267,13 @@ struct SettingsView: View {
                 .foregroundColor(.primary)
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
-                Toggle("Nearest Sensor", isOn: $nearestParticleSensor)
+                Toggle("Any Station", isOn: $nearestParticleSensor)
                     .onChange(of: nearestParticleSensor) { _, _ in
                         AppProcess.shared.refreshSubscription(subscriber: particles)
                     }
                 HStack {
                     Text(
-                        "Use the closest station, even if it measures only some pollutants. Otherwise a station reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} is preferred."
+                        "Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} are shown, nearest first, which can mean fewer of them."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)

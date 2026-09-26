@@ -5,7 +5,9 @@ enum DashboardTab: String, CaseIterable {
     case weather = "Weather"
     case warnings = "Warnings"
     case covid = "COVID-19"
-    case sensors = "Sensors"
+    case level = "Level"
+    case radiation = "Radiation"
+    case particles = "Particles"
     case energy = "Energy"
     case polls = "Polls"
 
@@ -15,7 +17,9 @@ enum DashboardTab: String, CaseIterable {
         case .weather: return "cloud.sun"
         case .warnings: return "exclamationmark.triangle"
         case .covid: return "facemask"
-        case .sensors: return "gauge"
+        case .level: return "water.waves"
+        case .radiation: return "atom"
+        case .particles: return "aqi.medium"
         case .energy: return "fuelpump"
         case .polls: return "chart.bar"
         }
@@ -47,15 +51,19 @@ struct ContentView: View {
             Group {
                 switch self.selection {
                 case .home:
-                    MapView().padding()
+                    HomeView().padding()
                 case .weather:
                     ForecastView().padding()
                 case .warnings:
                     WarningsView().padding()
                 case .covid:
                     CovidView().padding()
-                case .sensors:
-                    SensorsView().padding()
+                case .level:
+                    LevelView().padding()
+                case .radiation:
+                    RadiationView().padding()
+                case .particles:
+                    ParticleView().padding()
                 case .energy:
                     EnergyView().padding()
                 case .polls:
@@ -65,7 +73,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(light: .white, dark: Color(hex: "#000000")))
         }
-        .frame(minWidth: 700, minHeight: 500)
+        .frame(minWidth: 700, minHeight: 720)
         .foregroundStyle(Color(light: .primary, dark: .cyan))
         .background(Color(light: .white, dark: Color(hex: "#000000")))
     }

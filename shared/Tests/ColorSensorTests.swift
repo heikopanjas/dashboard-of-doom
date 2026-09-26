@@ -47,9 +47,24 @@ import Testing
         }
     }
 
+    @Test func theMacOSTabPalettesExtendTheIOSOnesToAllSixColors() {
+        for (tab, shared) in [(Color.waterTabSensors, Color.waterSensors), (Color.radiationTabSensors, Color.radiationSensors)] {
+            #expect(tab.count == 6)
+            #expect(Set(tab) == Set(Self.homeLabelColors))
+            // The nearest three look the same on both platforms.
+            #expect(Array(tab.prefix(3)) == shared)
+        }
+    }
+
     @Test func anIndexPastTheEndWrapsInsteadOfFailing() {
-        #expect(Color.sensor(selector: .radiation(.total), index: 3) == Color.sensor(selector: .radiation(.total), index: 0))
-        #expect(Color.sensor(selector: .water(.level), index: 7) == Color.sensor(selector: .water(.level), index: 1))
-        #expect(Color.sensor(selector: .water(.level), index: -1) == Color.sensor(selector: .water(.level), index: 2))
+        // Three colors a source on iOS, where level and radiation share a map; six on macOS, where each has its own tab.
+        #if os(macOS)
+        let count = 6
+        #else
+        let count = 3
+        #endif
+        #expect(Color.sensor(selector: .radiation(.total), index: count) == Color.sensor(selector: .radiation(.total), index: 0))
+        #expect(Color.sensor(selector: .water(.level), index: count + 1) == Color.sensor(selector: .water(.level), index: 1))
+        #expect(Color.sensor(selector: .water(.level), index: -1) == Color.sensor(selector: .water(.level), index: count - 1))
     }
 }

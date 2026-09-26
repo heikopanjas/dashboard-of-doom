@@ -15,7 +15,7 @@ class LevelController: ProcessController {
     private let forecastDuration: TimeInterval
 
     init(networkManager: NetworkManager = .shared,
-        nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: "nearestLevelSensor") },
+        nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestLevelSensorKey) },
         sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorLevelKey) },
         otherWaterways: @escaping @Sendable () -> Bool = {
             return UserDefaults.standard.bool(forKey: SourcePreferences.multiSensorLevelOtherWaterwaysKey)

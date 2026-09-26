@@ -232,6 +232,8 @@ targets:
       - Notifications/WarningEvaluator.swift
       - Notifications/WarningNotifier.swift
       - Notifications/NotificationCenterPoster.swift
+      - Views/SensorAnnotations.swift
+      - Views/SensorLabels.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests
@@ -309,14 +311,9 @@ targets:
       - AppActivityLifecycle.swift
       - BackgroundRefresh.swift
       - Views/ActivityIndicator.swift
-      - Views/AccentLabel.swift
-      - Views/ForecastStripView.swift
-      - Views/CurrentConditionsView.swift
-      - Views/NearestPlacesView.swift
       - Views/SensorHeaderView.swift
       - Views/EnvironmentMapView.swift
       - Views/ParticleMapView.swift
-      - Views/CovidMapView.swift
     settings:
       base:
         SDKROOT: iphoneos

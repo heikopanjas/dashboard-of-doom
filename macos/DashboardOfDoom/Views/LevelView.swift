@@ -2,53 +2,28 @@ import DoomKitProcess
 import Charts
 import SwiftUI
 
+/// The Level tab: the map of the gauges, then one card per gauge, nearest first. Up to six with Multiple Sensors on, else the nearest.
 struct LevelView: View {
     @Environment(LevelPresenter.self) private var presenter
+    @AppStorage(SourcePreferences.multiSensorLevelKey) private var multiSensor: Bool = false
 
     var body: some View {
-        VStack {
-            if presenter.timestamp == nil {
-                ActivityIndicator()
-            }
-            else {
-                #if os(macOS)
-                HStack(alignment: .bottom) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text(String(format: "%@", self.presenter.placemark))
-                    }
-                    Spacer()
-                    Text("Last update: \(Date.absoluteString(date: self.presenter.timestamp))")
-                        .foregroundColor(.gray)
+        // The same readings for map and cards, trimmed here as well as in the fetch, so switching off takes effect at once.
+        let readings = self.presenter.visibleReadings(multiSensor: self.multiSensor)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                SensorMapView(annotations: SensorAnnotations.water(readings))
+                if self.presenter.timestamp == nil {
+                    ActivityIndicator()
                 }
-                .font(.footnote)
-                #else
-                VStack(alignment: .leading) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text(String(format: "%@", self.presenter.placemark))
-                        Spacer()
-                    }
-                    .foregroundColor(.accentColor)
-                    HStack {
-                        Text("Last update: \(Date.absoluteString(date: self.presenter.timestamp))")
-                        Spacer()
-                    }
-                    .foregroundColor(.gray)
-                }
-                .font(.footnote)
-                #endif
-
-                let selectors = ProcessSelector.Water.allCases.filter {
-                    self.presenter.isAvailable(selector: .water($0))
-                }
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    ForEach(selectors, id: \.self) { selector in
-                        VStack {
-                            LevelChartView(selector: .water(selector))
+                else {
+                    SensorCardGrid(readings: readings, colorSelector: .water(.level)) { reading in
+                        ForEach(ProcessSelector.Water.allCases.filter { reading.isAvailable(selector: .water($0)) }, id: \.self) { selector in
+                            VStack {
+                                LevelChartView(reading: reading, selector: .water(selector))
+                            }
+                            .frame(height: 167)
                         }
-                        .frame(height: 167)
                     }
                 }
             }

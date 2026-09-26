@@ -3,7 +3,7 @@ import Charts
 import SwiftUI
 
 struct LevelChartView: View {
-    @Environment(LevelPresenter.self) private var presenter
+    let reading: ProcessReading
     @State private var timestamp: Date?
     let selector: ProcessSelector
 
@@ -11,10 +11,9 @@ struct LevelChartView: View {
         .water(.level): "Level"
     ]
 
-    /// The chart is titled with the waterway, not the gauge the sensor is named after. macOS reports only the nearest gauge, so there is one
-    /// chart, but the title stays the river as it has always been.
+    /// The chart is titled with the waterway, not the gauge the sensor is named after: the header above names the gauge.
     private var waterway: String {
-        return (self.presenter.sensor?.customData?["waterway"] as? String) ?? self.presenter.name
+        return (self.reading.sensor.customData?["waterway"] as? String) ?? self.reading.sensor.name
     }
 
     var body: some View {
@@ -24,7 +23,7 @@ struct LevelChartView: View {
                 Spacer()
             }
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { level in
+                ForEach(reading.measurements[selector] ?? []) { level in
                     LineMark(
                         x: .value("Date", level.timestamp),
                         y: .value("Level", level.value.value)
@@ -40,7 +39,7 @@ struct LevelChartView: View {
                     .foregroundStyle(Gradient.linear)
                 }
 
-                if let measurement = presenter.current[selector] {
+                if let measurement = reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                     PointMark(
@@ -54,7 +53,7 @@ struct LevelChartView: View {
                                 .font(.footnote)
                             HStack {
                                 Text(String(format: "%.2f%@", measurement.value.value, measurement.value.unit.symbol))
-                                if let icon = presenter.trend[selector] {
+                                if let icon = reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -67,7 +66,7 @@ struct LevelChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
+                    if let measurement = reading.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
                         RuleMark(x: .value("Date", timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                         PointMark(
@@ -91,7 +90,7 @@ struct LevelChartView: View {
                     }
                 }
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: reading.range[selector] ?? 0.0 ... 0.0)
             .chartOverlay { geometryProxy in
                 GeometryReader { geometryReader in
                     Rectangle()
