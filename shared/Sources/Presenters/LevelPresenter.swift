@@ -35,7 +35,9 @@ import SwiftUI
             let readings = try ProcessReading.render(sensors: sensors, transformer: { LevelTransformer() })
             try Task.checkCancellation()
             guard self.subscription?.isEnabled == true else { return }
-            self.publish(readings: readings, map: .conditional { UserDefaults.standard.bool(forKey: SourcePreferences.waterKey) == true })
+            // The subscription reads the switch with its default, on; bool(forKey:) would read an unset switch as off and drop the
+            // sensor from the home map's camera while its label still showed.
+            self.publish(readings: readings, map: .conditional { [weak self] in self?.subscription?.isEnabled == true })
         }
         catch is CancellationError { return }
         catch {

@@ -9,20 +9,14 @@ extension ProcessPresenter {
         self.publish(readings: readings)
         WarningNotifier.shared.check(readings: readings)
 
-        let isVisible: Bool
+        // The check travels with the location, so the map re-evaluates it whenever a setting changes, not only when this source refreshes.
         switch map {
             case .never:
                 return
             case .always:
-                isVisible = true
+                MapPresenter.shared.updateRegion(for: self.id, with: location, isVisible: { true })
             case .conditional(let condition):
-                isVisible = condition()
-        }
-        if isVisible == true {
-            MapPresenter.shared.updateRegion(for: self.id, with: location)
-        }
-        else {
-            MapPresenter.shared.updateRegion(remove: self.id)
+                MapPresenter.shared.updateRegion(for: self.id, with: location, isVisible: condition)
         }
     }
 }

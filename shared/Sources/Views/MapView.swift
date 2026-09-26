@@ -133,27 +133,8 @@ struct MapView: View {
             }
         }
         #endif
-        .onChange(of: self.covidEnabled) { _, newValue in
-            self.updateMapRegion(for: self.incidence, visible: newValue && self.showCovid)
-        }
-        .onChange(of: showCovid) { _, newValue in
-            updateMapRegion(for: incidence, visible: newValue && self.covidEnabled)
-        }
-        .onChange(of: showLevels) { _, newValue in
-            updateMapRegion(for: water, visible: newValue)
-        }
-        .onChange(of: showRadiation) { _, newValue in
-            updateMapRegion(for: radiation, visible: newValue)
-        }
-        .onChange(of: showParticles) { _, newValue in
-            updateMapRegion(for: particle, visible: newValue)
-        }
-        .onChange(of: self.pollsEnabled) { _, newValue in
-            self.updateMapRegion(for: self.surveys, visible: newValue && self.showElectionPolls)
-        }
-        .onChange(of: showElectionPolls) { _, newValue in
-            updateMapRegion(for: surveys, visible: newValue && self.pollsEnabled)
-        }
+        // No onChange handlers for the switches: MapPresenter re-evaluates every source's check when a setting changes, even while this
+        // view is not on screen.
     }
 
     // Category identities survive presenter refreshes and replacement measurement UUIDs.
@@ -194,14 +175,5 @@ struct MapView: View {
         #else
         return self.weather.timestamp != nil
         #endif
-    }
-
-    private func updateMapRegion(for presenter: ProcessPresenter, visible: Bool) {
-        if visible, let sensor = presenter.sensor {
-            MapPresenter.shared.updateRegion(for: presenter.id, with: sensor.location)
-        }
-        else {
-            MapPresenter.shared.updateRegion(remove: presenter.id)
-        }
     }
 }

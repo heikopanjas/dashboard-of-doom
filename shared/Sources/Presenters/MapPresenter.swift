@@ -5,12 +5,30 @@ import MapKit
 import SwiftUI
 
 @Observable class MapPresenter {
-    var visibleRegion: [UUID: Location] = [:]
+    /// The nearest sensor of each source that takes part in the camera, with the check that says whether it does right now.
+    private struct Entry {
+        var location: Location
+        var isVisible: @MainActor () -> Bool
+    }
+
+    /// The locations the camera fits, by presenter: the entries whose check passes. Recomputed from `entries`, never edited directly.
+    private(set) var visibleRegion: [UUID: Location] = [:]
     var visibleRectangle = MKMapRect.null
     var region = MapCameraPosition.region(MKCoordinateRegion(MKMapRect.null))
 
+    @ObservationIgnored private var entries: [UUID: Entry] = [:]
+    @ObservationIgnored private var observer: NSObjectProtocol?
+
     public static let shared = MapPresenter()
-    private init() {}
+
+    /// A switch can change while the home map is not on screen, in Settings or with the window closed, so the presenter itself watches the
+    /// settings rather than the view: switching a source off takes its sensor out of the camera at once, wherever the change was made.
+    private init() {
+        self.observer = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshRegion() }
+        }
+    }
 
 #if os(macOS)
     static let frameOffset = 0.0
@@ -18,34 +36,43 @@ import SwiftUI
     static let frameOffset = 10_000.0
 #endif
 
-    @MainActor func resetRegion() -> Void {
-        self.visibleRectangle = MKMapRect.null
-        self.region = MapCameraPosition.region(MKCoordinateRegion(self.visibleRectangle))
-    }
-
-    @MainActor func updateRegion(for id: UUID, with location: Location) -> Void {
-        self.visibleRegion[id] = location
+    /// Records where a source's nearest sensor is, and when it counts. Without a check an existing entry keeps its own, which is how the
+    /// iOS map moves the weather marker with the reader, and a new one always counts.
+    @MainActor func updateRegion(for id: UUID, with location: Location, isVisible: (@MainActor () -> Bool)? = nil) -> Void {
+        let check = isVisible ?? self.entries[id]?.isVisible ?? { true }
+        self.entries[id] = Entry(location: location, isVisible: check)
         self.refreshRegion()
     }
 
     @MainActor func updateRegion(remove id: UUID) -> Void {
-        if self.visibleRegion[id] != nil {
-            self.visibleRegion.removeValue(forKey: id)
-            self.resetRegion()
-            self.refreshRegion()
-        }
+        guard self.entries.removeValue(forKey: id) != nil else { return }
+        self.refreshRegion()
     }
 
-    @MainActor private func refreshRegion() -> Void {
-        if self.visibleRegion.isEmpty == false {
-        let maxDistance = Self.greatestDistance(locations: Array(self.visibleRegion.values))
-        for location in self.visibleRegion.values {
+    /// Rebuilds the rectangle from scratch from the entries that count now, so it shrinks as well as grows: a sensor that moved or a
+    /// source switched off leaves nothing behind. The camera only moves when the set of visible locations changed, since unrelated
+    /// settings are written all the time.
+    @MainActor func refreshRegion() -> Void {
+        let visible = self.entries.filter { $0.value.isVisible() }.mapValues { $0.location }
+        guard visible != self.visibleRegion else { return }
+        self.visibleRegion = visible
+        let rectangle = Self.rectangle(for: Array(visible.values))
+        self.visibleRectangle = rectangle
+        self.region = MapCameraPosition.region(MKCoordinateRegion(rectangle))
+    }
+
+    /// The camera rectangle for these locations alone: a box around each, as wide as half the greatest distance between any two, joined.
+    /// Null for none.
+    static func rectangle(for locations: [Location]) -> MKMapRect {
+        var rectangle = MKMapRect.null
+        let maxDistance = Self.greatestDistance(locations: locations)
+        for location in locations {
             let boundingRectangle = Self.makeBoundingRectangle(
-                centerCoordinate: location.coordinate, widthMeters: (maxDistance.value / 2) + Self.frameOffset, heightMeters: (maxDistance.value / 2) + Self.frameOffset)
-            self.visibleRectangle = self.visibleRectangle.union(boundingRectangle)
+                centerCoordinate: location.coordinate, widthMeters: (maxDistance.value / 2) + Self.frameOffset,
+                heightMeters: (maxDistance.value / 2) + Self.frameOffset)
+            rectangle = rectangle.union(boundingRectangle)
         }
-        }
-        self.region = MapCameraPosition.region(MKCoordinateRegion(self.visibleRectangle))
+        return rectangle
     }
 
     private static func greatestDistance(locations: [Location]) -> Measurement<UnitLength> {
