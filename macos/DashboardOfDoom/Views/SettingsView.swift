@@ -21,7 +21,7 @@ enum SettingsTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .general: return "gear"
+        case .general: return "gearshape"
         case .weather: return "cloud.sun"
         case .warnings: return "exclamationmark.triangle"
         case .covid: return "facemask"
