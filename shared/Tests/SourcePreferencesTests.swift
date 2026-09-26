@@ -98,6 +98,14 @@ import Testing
         }
     }
 
+    @Test func openStationsOnlyIsOnUntilTheUserTurnsItOff() {
+        let defaults = self.defaults()
+        #expect(SourcePreferences.fuelOpenOnlyKey == "fuelOpenOnly")
+        #expect(SourcePreferences.fuelOpenOnly(defaults: defaults) == true)
+        defaults.set(false, forKey: SourcePreferences.fuelOpenOnlyKey)
+        #expect(SourcePreferences.fuelOpenOnly(defaults: defaults) == false)
+    }
+
     @Test func theSwitchKeysAreThePersistedNames() {
         #expect(SourcePreferences.radiationKey == "showRadiation")
         #expect(SourcePreferences.particlesKey == "showParticles")

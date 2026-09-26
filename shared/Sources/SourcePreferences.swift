@@ -114,6 +114,13 @@ enum SourcePreferences {
     static let fuelTypeKey = "fuelType"
     static let fuelOrderKey = "fuelOrder"
     static let fuelRadiusKey = "fuelRadius"
+    /// Whether the fuel map leaves out closed stations. Tankerkoenig's terms forbid filtering the user did not ask for, so this is the
+    /// user's switch; on by default, since a closed station cannot sell at any price.
+    static let fuelOpenOnlyKey = "fuelOpenOnly"
+
+    static func fuelOpenOnly(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.fuelOpenOnlyKey, default: true, defaults: defaults)
+    }
 
     /// The radii the settings offer. Tankerkoenig caps the search at 25 km: a larger radius returns exactly the same stations.
     static let fuelRadiusChoices = [5, 10, 25]

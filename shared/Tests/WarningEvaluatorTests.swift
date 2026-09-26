@@ -159,5 +159,9 @@ import Testing
         #expect(assessments.first?.level == .warning)
         #expect(assessments.first?.body.hasPrefix("Cheapest Super E5 within 10 km: 2.059 €/l at near.") == true)
         #expect(WarningEvaluator.assessments(stations: [], fuel: .e5, radius: 10, defaults: self.defaults()).isEmpty)
+        // With Open Stations Only off, as on the map, a closed station counts too.
+        let withClosed = WarningEvaluator.assessments(stations: stations, fuel: .e5, radius: 10, openOnly: false, defaults: self.defaults())
+        #expect(withClosed.first?.body.contains("at shut.") == true)
+        #expect(withClosed.first?.level == .normal)
     }
 }

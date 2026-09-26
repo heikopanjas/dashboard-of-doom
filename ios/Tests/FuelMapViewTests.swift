@@ -22,6 +22,10 @@ import Testing
         // Closed stations stay out whichever end is asked for.
         let shut = [self.station("shut", e5: 0.99, open: false), self.station("open", e5: 1.50)]
         #expect(FuelMapView.ranked(stations: shut, fuel: .e5, order: .cheapest).map { $0.id } == ["open"])
+        // Only while the user's Open Stations Only switch is on: Tankerkoenig allows no filtering the user did not ask for.
+        #expect(FuelMapView.ranked(stations: shut, fuel: .e5, order: .cheapest, openOnly: false).map { $0.id } == ["shut", "open"])
+        let marked = FuelMapView.annotations(stations: shut, fuel: .e5, order: .cheapest, openOnly: false)
+        #expect(marked.map { $0.icon } == ["lock.fill", "2.circle.fill"])
     }
 
     @Test func equalPricesStillPutTheNearerFirstWhenCheapest() {

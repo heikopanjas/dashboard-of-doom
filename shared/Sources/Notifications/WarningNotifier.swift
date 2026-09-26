@@ -72,7 +72,8 @@ final class WarningNotifier {
         let fuel = FuelStation.Fuel(rawValue: self.defaults.integer(forKey: SourcePreferences.fuelTypeKey)) ?? .e5
         self.process(
             WarningEvaluator.assessments(
-                stations: stations, fuel: fuel, radius: SourcePreferences.fuelRadius(defaults: self.defaults), defaults: self.defaults))
+                stations: stations, fuel: fuel, radius: SourcePreferences.fuelRadius(defaults: self.defaults),
+                openOnly: SourcePreferences.fuelOpenOnly(defaults: self.defaults), defaults: self.defaults))
     }
 
     /// Nothing is judged while the location is the Berlin fallback, so a cold background launch cannot warn about Berlin.

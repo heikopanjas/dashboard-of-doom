@@ -169,12 +169,13 @@ enum WarningEvaluator {
 
     // MARK: - Fuel
 
-    /// The cheapest open station selling the fuel, the nearer one of two at the same price. A notice means even that one is dear.
-    static func assessments(stations: [FuelStation], fuel: FuelStation.Fuel, radius: Double, defaults: UserDefaults = .standard)
-        -> [WarningAssessment]
-    {
+    /// The cheapest station selling the fuel, the nearer one of two at the same price, open ones only while the user's Open Stations Only
+    /// setting is on, as on the map. A notice means even that one is dear.
+    static func assessments(
+        stations: [FuelStation], fuel: FuelStation.Fuel, radius: Double, openOnly: Bool = true, defaults: UserDefaults = .standard
+    ) -> [WarningAssessment] {
         guard let rule = WarningRule.rules(for: .fuel).first else { return [] }
-        let selling = stations.filter { $0.isOpen == true && $0.price(for: fuel) != nil }
+        let selling = stations.filter { (openOnly == false || $0.isOpen == true) && $0.price(for: fuel) != nil }
         let cheapest = selling.min { first, second in
             let one = first.price(for: fuel) ?? 0
             let other = second.price(for: fuel) ?? 0

@@ -10,6 +10,7 @@ struct FuelMapView: View {
     @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
     @AppStorage(SourcePreferences.fuelOrderKey) private var order: Int = FuelMapView.Order.dearest.rawValue
     @AppStorage(SourcePreferences.fuelRadiusKey) private var radius: Int = SourcePreferences.fuelRadiusDefault
+    @AppStorage(SourcePreferences.fuelOpenOnlyKey) private var openOnly: Bool = true
 
     /// Which end of the price range the map shows. The raw value is stored, so the order must not be renumbered.
     enum Order: Int, CaseIterable, Sendable {
@@ -32,14 +33,14 @@ struct FuelMapView: View {
     var body: some View {
         let fuel = FuelStation.Fuel(rawValue: self.fuelType) ?? .e5
         let order = Order(rawValue: self.order) ?? .dearest
-        let annotations = Self.annotations(stations: self.presenter.stations, fuel: fuel, order: order)
+        let annotations = Self.annotations(stations: self.presenter.stations, fuel: fuel, order: order, openOnly: self.openOnly)
         if annotations.isEmpty == false {
             VStack {
                 SensorMapView(annotations: annotations)
                 HStack {
                     // Crediting tankerkoenig.de and MTS-K is a condition of the CC BY licence, so it travels with the stations.
                     Text(
-                        "\(order.label) \(fuel.label) within \(self.radius) km. Prices from tankerkoenig.de (CC BY 4.0), data from MTS-K."
+                        "\(order.label) \(fuel.label) within \(self.radius) km\(self.openOnly ? ", open stations only" : "; a lock marks a closed station"). Prices from tankerkoenig.de (CC BY 4.0), data from MTS-K."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
@@ -53,10 +54,12 @@ struct FuelMapView: View {
 
     /// One pin per ranked station. The id is the provider's own, so a station keeps its label placement across refreshes, and the rank
     /// rides in the icon so the price keeps the text slot at full size.
-    static func annotations(stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest) -> [MapAnnotationSnapshot] {
-        return Self.ranked(stations: stations, fuel: fuel, order: order).enumerated().map { index, station in
+    static func annotations(stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest, openOnly: Bool = true) -> [MapAnnotationSnapshot] {
+        return Self.ranked(stations: stations, fuel: fuel, order: order, openOnly: openOnly).enumerated().map { index, station in
+            // A closed station, only there when the user asked for them, carries a lock instead of its rank.
             return MapAnnotationSnapshot(
-                id: "fuel-\(station.id)", location: station.location, selector: .energy(.brent), icon: Self.rankIcon(index),
+                id: "fuel-\(station.id)", location: station.location, selector: .energy(.brent),
+                icon: station.isOpen == true ? Self.rankIcon(index) : "lock.fill",
                 faceplate: Self.priceString(station.price(for: fuel)), color: Self.color(index))
         }
     }
@@ -74,12 +77,13 @@ struct FuelMapView: View {
         return (1 ... 9).contains(rank) ? "\(rank).circle.fill" : "fuelpump.fill"
     }
 
-    /// The stations to show, at whichever end of the price range is asked for, and only those open right now, since a closed one cannot
-    /// sell at any price. A station that does not sell this fuel has no price for it and does not appear.
+    /// The stations to show, at whichever end of the price range is asked for. With `openOnly`, the user's Open Stations Only setting, only
+    /// those open right now; Tankerkoenig's terms allow no filtering the user did not ask for, so without it closed stations rank too. A
+    /// station that does not sell this fuel has no price for it and does not appear.
     static func ranked(
-        stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest, limit: Int = FuelMapView.count
+        stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest, openOnly: Bool = true, limit: Int = FuelMapView.count
     ) -> [FuelStation] {
-        let selling = stations.filter { $0.isOpen == true && $0.price(for: fuel) != nil }
+        let selling = stations.filter { (openOnly == false || $0.isOpen == true) && $0.price(for: fuel) != nil }
         let ranked = selling.sorted { first, second in
             let one = first.price(for: fuel) ?? 0
             let other = second.price(for: fuel) ?? 0
