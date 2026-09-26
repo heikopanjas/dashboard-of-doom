@@ -73,6 +73,14 @@ public final class ProcessManager<Context: Sendable> {
         self.resetIntervals()
     }
 
+    /// A bulk refresh that returns once every refresh it started has finished, for work the system gives a deadline, such as a background
+    /// task. A refresh cancelled by a newer one finishes early, so the wait always ends.
+    public func refreshAllAndWait() async {
+        let tasks = Array(self.registrations.keys).compactMap { self.refresh(id: $0) }
+        self.resetIntervals()
+        for task in tasks { await task.value }
+    }
+
     public func resetIntervals() {
         let now = self.clock.now()
         for id in Array(self.registrations.keys) {

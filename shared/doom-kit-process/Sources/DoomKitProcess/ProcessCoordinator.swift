@@ -99,6 +99,11 @@ public final class ProcessCoordinator {
         self.scheduler.refreshAll()
     }
 
+    /// Refreshes every subscription and returns when all of them have finished.
+    public func refreshSubscriptionsAndWait() async {
+        await self.scheduler.refreshAllAndWait()
+    }
+
     public func refreshSubscription(subscriber: any ProcessRefreshable) {
         self.scheduler.refresh(id: subscriber.id)
     }

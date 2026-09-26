@@ -116,6 +116,37 @@ struct ProcessManagerTests {
         manager.shutdown()
     }
 
+    @Test func refreshAllAndWaitReturnsOnlyAfterEveryRefreshFinished() async {
+        let manager = ProcessManager<Int>(context: 1)
+        let gate = Gate()
+        var iterator = gate.events.stream.makeAsyncIterator()
+        var finished: [String] = []
+        manager.register(id: UUID(), interval: .seconds(60)) { _ in _ = await gate.wait(); finished.append("one") }
+        manager.register(id: UUID(), interval: .seconds(60)) { _ in _ = await gate.wait(); finished.append("two") }
+        // Registering refreshes at once; let those two finish first.
+        for _ in 0 ..< 2 { if let id = await iterator.next() { gate.release(id) } }
+        while finished.count < 2 { await Task.yield() }
+        finished.removeAll()
+        let waiting = Task { await manager.refreshAllAndWait(); return finished.count }
+        let first = await iterator.next()
+        let second = await iterator.next()
+        #expect(finished.isEmpty == true)
+        if let first { gate.release(first) }
+        if let second { gate.release(second) }
+        #expect(await waiting.value == 2)
+        manager.shutdown()
+        gate.events.continuation.finish()
+    }
+
+    @Test func refreshAllAndWaitWithoutContextReturnsAtOnce() async {
+        let manager = ProcessManager<Int>()
+        var calls = 0
+        manager.register(id: UUID(), interval: .seconds(60)) { _ in calls += 1 }
+        await manager.refreshAllAndWait()
+        #expect(calls == 0)
+        manager.shutdown()
+    }
+
     @Test func readinessStopAndRestart() async {
         let clock = ManualClock()
         let manager = ProcessManager<Int>(context: 1, clock: clock.clock)
