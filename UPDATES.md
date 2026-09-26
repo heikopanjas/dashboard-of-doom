@@ -4,6 +4,18 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.8.0, ios v6.7.0, data sources and licence obligations, 22:40)
+
+- the macos about tab lists every data source with the credit its licence asks for, and ios gains an about section at the end of settings with the same list, from one shared `DataSources` list
+- each provider's terms were checked on september 26, 2026; the prescribed wording is used where there is one (bkg, dawum, bfs, dwd, osm)
+- fix: the apple weather mark and legal link were shown nowhere, which the weatherkit terms and app store guideline 5.2.5 require. `WeatherAttributionView` loads them from weatherkit and sits in about and under both weather tabs
+- fix: dwd warnings now carry "quelle: deutscher wetterdienst" and the other feeds their issuer under each warning; bfs radiation data carries its source note under the charts, as the geonutzv asks
+- fix: tankerkoenig forbids filtering the user did not ask for, so leaving out closed stations became the open stations only switch, on by default; off, closed stations rank with a lock
+- about now says the app is not for emergencies, which the weatherkit terms also require of apps showing warnings
+- outside the code: tankerkoenig requires its credit in the app store description of both apps; nina publishes no api licence; acer's reuse terms contradict themselves; overpass discourages public apps on its public server; the uba api v3 now redirects to a new host
+- validation: 152 macos and 211 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-26 (macos v6.8.0, ios v6.7.0, one enable switch per source family, 22:00)
 
 - every source family except weather has one switch on both platforms: on, it updates, shows its value on the home map and has its tab; off, it stops updating and its tab and label go, and an open tab of it returns to home

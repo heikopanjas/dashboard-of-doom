@@ -1,6 +1,6 @@
 # Agent Instructions for Dashboard of Doom (macOS and iOS)
 
-*Last updated: September 26, 2026, 22:00 CEST (one enable switch per source family on both platforms)*
+*Last updated: September 26, 2026, 22:40 CEST (data sources and their licence obligations in About)*
 
 ## Project Overview
 
@@ -319,6 +319,15 @@ Controllers → Services → Transformers → Presenters → Views
 - Hooks: `ProcessPresenter.publish(readings:map:)` (every ProcessPresenter refresh, all sensors), and `HazardPresenter.refreshData` and `FuelPresenter.refreshData` after their publish calls, not inside `publish`, which the UI fixture calls. `replace(readings:)` never notifies, so fixtures stay silent. The notification files are in the `PointOfInterestTests` include list, since `ProcessPresenter+Map.swift` is.
 - iOS wakes itself with a `BGAppRefreshTask`, `BackgroundRefresh.identifier` (`com.panjas.dashboard-of-doom.refresh`, also in Info.plist under `BGTaskSchedulerPermittedIdentifiers`, with `fetch` in `UIBackgroundModes`). It is registered in `didFinishLaunching` and scheduled, 15 minutes at the earliest, on entering the background and on the master switch, only while notifications are on. The task waits up to 10 seconds for a measured position, then awaits `AppProcess.shared.refreshSubscriptionsAndWait()` (`ProcessManager.refreshAllAndWait()` in DoomKitProcess awaits the tasks `refresh(id:)` returns). The simulator refuses to schedule it; test it on a device, or with `_simulateLaunchForTaskWithIdentifier:` from the debugger.
 - Settings: iOS has a Notifications card after Home with the master switch, the permission state with a button to iOS Settings, and a row per family that pushes `NotificationFamilySettingsView`: the family switch, a card per rule with warning and critical fields and Restore Defaults, severity pickers for hazards, and the loaded gauges' marks for level. macOS has the Notify settings tab with a section per family. The simulator cannot grant notification permission from the command line (`simctl privacy` has no such service), so an unattended run gets as far as `Posting notification …` in the log and the system's "not authorized"; delivery was not verified there.
+
+### Data Sources and Licences
+
+- `DataSources.all(year:)` (`shared/Sources/Models/DataSources.swift`) is the one list of every source with the credit its licence asks for, checked against the providers' terms on September 26, 2026. `DataSourceList` renders it with links, the Apple Weather attribution first, in the macOS About tab and in the iOS About section at the end of Settings. Add a source there when the app starts using one.
+- **Apple Weather is mandatory** (WeatherKit terms, App Store guideline 5.2.5): the Apple Weather mark and the link to Apple's legal page wherever weather data is shown. `WeatherAttributionView` loads both from `WeatherService.shared.attribution` at run time and sits in About and under the forecast on both Weather tabs. The WeatherKit terms also forbid designing or marketing the app for emergencies, which is what `DataSources.disclaimer` in About says about the warnings.
+- **Near the data:** DWD warnings carry "Quelle: Deutscher Wetterdienst" and the other feeds their issuer (`Hazard.sourceNote`, under each warning row on both platforms); the NINA terms allow redistribution only unaltered and with the source. BfS radiation data carries `DataSources.radiationNote` under the radiation charts, since the GeoNutzV wants the note "in optischem Zusammenhang" with the data.
+- **Exact wording** where prescribed: BKG "© BKG (year of last retrieval) dl-de/by-2-0, Datenquellen: <PDF>", DAWUM "Daten von dawum.de (Open Database License (ODbL))", OSM linked to openstreetmap.org/copyright. UBA, RKI and corona-zahlen, the Berlin borough geometries (CC BY 3.0 DE, adapted), ACER and Tankerkoenig are required credits; PEGELONLINE (DL-DE Zero), VerkNet-BWaStr (GeoNutzV without source note) and EIA (public domain) are courtesy.
+- **Tankerkoenig** forbids filtering results the user did not ask for, so leaving out closed stations is the user's **Open Stations Only** switch (`fuelOpenOnly`, default on) in the Energy settings of both apps; off, closed stations rank too with a lock instead of their rank, on the map and for the fuel notification. Its terms also require the credit **in the App Store description** of each app, which is not in this repository.
+- Open points outside the code: NINA publishes no API licence; ACER's legal notice contradicts itself on reuse (credited as the most it asks); the Overpass usage policy discourages apps for the general public on its public server; the UBA API v3 answers with a 301 to `luftdaten.umweltbundesamt.de` and v4 exists.
 
 ### Local Package Boundaries
 
