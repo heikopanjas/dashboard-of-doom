@@ -170,7 +170,8 @@ struct ConditionalSubscriptionTests {
         #expect(fixture.scheduler.refresh(id: presenter.id) == nil)
         for setting in [
             "nearestLevelSensor", "nearestParticleSensor", "electionPollScope", "showWeather", "multiSensorLevel", "multiSensorRadiation",
-            "multiSensorParticles", "multiSensorLevelOtherWaterways"
+            "multiSensorParticles", "multiSensorLevelOtherWaterways", "notificationsEnabled", "notify.level", "warning.radiation.total.warning",
+            "warningState"
         ] {
             fixture.defaults.set(1, forKey: setting)
             fixture.notify()

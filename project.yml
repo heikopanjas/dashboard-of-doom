@@ -227,6 +227,11 @@ targets:
       - Presenters/ForecastPresenter.swift
       - Transformers/ForecastTransformer.swift
       - Controllers/ForecastController.swift
+      - Notifications/WarningRule.swift
+      - Notifications/WarningPreferences.swift
+      - Notifications/WarningEvaluator.swift
+      - Notifications/WarningNotifier.swift
+      - Notifications/NotificationCenterPoster.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

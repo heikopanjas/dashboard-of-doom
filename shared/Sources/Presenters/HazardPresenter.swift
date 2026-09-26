@@ -77,6 +77,8 @@ import Observation
             guard generation == self.generation, self.isEnabled else { return }
             self.failure = nil
             self.publish(hazards: hazards, timestamp: self.now())
+            // Here rather than in publish, which the UI fixture calls.
+            WarningNotifier.shared.check(hazards: hazards)
         }
         catch is CancellationError {
             return
