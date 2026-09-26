@@ -308,8 +308,6 @@ targets:
       - Views/CurrentConditionsView.swift
       - Views/NearestPlacesView.swift
       - Views/SensorHeaderView.swift
-      - Views/FuelMapView.swift
-      - Views/SensorMapView.swift
       - Views/EnvironmentMapView.swift
       - Views/ParticleMapView.swift
       - Views/CovidMapView.swift

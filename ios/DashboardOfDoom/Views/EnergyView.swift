@@ -9,19 +9,6 @@ struct EnergyView: View {
     @ScaledMetric(relativeTo: .body) private var chartHeight = 167.0
     @Environment(EnergyPresenter.self) private var presenter
 
-    /// What each price is, for a reader who does not follow the markets.
-    static let explainers: [ProcessSelector: String] = [
-        .energy(.brent):
-            "Crude oil from the North Sea. Brent is the reference price for about two thirds of the world's oil, and so for what Europe pays. "
-            + "US dollars per barrel, the spot price on each trading day, from the US Energy Information Administration.",
-        .energy(.wti):
-            "West Texas Intermediate, the US reference crude, priced at Cushing, Oklahoma. It usually trades a few dollars below Brent; "
-            + "a wider gap means American oil is hard to get to the coast. Same source as Brent.",
-        .energy(.lng):
-            "Liquefied natural gas delivered by ship to Europe, per megawatt hour of gas, as assessed each weekday by ACER, the EU energy "
-            + "regulator. Germany has imported much of its gas as LNG since 2022, so this follows what heating and power cost here.",
-    ]
-
     var body: some View {
         VStack {
             if self.presenter.timestamp == nil {
@@ -59,7 +46,7 @@ struct EnergyView: View {
                         .frame(height: self.chartHeight)
                         // Inset like a card but without one: the room around the text is what keeps it apart from the chart's axis
                         // labels above and the next title below.
-                        if let explainer = Self.explainers[.energy(selector)] {
+                        if let explainer = EnergyExplainers.text[.energy(selector)] {
                             HStack {
                                 Text(explainer)
                                     .font(.footnote)

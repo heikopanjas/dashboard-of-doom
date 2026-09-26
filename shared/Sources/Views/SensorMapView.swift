@@ -20,9 +20,14 @@ struct SensorMapView: View {
     /// flagged `user`; here it is a marker of its own, because these tabs have no weather label to hang it on.
     @State private var userLocation = AppLocation.shared.state.location
 
-    /// The height the home map has, without its header row.
+    /// The height the home map has on iOS, without its header row. macOS keeps the phone height, fixed like its charts, so the window size
+    /// never changes it.
     private static var height: CGFloat {
+        #if os(iOS)
         return UIDevice.current.userInterfaceIdiom == .pad ? 667 : 367
+        #else
+        return 367
+        #endif
     }
 
     /// The smallest area the camera shows, so a lone sensor, or two close neighbours, do not zoom in to nothing.
