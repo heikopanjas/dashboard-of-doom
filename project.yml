@@ -234,6 +234,7 @@ targets:
       - Notifications/NotificationCenterPoster.swift
       - Views/SensorAnnotations.swift
       - Views/SensorLabels.swift
+      - Models/DataSources.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

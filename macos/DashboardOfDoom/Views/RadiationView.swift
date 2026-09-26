@@ -28,6 +28,10 @@ struct RadiationView: View {
                             .frame(height: 167)
                         }
                     }
+                    // The BfS data licence asks for its source note next to the data.
+                    Text(DataSources.radiationNote)
+                        .font(.caption2)
+                        .foregroundColor(.gray)
                 }
             }
         }

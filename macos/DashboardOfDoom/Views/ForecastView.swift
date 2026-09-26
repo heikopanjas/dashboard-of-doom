@@ -52,6 +52,9 @@ struct ForecastView: View {
                             .frame(height: 167)
                         }
                     }
+                    // WeatherKit requires the Apple Weather mark and its legal link wherever its data is shown.
+                    WeatherAttributionView()
+                        .padding(.top, 8)
                 }
             }
         }

@@ -60,6 +60,17 @@ struct Hazard: Identifiable, Equatable, Sendable {
         return URL(string: "https://warnung.bund.de/meldungen/\(path)/warnung/")
     }
 
+    /// Who issued the warning, shown with it. The DWD asks for exactly this note directly at its warnings; the others are named after
+    /// the system that carried them, since NINA's terms ask for the source to be given.
+    var sourceNote: String {
+        switch self.feed {
+            case .dwd: return "Quelle: Deutscher Wetterdienst"
+            case .mowas: return "Quelle: MoWaS, BBK"
+            case .katwarn: return "Quelle: KATWARN"
+            case .biwapp: return "Quelle: BIWAPP"
+        }
+    }
+
     var areaLabel: String {
         let area = self.areaDescription ?? self.placemark ?? "Nearby"
         return self.isInside ? area : String(format: "%@ · %.0f km", area, self.distance / 1000)

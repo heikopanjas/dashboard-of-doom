@@ -99,6 +99,7 @@ struct SettingsView: View {
     @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
     @AppStorage(SourcePreferences.fuelOrderKey) private var fuelOrder: Int = FuelMapView.Order.dearest.rawValue
     @AppStorage(SourcePreferences.fuelRadiusKey) private var fuelRadius: Int = SourcePreferences.fuelRadiusDefault
+    @AppStorage(SourcePreferences.fuelOpenOnlyKey) private var fuelOpenOnly: Bool = true
     @State private var hasFuelKey = false
 
     // Sensor preferences
@@ -378,6 +379,9 @@ struct SettingsView: View {
                             }
                         }
                         .help("How far around you to look. Tankerkoenig searches at most 25 km")
+                        // Tankerkoenig allows no filtering the user did not ask for, so leaving out closed stations is a switch.
+                        Toggle("Open Stations Only", isOn: $fuelOpenOnly)
+                            .help("Leave out stations that are closed right now. Off, they are ranked too and marked with a lock.")
                     }
                 }
             }
@@ -414,46 +418,33 @@ struct SettingsView: View {
     }
 
     private var aboutContent: some View {
-        VStack(spacing: 12) {
-            Spacer()
-
-            Text("Dashboard of Doom")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-
-            Text("A macOS menu bar application providing real-time environmental and public health data for Germany. Integrates weather, civil protection warnings, air quality, water levels, radiation, COVID-19 statistics, energy and fuel prices, and election polls.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-
-            Spacer()
-
-            Text("COVID-19 district boundaries: © BKG (\(Calendar.current.component(.year, from: Date()))) dl-de/by-2-0")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-
-            Text("Berlin borough boundaries: Amt für Statistik Berlin-Brandenburg, CC-BY")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-
-            Text("Federal waterway network: © WSV (GDWS), VerkNet-BWaStr")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-
-            Text("Fuel prices: tankerkoenig.de, CC BY 4.0, data from MTS-K")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-
-            Text("© 2025 Heiko Panjas. All rights reserved.")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .padding(.bottom, 16)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Dashboard of Doom")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Text("A macOS menu bar application with environmental and public health data for Germany: weather, civil protection warnings, air quality, water levels, radiation, COVID-19, energy and fuel prices, and election polls.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text(DataSources.disclaimer)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Divider()
+                Text("Data Sources")
+                    .font(.headline)
+                DataSourceList()
+                Divider()
+                Text("© 2025 Heiko Panjas. All rights reserved.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

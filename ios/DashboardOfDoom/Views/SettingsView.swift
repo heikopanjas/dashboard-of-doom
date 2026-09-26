@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
     @AppStorage(SourcePreferences.fuelOrderKey) private var fuelOrder: Int = FuelMapView.Order.dearest.rawValue
     @AppStorage(SourcePreferences.fuelRadiusKey) private var fuelRadius: Int = SourcePreferences.fuelRadiusDefault
+    @AppStorage(SourcePreferences.fuelOpenOnlyKey) private var fuelOpenOnly: Bool = true
     @State private var hasFuelKey = false
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
     @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
@@ -340,6 +341,14 @@ struct SettingsView: View {
                                     .foregroundColor(.gray)
                                 Spacer()
                             }
+                            // Tankerkoenig allows no filtering the user did not ask for, so leaving out closed stations is a switch.
+                            Toggle("Open Stations Only", isOn: $fuelOpenOnly)
+                            HStack {
+                                Text("Leave out stations that are closed right now. Off, they are ranked too and marked with a lock.")
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                            }
                         }
                     }
                 }
@@ -384,5 +393,7 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
         }
+
+        AboutSettingsView()
     }
 }

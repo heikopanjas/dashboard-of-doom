@@ -34,6 +34,13 @@ struct RadiationView: View {
                         }
                     }
                 }
+                // The BfS data licence asks for its source note next to the data.
+                HStack {
+                    Text(DataSources.radiationNote)
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
             }
         }
     }

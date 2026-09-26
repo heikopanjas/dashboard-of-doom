@@ -114,6 +114,9 @@ private struct HazardRow: View {
                 Text(Self.timeLabel(self.hazard))
                     .font(.caption)
                     .foregroundColor(.gray)
+                Text(self.hazard.sourceNote)
+                    .font(.caption2)
+                    .foregroundColor(.gray)
             }
         }
         .padding(.vertical, 4)
