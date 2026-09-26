@@ -20,7 +20,7 @@ class ParticleController: ProcessController {
     private let sensorLimit: @Sendable () -> Int
 
     init(
-        nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: "nearestParticleSensor") },
+        nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestParticleSensorKey) },
         sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorParticlesKey) }
     ) {
         self.nearestSensor = nearestSensor
@@ -209,32 +209,44 @@ class ParticleController: ProcessController {
         return stations
     }
 
+    /// How many stations are probed at once while looking for ones that report every relevant pollutant.
+    static let probeConcurrency = 3
+
     /// The stations to report, nearest first, from `stations` ordered by distance.
     ///
-    /// By default the first is the nearest station that reports every relevant pollutant, found by probing in order, and the others are the
-    /// stations that follow it, whatever they report, so the order by distance holds. With `nearest` they are simply the nearest stations.
-    /// When no station qualifies they are the nearest as well. `probe` returns a station's measurements, or nil; the qualifying station
-    /// carries what it returned so it is not fetched twice.
+    /// By default only stations that report every relevant pollutant are reported: stations are probed in order, as many at a time as are
+    /// still missing, until `limit` qualify or none are left, so fewer than `limit` can come back. With `nearest` they are simply the nearest
+    /// stations, whatever they report. When no station qualifies at all they are the nearest as well, so an outage of the measurement
+    /// endpoint does not empty the tab. `probe` returns a station's measurements, or nil; a qualifying station carries what it returned so it
+    /// is not fetched twice.
     static func selectStations(
-        from stations: [Station], nearest: Bool, limit: Int, probe: (Station) async -> [ProcessSelector: [ProcessValue<Dimension>]]?
+        from stations: [Station], nearest: Bool, limit: Int,
+        probe: @escaping (Station) async -> [ProcessSelector: [ProcessValue<Dimension>]]?
     ) async -> [StationResult] {
         let count = Swift.max(limit, 1)
         if nearest == false {
-            for (index, station) in stations.enumerated() {
+            var qualifying: [StationResult] = []
+            var next = 0
+            while next < stations.count && qualifying.count < count {
                 if Task.isCancelled == true {
                     return []
                 }
-                if let measurements = await probe(station) {
-                    if Task.isCancelled == true {
-                        return []
-                    }
-                    if Self.stationHasRelevantMeasurements(measurements) == true {
-                        trace.debug("Selected station \(station.code) with cached measurements")
-                        var results = [StationResult(station: station, cachedMeasurements: measurements)]
-                        results.append(contentsOf: stations.dropFirst(index + 1).prefix(count - 1).map { StationResult(station: $0, cachedMeasurements: nil) })
-                        return results
-                    }
+                // Only as many as are still missing, so a single station is still probed one at a time and nothing is fetched in vain.
+                let batch = Array(stations[next ..< Swift.min(next + count - qualifying.count, stations.count)])
+                next += batch.count
+                let probed = (try? await batch.concurrentCompactMap(limit: Self.probeConcurrency) { station in
+                    return await probe(station).map { (station, $0) }
+                }) ?? []
+                if Task.isCancelled == true {
+                    return []
                 }
+                for (station, measurements) in probed where Self.stationHasRelevantMeasurements(measurements) == true {
+                    trace.debug("Selected station \(station.code) with cached measurements")
+                    qualifying.append(StationResult(station: station, cachedMeasurements: measurements))
+                }
+            }
+            if qualifying.isEmpty == false {
+                return qualifying
             }
         }
         if Task.isCancelled == true {

@@ -46,33 +46,38 @@ import Testing
         return (results: results, probed: await probes.codes)
     }
 
-    @Test func theNearestQualifyingStationIsFirstAndTheNextTwoFollow() async {
-        let selection = await self.select(reporting: ["a": Self.relevant])
-        #expect(Self.codes(selection.results) == ["a", "b", "c"])
-        // Probing stops at the first station that qualifies, and only that one carries measurements.
-        #expect(selection.probed == ["a"])
-        #expect(selection.results.map { $0.cachedMeasurements != nil } == [true, false, false])
+    @Test func onlyStationsReportingAllFourAreReported() async {
+        let selection = await self.select(reporting: ["a": Self.relevant, "b": [.particle(.pm10)], "c": Self.relevant, "e": Self.relevant])
+        #expect(Self.codes(selection.results) == ["a", "c", "e"])
+        // Every reported station qualified, so every one carries its measurements and none is fetched twice.
+        #expect(selection.results.allSatisfy { $0.cachedMeasurements != nil } == true)
     }
 
-    @Test func stationsThatDoNotQualifyAreSkippedForTheFirstSensorOnly() async {
-        // The nearest two are skipped, and so are not reported at all: the array stays ordered by distance from its first sensor on.
+    @Test func probingStopsOnceEnoughQualify() async {
+        let all = Dictionary(uniqueKeysWithValues: Self.stations.map { ($0.code, Self.relevant) })
+        let selection = await self.select(limit: 2, reporting: all)
+        #expect(Self.codes(selection.results) == ["a", "b"])
+        // Only as many as were still missing were probed.
+        #expect(Set(selection.probed) == ["a", "b"])
+    }
+
+    @Test func fewerQualifyingStationsThanTheLimitAreAllThatIsReported() async {
+        // Stations with only some pollutants, or none, are left out rather than filling the list.
         let selection = await self.select(reporting: ["a": [.particle(.pm10)], "b": [], "c": Self.relevant, "d": [.particle(.pm10)]])
-        #expect(Self.codes(selection.results) == ["c", "d", "e"])
-        #expect(selection.probed == ["a", "b", "c"])
-        #expect(selection.results.map { $0.cachedMeasurements != nil } == [true, false, false])
+        #expect(Self.codes(selection.results) == ["c"])
+        #expect(Set(selection.probed) == ["a", "b", "c", "d", "e"])
     }
 
     @Test func aStationWithoutAnswerIsSkippedLikeOneThatDoesNotQualify() async {
         let selection = await self.select(reporting: ["b": Self.relevant])
-        #expect(Self.codes(selection.results) == ["b", "c", "d"])
-        #expect(selection.probed == ["a", "b"])
+        #expect(Self.codes(selection.results) == ["b"])
     }
 
     @Test func whenNoStationQualifiesTheNearestAreUsed() async {
         let partial = Dictionary(uniqueKeysWithValues: Self.stations.map { ($0.code, [ProcessSelector.particle(.pm10)]) })
         let selection = await self.select(reporting: partial)
         #expect(Self.codes(selection.results) == ["a", "b", "c"])
-        #expect(selection.probed == ["a", "b", "c", "d", "e"])
+        #expect(Set(selection.probed) == ["a", "b", "c", "d", "e"])
         #expect(selection.results.allSatisfy { $0.cachedMeasurements == nil } == true)
     }
 
@@ -85,14 +90,16 @@ import Testing
 
     @Test func fewerStationsThanTheLimitAreAllReported() async {
         let two = Array(Self.stations.prefix(2))
-        #expect(Self.codes(await self.select(from: two, reporting: ["a": Self.relevant]).results) == ["a", "b"])
+        #expect(Self.codes(await self.select(from: two, reporting: ["a": Self.relevant, "b": Self.relevant]).results) == ["a", "b"])
         #expect(await self.select(from: [], reporting: [:]).results.isEmpty == true)
     }
 
     @Test(arguments: [0, 1])
     func aLimitOfOneReportsOnlyTheFirstSensor(limit: Int) async {
-        // The macOS cap: one sensor, chosen the same way, and a limit below one is treated as one.
-        #expect(Self.codes(await self.select(limit: limit, reporting: ["b": Self.relevant]).results) == ["b"])
+        // One sensor, the Multiple Sensors switch off, and a limit below one is treated as one. Probing stays one station at a time.
+        let selection = await self.select(limit: limit, reporting: ["b": Self.relevant, "c": Self.relevant])
+        #expect(Self.codes(selection.results) == ["b"])
+        #expect(selection.probed == ["a", "b"])
         #expect(Self.codes(await self.select(nearest: true, limit: limit, reporting: [:]).results) == ["a"])
     }
 
