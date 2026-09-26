@@ -419,8 +419,8 @@ The five local packages support macOS 15 and iOS 26. Both app targets use Swift 
 [DoomKitProcess](shared/doom-kit-process/README.md),
 [DoomKitTools](shared/doom-kit-tools/README.md), and
 [DoomKitServices](shared/doom-kit-services/README.md) for API and lifecycle contracts.
-Native location live updates are a planned provider replacement, not implemented
-by this migration. The integration retains CLLocationManager and tests its platform policies independently.
+The app keeps CLLocationManager and tests its platform policies independently. Native
+location live updates were considered and not adopted; AGENTS.md records why and when to revisit.
 
 Run package tests before the signed app build:
 

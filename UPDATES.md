@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (no version change, location provider and geocoder kept, 18:05)
+
+- decision: the location provider stays on `CLLocationManager` and geocoding stays on `CLGeocoder`. the docs no longer call a `liveUpdates` provider planned; they record the decision, its reasons and when to revisit it
+- rationale for the provider: `CLLocationManager` is not deprecated, and the app only reacts to movement over 100 m, so the new api would bring no visible gain while changing the background behaviour notifications depend on. it would still need a location manager to tell always from while using, its ios sessions do not exist on macos, and macos would lose its kilometre accuracy
+- rationale for the geocoder: `CLGeocoder` is deprecated as of ios and macos 26 but works. `MKReverseGeocodingRequest` needs macos 26 while the app supports macos 15, and mapkit's address has no federal state, which the polls need. the warnings appear only in the ios build
+- revisit when `CLGeocoder` stops working or is removed, when macos 15 support ends, or when the open device checks show a real provider problem. those checks come first
+- removed notes from `ios/MIGRATION.md` and AGENTS.md that had stopped being true: the signing blocker (signed builds install on the iphone now), the failed signed device build row, the claim that migration changes sit uncommitted, dormant hazards, and the instruction to use the long gone `feature/ios-modernization` branch
+- version bump: none, documentation only
+
 ### 2026-09-26 (macos v6.7.0, ios v6.6.0, notifications with warning values per sensor family, 16:10)
 
 - both apps send a local notice when a reading reaches its warning or critical limit. eight families with their own switch: weather, hazards, level, radiation, particles, covid, energy and fuel. polls are left out

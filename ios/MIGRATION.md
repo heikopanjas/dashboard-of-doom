@@ -9,8 +9,7 @@ iOS 26.3 simulators on Apple Silicon.
 After the Apple account was reauthenticated, Xcode automatic provisioning signed
 the Debug app successfully. Version 6.3.0 (178) was installed and launched on
 the paired iPad Pro 13-inch (M5), running iPadOS 26.6.1. A subsequent device process
-check confirmed the app remained running. The signing blocker recorded below is
-resolved. Real background movement, permission transitions, and WeatherKit data
+check confirmed the app remained running. Real background movement, permission transitions, and WeatherKit data
 are still separate validation steps; this launch alone does not establish them.
 
 Evidence: `/tmp/doom-ipad-install-build.log`, `/tmp/doom-ipad-launch.json`, and
@@ -64,10 +63,6 @@ Evidence: `/tmp/doom-ipad-correct-id-build.log` and
 | 5. Build and validate | Add iOS build script, app/package tests, simulator and macOS builds, device compilation | Complete for simulator and macOS; unsigned device Debug/Release compile |
 | 6. Physical device validation | Sign, install, test Always authorization and actual background movement/delivery, and WeatherKit | Signed iPad installation and launch passed September 7; background/WeatherKit behavior checks remain pending |
 
-No remote branch was pushed, repository renamed, iOS repository archived, or app
-submitted. Only the history-preserving import is committed; migration changes
-remain in the worktree for review.
-
 ## Preserved identities and boundaries
 
 | Setting | macOS | iOS |
@@ -115,7 +110,7 @@ Weather and forecasts refresh regardless of display settings. Disabling other
 sources unregisters and cancels them, retains successful values, and blocks
 refresh attempts from timers, movement, bulk refresh, or sensor/scope settings.
 Re-enabling refreshes using the latest coordinator location. Poll map visibility
-does not change iOS poll fetching. Dormant hazards are not instantiated.
+does not change iOS poll fetching.
 
 The iOS map can render the HKW fallback and other sources while WeatherKit is
 unavailable. POIs retain a 6,666.67-metre radius, one-hour cache within 1 km,
@@ -151,7 +146,6 @@ settings boundary rather than requiring a background-capable XCTest host.
 | Signed macOS Debug and Release | Builds passed; both signatures verified with strict/deep checks; both launched |
 | iOS simulator Debug and Release | Builds passed; Release launched at HKW using `build-ios.sh --release --simulator UUID --run` |
 | iOS device Debug and Release, unsigned | Both compiled successfully |
-| Signed iOS device build | Failed: no matching development certificate/private key; only the macOS Developer ID identity is installed |
 | Live iOS simulator smoke | Release map and charts loaded COVID, water, radiation, particles, and POIs near HKW |
 
 Unit tests use isolated preferences, callbacks, a controlled clock, and suspended
@@ -172,8 +166,8 @@ Local evidence (ignored build artifacts):
 - `.build/macos-migration-smoke.png`
 
 Logs are in `/tmp/doom-*-migration-*.log`, `/tmp/doom-ios-*.log`, and
-`/tmp/doom-build-script-tests.log`. Existing CLGeocoder deprecation warnings remain;
-the native provider/geocoder replacement is a separate task. Xcode UI tests also
+`/tmp/doom-build-script-tests.log`. The CLGeocoder deprecation warnings are known and
+accepted for now; AGENTS.md records the decision to keep the provider and geocoder. Xcode UI tests also
 record a UIKitToolbar hosting diagnostic; navigation and screenshots passed.
 
 ## Repeat the checks
@@ -196,15 +190,10 @@ not disable optimization. When running builds concurrently, give each a distinct
 
 ## Remaining physical-device checks
 
-An iPhone and iPad are paired, but cannot run this new build until a valid
-**Apple Development certificate with its private key** is imported or configured
-for the existing team and bundle identifier. A Developer ID Application identity
-cannot sign an iOS development app. No replacement identity/profile was created.
+These have not been recorded as done. Signing works: `./ios/build.sh --device UDID --run`
+builds, installs and launches on a paired iPhone or iPad.
 
-Once signing is available:
-
-1. Run `./ios/build.sh --device`, install on the paired iPhone/iPad using Xcode,
-   and verify WeatherKit returns conditions and forecasts.
+1. Verify WeatherKit returns conditions and forecasts on the device.
 2. Test fresh, denied, While Using, and Always permissions. Confirm Settings
    reports the actual scope and fallback honestly; grant Precise Location.
 3. With Always permission, lock/background the device and move more than 100 m.

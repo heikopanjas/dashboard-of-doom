@@ -45,10 +45,14 @@ from Always without changing the existing broad `authorization` values. It creat
 Broadcasting, movement filtering, fallback selection, and consumers live outside
 the adapter.
 
-A future provider using `CLLocationUpdate.liveUpdates()` is planned. It will retain
-the public stream contract, but must separately validate accuracy, authorization,
-delivery, cancellation, and background behavior. It is not expected to reproduce
-every legacy tracking setting. Background capability belongs to the app; selecting a policy does not grant permission.
+The Core Location adapter stays; `CLLocationUpdate.liveUpdates()` was considered
+and not adopted (September 26, 2026). `CLLocationManager` is not deprecated, the
+new API cannot tell Always from While Using, and its iOS sessions do not exist on
+macOS. A later provider can still replace the adapter behind `LocationProvider`
+without changing the public stream contract, and would then have to validate
+accuracy, authorization, delivery, cancellation, and background behavior on its
+own. The reasons and the conditions for revisiting are in the repository's
+AGENTS.md. Background capability belongs to the app; selecting a policy does not grant permission.
 
 `GeocodingService` performs separate async requests with injectable lookup for
 tests. `GeocodedPlace` preserves long/short address formatting and constituency
