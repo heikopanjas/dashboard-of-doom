@@ -10,7 +10,6 @@ struct SettingsView: View {
     @AppStorage("enableDarkTheme") private var enableDarkTheme: Bool = false
 
     @AppStorage("showWeather") private var showWeather: Bool = true
-    @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
     @Environment(FuelPresenter.self) private var fuel
@@ -18,8 +17,8 @@ struct SettingsView: View {
     @AppStorage(SourcePreferences.fuelOrderKey) private var fuelOrder: Int = FuelMapView.Order.dearest.rawValue
     @AppStorage(SourcePreferences.fuelRadiusKey) private var fuelRadius: Int = SourcePreferences.fuelRadiusDefault
     @State private var hasFuelKey = false
-    @AppStorage("showRadiation") private var showRadiation: Bool = true
-    @AppStorage("showHazards") private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
+    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
 
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var covid
@@ -33,13 +32,12 @@ struct SettingsView: View {
     @AppStorage(SourcePreferences.multiSensorLevelOtherWaterwaysKey) private var multiSensorLevelOtherWaterways: Bool = false
 
     @Environment(ParticlePresenter.self) private var particles
-    @AppStorage("showParticles") private var showParticles: Bool = true
+    @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @AppStorage(SourcePreferences.nearestParticleSensorKey) private var nearestParticleSensor: Bool = false
     @AppStorage(SourcePreferences.multiSensorParticlesKey) private var multiSensorParticles: Bool = false
 
     @Environment(SurveyPresenter.self) private var electionPolls
     @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
-    @AppStorage("showElectionPolls") private var showElectionPolls: Bool = true
     @AppStorage("electionPollScope") private var electionPollScope: Int = 1
 
     /// The waterway choice over the two stored level switches, which keep their historical keys.
@@ -116,6 +114,32 @@ struct SettingsView: View {
             }
         }
 
+        // One switch per source. On, it updates and shows on the map and in its tab; off, it stops updating and its tab and label go.
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Sources")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                Toggle("COVID-19", isOn: $enableCovid)
+                Toggle("Water", isOn: $showWater)
+                Toggle("Radiation", isOn: $showRadiation)
+                Toggle("Particulate Matter", isOn: $showParticles)
+                Toggle("Warnings", isOn: $showHazards)
+                Toggle("Energy", isOn: $enableEnergy)
+                Toggle("Election Polls", isOn: $enableElectionPolls)
+                HStack {
+                    Text("A source that is on keeps updating, shows its value on the map and has its tab; warnings show on the Home screen. Turning one off stops it and removes its tab and its label. Weather always updates.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+
         VStack(alignment: .leading, spacing: 8) {
             Text("Home")
                 .font(.headline)
@@ -128,56 +152,6 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
-                }
-                if enableCovid == true {
-                    VStack {
-                        Toggle("COVID-19", isOn: $showCovid)
-                        HStack {
-                            Text("Shows incidence on the map. The COVID-19 tab keeps it either way.")
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                            Spacer()
-                        }
-                    }
-                }
-                Toggle("Water", isOn: $showWater)
-                HStack {
-                    Text("Shows the water level on the map. Turning it off also stops it from updating.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-                Toggle("Radiation", isOn: $showRadiation)
-                HStack {
-                    Text("Shows the dose rate on the map. Turning it off also stops it from updating.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-                Toggle("Particulate Matter", isOn: $showParticles)
-                HStack {
-                    Text("Shows particulates on the map. Turning it off also stops them from updating.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-                Toggle("Warnings", isOn: $showHazards)
-                HStack {
-                    Text("Shows civil protection and weather warnings near you on the Home screen. Turning it off also stops them from updating.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-                if enableElectionPolls == true {
-                    VStack {
-                        Toggle("Election Polls", isOn: $showElectionPolls)
-                        HStack {
-                            Text("Shows poll results on the map. The Polls tab keeps them either way.")
-                                .font(.footnote)
-                                .foregroundColor(.gray)
-                            Spacer()
-                        }
-                    }
                 }
             }
             .padding()
@@ -196,6 +170,8 @@ struct SettingsView: View {
 
         LocationSettingsView()
 
+        // Only while the source is on; its switch is in the Sources card.
+        if showWater == true {
         VStack(alignment: .leading, spacing: 8) {
             Text("Water")
                 .font(.headline)
@@ -238,6 +214,9 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
+        }
+        // Only while the source is on; its switch is in the Sources card.
+        if showRadiation == true {
         VStack(alignment: .leading, spacing: 8) {
             Text("Radiation")
                 .font(.headline)
@@ -261,6 +240,9 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
+        }
+        // Only while the source is on; its switch is in the Sources card.
+        if showParticles == true {
         VStack(alignment: .leading, spacing: 8) {
             Text("Particulate Matter")
                 .font(.headline)
@@ -296,20 +278,16 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
+        }
 
+        // Only while the source is on; its switch is in the Sources card.
+        if enableEnergy == true {
         VStack(alignment: .leading, spacing: 8) {
             Text("Energy")
                 .font(.headline)
                 .foregroundColor(.primary)
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
-                Toggle("Enable", isOn: $enableEnergy)
-                HStack {
-                    Text("Downloads the daily Brent and WTI crude oil prices and the EU LNG price, and adds the Energy tab. Nothing appears on the map.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
                 if enableEnergy == true {
                     VStack(spacing: 12) {
                         // Saving a key is a keychain write, which nothing observes, so the stations are refreshed by hand.
@@ -373,39 +351,17 @@ struct SettingsView: View {
                 self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
             }
         }
-
-        VStack(alignment: .leading, spacing: 8) {
-            Text("COVID-19")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                Toggle("Enable", isOn: $enableCovid)
-                HStack {
-                    Text("Downloads COVID-19 data and adds the COVID-19 tab.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
         }
 
+
+        // Only while the source is on; its switch is in the Sources card.
+        if enableElectionPolls == true {
         VStack(alignment: .leading, spacing: 8) {
             Text("Election Polls")
                 .font(.headline)
                 .foregroundColor(.primary)
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
-                Toggle("Enable", isOn: $enableElectionPolls)
-                HStack {
-                    Text("Downloads polling data and adds the Polls tab.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
                 if enableElectionPolls == true {
                     Picker("Scope", selection: $electionPollScope) {
                         Text("Federal").tag(0)
@@ -426,6 +382,7 @@ struct SettingsView: View {
             .padding()
             .background(Color(.systemGray6))
             .cornerRadius(10)
+        }
         }
     }
 }

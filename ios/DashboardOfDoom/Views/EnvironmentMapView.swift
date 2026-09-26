@@ -7,13 +7,16 @@ struct EnvironmentMapView: View {
     @Environment(RadiationPresenter.self) private var radiation
     @AppStorage(SourcePreferences.multiSensorLevelKey) private var multiSensorLevel: Bool = false
     @AppStorage(SourcePreferences.multiSensorRadiationKey) private var multiSensorRadiation: Bool = false
+    @AppStorage(SourcePreferences.waterKey) private var showWater: Bool = true
+    @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
 
     var body: some View {
-        // The same readings the sections below list, so switching a source's Multiple Sensors off removes its extra labels at once.
+        // The same readings the sections below list, so switching a source's Multiple Sensors off removes its extra labels at once, and
+        // switching the source off removes all of them.
         SensorMapView(
             annotations: Self.annotations(
-                radiation: self.radiation.visibleReadings(multiSensor: self.multiSensorRadiation),
-                water: self.water.visibleReadings(multiSensor: self.multiSensorLevel)))
+                radiation: self.showRadiation == true ? self.radiation.visibleReadings(multiSensor: self.multiSensorRadiation) : [],
+                water: self.showWater == true ? self.water.visibleReadings(multiSensor: self.multiSensorLevel) : []))
     }
 
     /// One annotation per reading, radiation before level as on the tab, which is also the order the label solver gives priority.

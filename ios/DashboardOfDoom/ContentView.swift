@@ -24,10 +24,14 @@ struct MapSizeModifier: ViewModifier {
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ColorPresenter.self) private var colors
-    @AppStorage("enableElectionPolls") private var enableElectionPolls: Bool = false
+    // One switch per source: off, its tab leaves the bar and, when it was on screen, the app goes back to Home.
+    @AppStorage(SourcePreferences.pollsEnableKey) private var enableElectionPolls: Bool = SourcePreferences.pollsEnabledByDefault
     @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
-    @AppStorage("showHazards") private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.waterKey) private var showWater: Bool = true
+    @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
+    @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @State private var selectedScreen = Screen.home
     @State private var navigationVisible = Visibility.hidden
     @State private var navigationTitle = ""
@@ -42,6 +46,23 @@ struct ContentView: View {
     private var toolbarWidth: CGFloat? {
         guard self.containerWidth > 0 else { return nil }
         return min(self.containerWidth - 2 * self.toolbarSideMargin, self.toolbarMaxWidth)
+    }
+
+    /// Whether a screen has anything to show. Environment holds level and radiation, so it stays while either is on.
+    private func isAvailable(_ screen: Screen) -> Bool {
+        switch screen {
+            case .covid: return self.enableCovid
+            case .energy: return self.enableEnergy
+            case .environment: return self.showWater || self.showRadiation
+            case .particles: return self.showParticles
+            case .surveys: return self.enableElectionPolls
+            case .home, .weather, .settings: return true
+        }
+    }
+
+    /// Every source switch, so one handler notices any of them.
+    private var switches: [Bool] {
+        return [self.enableCovid, self.enableEnergy, self.showWater, self.showRadiation, self.showParticles, self.enableElectionPolls]
     }
 
     enum Screen {
@@ -155,17 +176,24 @@ struct ContentView: View {
                             }
                         case .environment:
                             VStack {
-                                // Draws its own trailing Divider, so nothing remains until a sensor has loaded.
+                                // Draws its own trailing Divider, so nothing remains until a sensor has loaded. A source that is off has
+                                // no labels on it and no section below it.
                                 EnvironmentMapView()
-                                RadiationView()
-                                    .padding(5)
-                                    .padding(.trailing, 3)
-                                Divider()
-                                    .padding(.horizontal, 5)
-                                    .padding(.trailing, 5)
-                                LevelView()
-                                    .padding(5)
-                                    .padding(.trailing, 3)
+                                if self.showRadiation == true {
+                                    RadiationView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
+                                if self.showRadiation == true && self.showWater == true {
+                                    Divider()
+                                        .padding(.horizontal, 5)
+                                        .padding(.trailing, 5)
+                                }
+                                if self.showWater == true {
+                                    LevelView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
                             }
                             .onAppear {
                                 navigationVisible = .visible
@@ -173,11 +201,13 @@ struct ContentView: View {
                             }
                         case .particles:
                             VStack {
-                                // Draws its own trailing Divider, so nothing remains until a station has loaded.
-                                ParticleMapView()
-                                ParticleView()
-                                    .padding(5)
-                                    .padding(.trailing, 3)
+                                if self.showParticles == true {
+                                    // Draws its own trailing Divider, so nothing remains until a station has loaded.
+                                    ParticleMapView()
+                                    ParticleView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
                             }
                             .onAppear {
                                 navigationVisible = .visible
@@ -240,19 +270,23 @@ struct ContentView: View {
                                 }
                                 .accessibilityLabel("Energy")
                             }
-                            Spacer()
-                            Button(action: { selectedScreen = .environment }) {
-                                Image(systemName: selectedScreen == .environment ? "leaf.fill" : "leaf")
-                                    .foregroundColor(selectedScreen == .environment ? .accentColor : .accentColor.opacity(0.5))
+                            if self.isAvailable(.environment) == true {
+                                Spacer()
+                                Button(action: { selectedScreen = .environment }) {
+                                    Image(systemName: selectedScreen == .environment ? "leaf.fill" : "leaf")
+                                        .foregroundColor(selectedScreen == .environment ? .accentColor : .accentColor.opacity(0.5))
+                                }
+                                .accessibilityLabel("Environment")
                             }
-                            .accessibilityLabel("Environment")
-                            Spacer()
-                            Button(action: { selectedScreen = .particles }) {
-                                Image(systemName: selectedScreen == .particles ? "aqi.medium" : "aqi.low")
-                                    .foregroundColor(selectedScreen == .particles ? .accentColor : .accentColor.opacity(0.5))
-                                    .fontWeight(.black)  // Workaround for "aqi.medium" icon being rather thin
+                            if self.isAvailable(.particles) == true {
+                                Spacer()
+                                Button(action: { selectedScreen = .particles }) {
+                                    Image(systemName: selectedScreen == .particles ? "aqi.medium" : "aqi.low")
+                                        .foregroundColor(selectedScreen == .particles ? .accentColor : .accentColor.opacity(0.5))
+                                        .fontWeight(.black)  // Workaround for "aqi.medium" icon being rather thin
+                                }
+                                .accessibilityLabel("Particles")
                             }
-                            .accessibilityLabel("Particles")
                             if enableCovid == true {
                                 Spacer()
                                 Button(action: { selectedScreen = .covid }) {
@@ -293,18 +327,8 @@ struct ContentView: View {
                         traitCollection.userInterfaceStyle == .dark ? .black : .white
                     }), for: .bottomBar
             )
-            .onChange(of: self.enableElectionPolls) { _, enabled in
-                if enabled == false && self.selectedScreen == .surveys {
-                    self.selectedScreen = .home
-                }
-            }
-            .onChange(of: self.enableCovid) { _, enabled in
-                if enabled == false && self.selectedScreen == .covid {
-                    self.selectedScreen = .home
-                }
-            }
-            .onChange(of: self.enableEnergy) { _, enabled in
-                if enabled == false && self.selectedScreen == .energy {
+            .onChange(of: self.switches) { _, _ in
+                if self.isAvailable(self.selectedScreen) == false {
                     self.selectedScreen = .home
                 }
             }

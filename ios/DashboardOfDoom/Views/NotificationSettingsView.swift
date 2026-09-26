@@ -140,19 +140,19 @@ struct NotificationFamilySettingsView: View {
             case .weather:
                 return "Current weather and the forecast for the next 24 hours, so a notice can come before the weather does."
             case .hazards:
-                return "Official NINA warnings that cover your location or lie nearby, once for each new warning. Needs Warnings on under Home."
+                return "Official NINA warnings that cover your location or lie nearby, once for each new warning. Needs Warnings on under Sources."
             case .level:
-                return "Every gauge that is loaded, against its own official marks. Needs Water on under Home."
+                return "Every gauge that is loaded, against its own official marks. Needs Water on under Sources."
             case .radiation:
-                return "Every radiation station that is loaded. Needs Radiation on under Home."
+                return "Every radiation station that is loaded. Needs Radiation on under Sources."
             case .particles:
-                return "Every air quality station that is loaded, one notice per pollutant. Needs Particulate Matter on under Home."
+                return "Every air quality station that is loaded, one notice per pollutant. Needs Particulate Matter on under Sources."
             case .covid:
-                return "The reporting district's incidence. Needs COVID-19 on."
+                return "The reporting district's incidence. Needs COVID-19 on under Sources."
             case .energy:
-                return "The daily crude oil and LNG prices. Needs Energy on."
+                return "The daily crude oil and LNG prices. Needs Energy on under Sources."
             case .fuel:
-                return "Needs Energy on and a Tankerkoenig key."
+                return "Needs Energy on under Sources and a Tankerkoenig key."
         }
     }
 }
