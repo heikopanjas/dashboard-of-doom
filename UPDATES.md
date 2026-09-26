@@ -4,6 +4,18 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.8.0, the status item shows one or two chosen values, 23:20)
+
+- the macos status item shows one or two values the user ticks in settings, general, menu bar, from any sources, after a small vertical dod tag; one at menu bar text size, two stacked in a smaller font
+- decision: the model and the view follow senor-particle, the author's other menu bar app, including its vertical tag, which here always reads dod. a source symbol per row was tried first and dropped at the user's request: at menu bar size the symbols were unreadable
+- decision: the status item is an appkit nsstatusitem instead of a swiftui menubarextra, since a menu bar extra's label cannot hold the custom drawn view. it is also the base for the popup task on the roadmap
+- consequence: the dashboard became an appkit window like the settings panel. the swiftui window scene could only be opened with the openwindow action the app got from the menu bar extra; the window is built once, kept when closed and remembers its frame
+- nothing ticked, or only values whose source is off, shows the temperature as before; the selection is kept for when a source comes back
+- the roadmap entry for the status item is removed now that it is done
+- not verified on screen: the terminal has no screen recording permission, so the look of the status item in light and dark menu bars is for the user to check; a launch with two values set ran without problems
+- validation: 161 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
 ### 2026-09-26 (macos v6.8.0, ios v6.7.0, data sources and licence obligations, 22:40)
 
 - the macos about tab lists every data source with the credit its licence asks for, and ios gains an about section at the end of settings with the same list, from one shared `DataSources` list
