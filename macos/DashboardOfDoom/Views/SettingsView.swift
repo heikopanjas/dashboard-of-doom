@@ -84,6 +84,8 @@ struct SettingsView: View {
     let surveyPresenter: SurveyPresenter
     let fuelPresenter: FuelPresenter
     let pointOfInterestPresenter: PointOfInterestPresenter
+    /// The current reading of a status bar value, for the Menu Bar section.
+    let faceplate: (StatusBarValue) -> String?
 
     // Enable toggles
     @AppStorage("showWeather") private var showWeather: Bool = true
@@ -233,6 +235,7 @@ struct SettingsView: View {
             Section("Appearance") {
                 Toggle("Always Use Dark Theme", isOn: $alwaysUseDarkTheme)
             }
+            StatusBarSettingsSection(faceplate: self.faceplate)
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)

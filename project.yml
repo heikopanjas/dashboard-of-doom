@@ -235,6 +235,8 @@ targets:
       - Views/SensorAnnotations.swift
       - Views/SensorLabels.swift
       - Models/DataSources.swift
+      - Models/StatusBarValue.swift
+      - Views/StatusItemDisplayView.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

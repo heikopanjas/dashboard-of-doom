@@ -6,91 +6,40 @@ import SwiftUI
 
 @main
 struct DashboardOfDoomApp: App {
-    @AppStorage("alwaysUseDarkTheme") private var alwaysUseDarkTheme: Bool = true
-
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // The status item and the dashboard window are AppKit, owned by AppDelegate, so SwiftUI only needs a scene to exist: an empty
+    // Settings scene, since the app's own settings are a panel as well.
     var body: some Scene {
-        MenuBarExtra {
-            MenuBarContentView(appDelegate: self.appDelegate)
-        } label: {
-            MenuBarLabelView(appDelegate: self.appDelegate, weatherPresenter: self.appDelegate.weatherPresenter)
+        Settings {
+            EmptyView()
         }
-        .menuBarExtraStyle(.menu)
-
-        Window("Dashboard of Doom", id: AppDelegate.dashboardWindowID) {
-            ContentView()
-                .environment(self.appDelegate.weatherPresenter)
-                .environment(self.appDelegate.forecastPresenter)
-                .environment(self.appDelegate.covidPresenter)
-                .environment(self.appDelegate.levelPresenter)
-                .environment(self.appDelegate.radiationPresenter)
-                .environment(self.appDelegate.particlePresenter)
-                .environment(self.appDelegate.surveyPresenter)
-                .environment(self.appDelegate.hazardPresenter)
-                .environment(self.appDelegate.energyPresenter)
-                .environment(self.appDelegate.fuelPresenter)
-                .environment(self.appDelegate.colorPresenter)
-                .environment(self.appDelegate)
-                .environment(self.appDelegate.pointOfInterestPresenter)
-                .preferredColorScheme(self.alwaysUseDarkTheme ? .dark : nil)
-                .background(DashboardWindowAccessor { [appDelegate] window in
-                    appDelegate.registerDashboardWindow(window)
-                })
-        }
-        .defaultSize(width: 800, height: 859)
-        .defaultPosition(.center)
-        .windowResizability(.contentMinSize)
-        .defaultLaunchBehavior(.suppressed)
     }
 }
 
-// MARK: - Menu Bar Views
+// MARK: - Dashboard
 
-private struct MenuBarLabelView: View {
+/// The dashboard's content with every presenter in its environment and the theme setting applied, hosted in the AppKit window.
+private struct DashboardRootView: View {
     let appDelegate: AppDelegate
-    let weatherPresenter: WeatherPresenter
-
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
+    @AppStorage("alwaysUseDarkTheme") private var alwaysUseDarkTheme: Bool = true
 
     var body: some View {
-        Text(self.weatherPresenter.faceplate[.weather(.temperature)] ?? "n/a")
-            .font(.system(.body, design: .monospaced))
-            .task {
-                self.appDelegate.bindWindowActions(open: self.openWindow, dismiss: self.dismissWindow)
-            }
-    }
-}
-
-private struct MenuBarContentView: View {
-    let appDelegate: AppDelegate
-
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
-
-    var body: some View {
-        Button("Open Dashboard") {
-            self.appDelegate.bindWindowActions(open: self.openWindow, dismiss: self.dismissWindow)
-            self.appDelegate.showDashboard()
-        }
-        .globalKeyboardShortcut(.toggleDashboard)
-
-        Divider()
-
-        Button("Settings…") {
-            self.appDelegate.showSettings()
-        }
-        .keyboardShortcut(",", modifiers: .command)
-
-        Button("About…") {
-            self.appDelegate.showSettings(tab: .about)
-        }
-
-        Button("Quit") {
-            NSApplication.shared.terminate(nil)
-        }
-        .keyboardShortcut("q", modifiers: .command)
+        ContentView()
+            .environment(self.appDelegate.weatherPresenter)
+            .environment(self.appDelegate.forecastPresenter)
+            .environment(self.appDelegate.covidPresenter)
+            .environment(self.appDelegate.levelPresenter)
+            .environment(self.appDelegate.radiationPresenter)
+            .environment(self.appDelegate.particlePresenter)
+            .environment(self.appDelegate.surveyPresenter)
+            .environment(self.appDelegate.hazardPresenter)
+            .environment(self.appDelegate.energyPresenter)
+            .environment(self.appDelegate.fuelPresenter)
+            .environment(self.appDelegate.colorPresenter)
+            .environment(self.appDelegate)
+            .environment(self.appDelegate.pointOfInterestPresenter)
+            .preferredColorScheme(self.alwaysUseDarkTheme ? .dark : nil)
     }
 }
 
@@ -98,8 +47,6 @@ private struct MenuBarContentView: View {
 
 @MainActor @Observable
 class AppDelegate: NSObject, NSApplicationDelegate {
-    static let dashboardWindowID = "dashboard"
-
     let weatherPresenter = WeatherPresenter()
     let forecastPresenter = ForecastPresenter()
     let covidPresenter = CovidPresenter()
@@ -119,9 +66,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let settingsSelection = SettingsSelection()
     var settingsPanel: NSPanel?
 
-    @ObservationIgnored private var openWindowAction: OpenWindowAction?
-    @ObservationIgnored private var dismissWindowAction: DismissWindowAction?
-    @ObservationIgnored private weak var dashboardWindow: NSWindow?
+    @ObservationIgnored private var dashboardWindow: NSWindow?
+    @ObservationIgnored private var statusItemController: StatusItemController?
     @ObservationIgnored private var themeObserver: NSObjectProtocol?
     @ObservationIgnored private var shutdownTask: Task<Void, Never>?
 
@@ -133,6 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenterPoster.shared.activate()
         AppProcess.shared.start()
         self.pointOfInterestPresenter.start(updates: AppLocation.shared.updates())
+        self.statusItemController = StatusItemController(appDelegate: self)
 
         // Apply initial theme
         updateAppearance()
@@ -178,41 +125,55 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.appearance = useDark ? NSAppearance(named: .darkAqua) : nil
     }
 
-    // MARK: - Dashboard Window
-
-    func bindWindowActions(open: OpenWindowAction, dismiss: DismissWindowAction) -> Void {
-        self.openWindowAction = open
-        self.dismissWindowAction = dismiss
+    /// The nearest reading's faceplate for a status bar value, the string the map labels show. The status item and its settings both read
+    /// it here, so they always show the same text.
+    func faceplate(for value: StatusBarValue) -> String? {
+        let presenter: ProcessPresenter
+        switch value.source {
+            case .weather: presenter = self.weatherPresenter
+            case .covid: presenter = self.covidPresenter
+            case .water: presenter = self.levelPresenter
+            case .radiation: presenter = self.radiationPresenter
+            case .particles: presenter = self.particlePresenter
+            case .energy: presenter = self.energyPresenter
+        }
+        return presenter.faceplate[value.selector]
     }
 
-    func registerDashboardWindow(_ window: NSWindow?) -> Void {
-        self.dashboardWindow = window
+    // MARK: - Dashboard Window
+
+    /// The dashboard window, built once and kept, so closing it keeps its tab and its frame. An AppKit window like the settings panel: a
+    /// SwiftUI `Window` scene could only be opened with the `openWindow` action, which the app got from the menu bar extra it no longer has.
+    private func makeDashboardWindow() -> NSWindow {
+        let hostingController = NSHostingController(rootView: DashboardRootView(appDelegate: self))
+        // The content's own minimum size, 700 by 720, becomes the window's.
+        hostingController.sizingOptions = [.minSize]
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 859), styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered, defer: false)
+        window.title = "Dashboard of Doom"
+        window.contentViewController = hostingController
+        window.isReleasedWhenClosed = false
+        window.setContentSize(NSSize(width: 800, height: 859))
+        // Remembers where the user put it; the first time it opens centred.
+        if window.setFrameUsingName("DashboardWindow") == false {
+            window.center()
+        }
+        window.setFrameAutosaveName("DashboardWindow")
+        return window
     }
 
     func showDashboard() -> Void {
-        self.openWindowAction?(id: Self.dashboardWindowID)
-        self.frontDashboard(retries: 5)
-    }
-
-    private func frontDashboard(retries: Int) -> Void {
-        if let window = self.dashboardWindow {
-            NSRunningApplication.current.activate(options: [.activateAllWindows])
-            NSApp.activate()
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-            return
-        }
-        guard retries > 0 else { return }
-        DispatchQueue.main.async { self.frontDashboard(retries: retries - 1) }
+        let window = self.dashboardWindow ?? self.makeDashboardWindow()
+        self.dashboardWindow = window
+        NSRunningApplication.current.activate(options: [.activateAllWindows])
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 
     func hideDashboard() -> Void {
-        if let dismiss = self.dismissWindowAction {
-            dismiss(id: Self.dashboardWindowID)
-        }
-        else {
-            self.dashboardWindow?.close()
-        }
+        self.dashboardWindow?.close()
     }
 
     func toggleDashboard() -> Void {
@@ -256,7 +217,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 particlePresenter: self.particlePresenter,
                 surveyPresenter: self.surveyPresenter,
                 fuelPresenter: self.fuelPresenter,
-                pointOfInterestPresenter: self.pointOfInterestPresenter
+                pointOfInterestPresenter: self.pointOfInterestPresenter,
+                faceplate: { [unowned self] value in self.faceplate(for: value) }
             )
             let hostingController = NSHostingController(rootView: settingsView)
             hostingController.view.frame = NSRect(x: 0, y: 0, width: SettingsView.width, height: 400)
