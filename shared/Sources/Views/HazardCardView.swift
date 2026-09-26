@@ -1,7 +1,7 @@
 import DoomKitProcess
 import SwiftUI
 
-/// NINA warnings near the user, or a green all-clear when there are none.
+/// NINA warnings near the user, or a green all-clear when there are none, at the end of the Home tab on both platforms.
 /// A failed refresh keeps the last list and adds a line; it never shows a
 /// false all-clear.
 struct HazardCardView: View {

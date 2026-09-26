@@ -3,7 +3,6 @@ import SwiftUI
 enum DashboardTab: String, CaseIterable {
     case home = "Home"
     case weather = "Weather"
-    case warnings = "Warnings"
     case covid = "COVID-19"
     case level = "Level"
     case radiation = "Radiation"
@@ -15,7 +14,6 @@ enum DashboardTab: String, CaseIterable {
         switch self {
         case .home: return "house"
         case .weather: return "cloud.sun"
-        case .warnings: return "exclamationmark.triangle"
         case .covid: return "facemask"
         case .level: return "water.waves"
         case .radiation: return "atom"
@@ -30,7 +28,6 @@ enum DashboardTab: String, CaseIterable {
     func isVisible(defaults: UserDefaults = .standard) -> Bool {
         switch self {
         case .home, .weather: return true
-        case .warnings: return SourcePreferences.hazardsVisible(defaults: defaults)
         case .covid: return SourcePreferences.covidVisible(defaults: defaults)
         case .level: return SourcePreferences.waterVisible(defaults: defaults)
         case .radiation: return SourcePreferences.radiationVisible(defaults: defaults)
@@ -46,7 +43,6 @@ struct ContentView: View {
 
     // Observed so that a switch flipped in the Settings panel redraws the toolbar here at once; the visibility itself is read through
     // `DashboardTab.isVisible`, the same way the presenters read the switches.
-    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
     @AppStorage(SourcePreferences.covidEnableKey) private var showCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.waterKey) private var showLevels: Bool = true
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
@@ -55,7 +51,7 @@ struct ContentView: View {
     @AppStorage(SourcePreferences.pollsEnableKey) private var showPolls: Bool = SourcePreferences.pollsEnabledByDefault
 
     private var switches: [Bool] {
-        return [self.showHazards, self.showCovid, self.showLevels, self.showRadiation, self.showParticles, self.enableEnergy, self.showPolls]
+        return [self.showCovid, self.showLevels, self.showRadiation, self.showParticles, self.enableEnergy, self.showPolls]
     }
 
     var body: some View {
@@ -85,8 +81,6 @@ struct ContentView: View {
                     HomeView().padding()
                 case .weather:
                     ForecastView().padding()
-                case .warnings:
-                    WarningsView().padding()
                 case .covid:
                     CovidView().padding()
                 case .level:

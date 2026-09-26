@@ -1,22 +1,31 @@
 import SwiftUI
 
-/// The Home tab: the map, then the three rows the iOS home screen has under it, the next 24 hours, the current conditions and the nearest
-/// places. The warnings card is left out, since macOS has a Warnings tab. The rows keep their own height and the map takes the rest, so
-/// a taller window means a bigger map; the window's minimum height keeps it usable.
+/// The Home tab, the iOS home screen in the dashboard popup: the map, then the next 24 hours, the current conditions, the nearest places
+/// and, while the Warnings switch is on, the warnings. It scrolls, so the map has a fixed height and the rows below it keep theirs.
 struct HomeView: View {
+    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
+
     var body: some View {
-        VStack(spacing: 0) {
-            MapView()
-                .frame(minHeight: 260, maxHeight: .infinity)
-            Divider()
-            ForecastStripView()
-                .padding(5)
-            Divider()
-                .padding(.horizontal, 5)
-            CurrentConditionsView()
-                .padding(5)
-            // Draws its own leading divider, and nothing at all until places have loaded.
-            NearestPlacesView()
+        ScrollView {
+            VStack(spacing: 0) {
+                MapView()
+                    .frame(height: 500)
+                Divider()
+                ForecastStripView()
+                    .padding(5)
+                Divider()
+                    .padding(.horizontal, 5)
+                CurrentConditionsView()
+                    .padding(5)
+                // Draws its own leading divider, and nothing at all until places have loaded.
+                NearestPlacesView()
+                if self.showHazards == true {
+                    Divider()
+                        .padding(.horizontal, 5)
+                    HazardCardView()
+                        .padding(5)
+                }
+            }
         }
     }
 }
