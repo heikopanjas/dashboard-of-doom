@@ -4,8 +4,13 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>Dashboard of Doom</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.panjas.dashboard-of-doom.refresh</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>location</string>
 	</array>
 </dict>

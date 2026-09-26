@@ -171,6 +171,8 @@ struct SettingsView: View {
             .background(Color(.systemGray6))
             .cornerRadius(10)
         }
+        NotificationSettingsView()
+
         VStack(alignment: .leading, spacing: 8) {
             Text("Points of Interest")
                 .font(.headline)

@@ -307,6 +307,7 @@ targets:
       type: syncedFolder
       includes:
       - AppActivityLifecycle.swift
+      - BackgroundRefresh.swift
       - Views/ActivityIndicator.swift
       - Views/AccentLabel.swift
       - Views/ForecastStripView.swift

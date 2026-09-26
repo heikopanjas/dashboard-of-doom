@@ -27,6 +27,24 @@ struct IOSPolicyTests {
         #expect(refreshes == 2)
     }
 
+    @Test func backgroundRefreshIsOnlyWantedWhileNotificationsAreOn() throws {
+        let suite = "IOSPolicyTests.background.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        #expect(BackgroundRefresh.shouldSchedule(defaults: defaults) == false)
+        defaults.set(true, forKey: WarningPreferences.enabledKey)
+        #expect(BackgroundRefresh.shouldSchedule(defaults: defaults) == true)
+    }
+
+    @Test func theBackgroundTaskIdentifierIsTheOneInfoPlistPermits() throws {
+        // The unhosted test bundle has no app Info.plist to read, so the plist file itself is the reference.
+        let plist = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appending(path: "../DashboardOfDoom/Info.plist")
+        let data = try Data(contentsOf: plist.standardizedFileURL)
+        let info = try #require(try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        #expect((info["BGTaskSchedulerPermittedIdentifiers"] as? [String]) == [BackgroundRefresh.identifier])
+        #expect((info["UIBackgroundModes"] as? [String])?.contains("fetch") == true)
+    }
+
     @Test func accentSelectionSurvivesRelaunch() throws {
         let suite = "IOSPolicyTests.accent.\(UUID())"
         let defaults = try #require(UserDefaults(suiteName: suite))
