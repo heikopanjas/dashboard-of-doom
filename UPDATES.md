@@ -4,6 +4,75 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, home map camera follows the switches, 21:40)
+
+- fix: switching polls and radiation off in settings left the home map framing them. only the `onChange` handlers in `MapView` told the camera, and the view only exists while the home tab is on screen; a switched off source no longer refreshes, so nothing else did
+- fix: the camera rectangle only grew. every update added to it and only removing a source rebuilt it, so a sensor that moved, or a nearest station that changed, left the old area in the frame
+- decision: `MapPresenter` stores each source's location with its visibility check and re-evaluates all checks when any setting changes, wherever the change happens; the view's handlers are gone, so there is one mechanism
+- decision: the rectangle is rebuilt from the visible locations each time, and the camera only moves when that set changed, because settings such as `warningState` are written on every refresh
+- `MapPresenterTests` cover a hidden source, a settings change without a refresh, a moved sensor, an update that keeps its check, and the rectangle itself
+- validation: 144 macos and 203 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, the macos home tab gets the ios home rows, 21:15)
+
+- the macos home tab shows what ios home shows except the warnings card, which macos has as a tab: the map, the next 24 hours, the current conditions and the nearest places
+- decision: no scrolling. the rows keep their height and the map takes the rest, so it still grows with the window; the window's minimum height went from 500 to 720 so the rows cannot squash the map below 260 points
+- `ForecastStripView`, `CurrentConditionsView`, `NearestPlacesView` and `AccentLabel` moved to shared unchanged for ios; `accentLabel()` leaves text alone on macOS, whose window sets its own label colors
+- decision: macos fetches all five point of interest categories whatever the map switches say, as ios does, so the nearest places row is complete; the master switch is "show on map" on both platforms. with the switches at their default, on, this adds no requests
+- seen live: all five categories were requested, and all five failed because overpass-api.de answered slower than the request timeout (about 10 s for a small test query) and the fallback overpass.private.coffee did not answer at all. that is the server, not this change; the presenter retries after its five minute cooldown and the row appears once data arrives
+- validation: 139 macos and 198 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, any station off reports only complete stations, 21:00)
+
+- with any station off, every reported particle station now reports pm10, pm2.5, no2 and o3. before only the first had to; the extras followed by distance whatever they measured, so a tab could list stations with one or two pollutants
+- decision: fewer stations rather than incomplete ones. when fewer than the limit qualify, only those are shown; when none qualify at all the nearest are used, so an outage of the measurement endpoint does not empty the tab
+- probing now runs in rounds of as many stations as are still missing, three at a time, so the single station default still probes one at a time and nothing is probed in vain. a reported station always carries its probed measurements
+- cost: each probe is a request. at hkw six qualifying stations took 15 measurement requests and 6 forecasts, against 7 and 6 before
+- the settings footnotes on both platforms say that off means only complete stations, possibly fewer of them
+- validation: 139 macos and 198 ios tests pass, both apps build, verified live with launch arguments
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, the covid district map on macos, 20:45)
+
+- the macos covid tab starts with the district map ios has: the outline shaded, the incidence at its centroid, the reader's dot
+- `CovidMapView` moved to shared unchanged; it never used ios only api, and `CovidController` already put the outline in `customData` on both platforms. its ios tests pass against the shared copy
+- on macos the map, the header and the chart grid scroll together, as on the level and energy tabs
+- validation: 138 macos and 197 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, level waterway choice and any station, 20:30)
+
+- the nearest sensor toggles did not say what they do. for level it meant allow waterways other than natural ones, for particles allow stations that report fewer or other pollutants than pm10, pm2.5, no2 and o3. the behaviour already matched; the presentation did not
+- decision: level's two switches, nearest sensor and other waterways, became one waterways choice: natural, natural first, any waterway. they overlapped, since other waterways changed nothing once nearest sensor was on. natural first is only offered with multiple sensors on, where it differs from natural
+- decision: the particle toggle is now any station, with a footnote that says the extras follow by distance either way
+- decision: the stored keys `nearestLevelSensor`, `nearestParticleSensor` and `multiSensorLevelOtherWaterways` stay, so nobody's choice resets and the controllers did not change; `SourcePreferences.LevelWaterways` maps the choice to the two switches and back, and the key names are now constants
+- verified live on macos with launch arguments: any waterway skips the natural waterway lookup, natural runs it. at hkw both give the same six gauges, because the spree-oder-wasserstrasse is both the nearest natural and the nearest waterway
+- validation: 138 macos and 197 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, home map camera fits level, radiation and particles again, 20:05)
+
+- fix: the home map zoomed to the weather and covid dots only, and the level, radiation and particle labels sat at its edges without their dots, two of them on top of each other
+- cause: those three presenters decided whether their nearest sensor joins the camera with `UserDefaults.standard.bool(forKey:)`. an untouched switch is unset, which `bool(forKey:)` reads as off, while settings, the refresh subscription and the map labels all treat it as on. so the sources refreshed and drew labels but asked to be removed from the camera. confirmed in the user's defaults: `showLevels`, `showRadiation` and `showParticles` were unset
+- fix: the condition asks the presenter's own subscription, which reads the same key with the same default. covid and polls already went through `SourcePreferences` and were right
+- not caused by the multi sensor work: the lines predate it. it affects ios the same way whenever `showWater`, `showRadiation` or `showParticles` are unset
+- `HomeMapRegionTests` covers all three; with the old level line restored it fails
+- version bump: ios 6.6.0 to 6.6.1 (182), PATCH, a bug fix. macos folds it into the unreleased 6.8.0
+
+### 2026-09-26 (macos v6.8.0, level, radiation and particles tabs with six sensors and a map, 19:40)
+
+- macos replaces the sensors tab with level, radiation and particles tabs. each starts with its own map, a dot and label per sensor plus the reader's dot, and lists up to six sensors nearest first behind a multiple sensors switch, off by default like on ios. level also gets other waterways
+- decision: six on macos, three for level and radiation on ios. ios puts both on one environment map, where three and three is the label solver's limit of six; on macos each has a map of its own, so each can take all six label colors
+- decision: level and radiation have one chart per sensor, so their sensors sit in a two column grid of cards, header above chart; particles keep one section per station with the pollutant grid
+- the cap was one per source below the views on macos; `SourcePreferences.sensorMaximum` now gives the three switchable sources `macOSSensorMaximum`, six, on macos. `ProcessSensor.maximumPerSource` and the controllers are unchanged
+- six color palettes for the macos level and radiation tabs start with the ios three, so the nearest sensor keeps its home color on both platforms
+- the map annotation builders and the header words moved to shared `SensorAnnotations` and `SensorLabels`; the ios views forward to them and their tests pass unchanged. the macos charts now take a reading instead of the presenter, as the ios ones do
+- verified live with the switches on by launch argument: six radiation series, six level series with six mark requests, and seven particle measurement requests, the probe plus six, no errors
+- validation: 132 macos and 191 ios tests pass, both apps build
+- version bump: macos 6.7.0 to 6.8.0 (155), MINOR, new tabs and settings. ios unchanged in behaviour, no bump
+
 ### 2026-09-26 (no version change, location provider and geocoder kept, 18:05)
 
 - decision: the location provider stays on `CLLocationManager` and geocoding stays on `CLGeocoder`. the docs no longer call a `liveUpdates` provider planned; they record the decision, its reasons and when to revisit it

@@ -157,7 +157,7 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Adaptive Branding**: Text title in light mode, logo image in dark mode
 - **Settings Window**: Comprehensive configuration for preferences and data sources
 - **Dark Mode Optimized**: Native macOS appearance with pure black backgrounds
-- **Dashboard Tabs**: Home map, Weather, Warnings, COVID-19, Sensors, Energy, and Polls
+- **Dashboard Tabs**: Home (map, next 24 hours, current conditions, nearest places), Weather, Warnings, COVID-19, Level, Radiation, Particles, Energy, and Polls; Level, Radiation and Particles show up to six sensors each on their own map
 - **Low Resource Usage**: Optimized for background operation with minimal system impact
 
 ### Data Sources & Monitoring
