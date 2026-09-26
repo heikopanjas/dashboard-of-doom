@@ -5,11 +5,12 @@ import SwiftUI
 /// a line; it never shows a false all-clear. The rows are the ones the iOS home card shows.
 struct WarningsView: View {
     @Environment(HazardPresenter.self) private var presenter
-    @AppStorage("showHazards") private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // The presenter never leaves `.loading` while switched off, so without this the tab would spin forever.
+            // The tab leaves the toolbar when warnings are switched off and the dashboard goes to Home; this only covers that moment, since
+            // the presenter never leaves `.loading` while off and the tab would otherwise show a spinner.
             if self.showHazards == false {
                 self.switchedOff
             }

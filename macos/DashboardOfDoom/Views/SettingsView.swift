@@ -89,10 +89,10 @@ struct SettingsView: View {
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage("showLevels") private var showLevels: Bool = true
-    @AppStorage("showRadiation") private var showRadiation: Bool = true
-    @AppStorage("showParticles") private var showParticles: Bool = true
+    @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
+    @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @AppStorage("showElectionPolls") private var showElectionPolls: Bool = true
-    @AppStorage("showHazards") private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
 
     // Fuel stations: which fuel, which end of the price range and how far. Ranking is local, so only the radius refetches.
@@ -240,7 +240,8 @@ struct SettingsView: View {
     private var weatherContent: some View {
         Form {
             Section("Data Source") {
-                Toggle("Enable Weather Data", isOn: $showWeather)
+                Toggle("Show on Home Map", isOn: $showWeather)
+                    .help("Shows the temperature on the home map. Weather keeps updating either way.")
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $weatherRefreshInterval)
