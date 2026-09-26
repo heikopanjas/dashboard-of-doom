@@ -167,7 +167,8 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Air Quality**: PM10, PM2.5, O3, NO2 particle concentrations from UBA
 - **Weather & Forecasting**: Current conditions and ARIMA-based future predictions
 - **Water Levels**: Hydrological data from federal waterway stations
-- **Civil Protection**: NINA warnings that cover or lie near your location. There are no push notifications yet; they are planned in [ROADMAP.md](ROADMAP.md)
+- **Civil Protection**: NINA warnings that cover or lie near your location
+- **Notifications**: A local notice when a reading reaches its warning or critical limit, with limits per sensor family; water levels use each gauge's official flood marks
 - **Energy Prices**: Brent and WTI crude from the US EIA, and the EU LNG price from ACER
 - **Fuel Stations**: The dearest or cheapest filling stations nearby from tankerkoenig.de (CC BY 4.0, data from MTS-K), with a free API key
 - **Political Surveys**: Election polling data and trend analysis
@@ -290,7 +291,7 @@ dashboard-of-doom-mac/
 - `RadiationPresenter` - Environmental radiation monitoring and alerts
 - `ParticlePresenter` - Air quality measurements (PM10, PM2.5, O3, NO2)
 - `SurveyPresenter` - Political polling data and electoral trend analysis
-- `HazardPresenter` - Civil protection alerts and emergency notifications
+- `HazardPresenter` - Civil protection warnings near the user
 - `MapPresenter` - Shared geographic state and location management
 
 #### Data Sources Integration
@@ -464,7 +465,7 @@ test targets in `project.yml`.
 
 - **Location Services**: Required for geographic data filtering and location-based environmental data
 - **Network Access**: Essential for API communication with German federal data sources
-- **Notifications**: Optional for civil protection alerts and hazard warnings
+- **Notifications**: Optional, off by default; asked for when the Notifications switch is turned on
 
 ## 🧩 Development & Contribution
 
@@ -517,7 +518,7 @@ git push origin feature/your-feature-name
 - **Water Levels**: 15-minute intervals
 - **COVID-19 Data**: 6-hour intervals
 - **Radiation Monitoring**: Real-time continuous updates
-- **Civil Protection**: Immediate emergency notifications
+- **Civil Protection**: Every 15 minutes, notifying on new warnings when notifications are on
 
 ## Privacy & Security
 

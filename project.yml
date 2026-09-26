@@ -124,7 +124,7 @@ targets:
         CODE_SIGN_IDENTITY[sdk=macosx*]: Developer ID Application
         CODE_SIGN_STYLE: Manual
         COMBINE_HIDPI_IMAGES: 'YES'
-        CURRENT_PROJECT_VERSION: '153'
+        CURRENT_PROJECT_VERSION: '154'
         DEAD_CODE_STRIPPING: 'YES'
         DEVELOPMENT_ASSET_PATHS: ''
         DEVELOPMENT_TEAM: ''
@@ -144,7 +144,7 @@ targets:
         - "$(inherited)"
         - "@executable_path/../Frameworks"
         MACOSX_DEPLOYMENT_TARGET: '15.0'
-        MARKETING_VERSION: 6.6.0
+        MARKETING_VERSION: 6.7.0
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
         PRODUCT_NAME: Dashboard of Doom
         PROVISIONING_PROFILE_SPECIFIER: ''
@@ -267,8 +267,8 @@ targets:
         PRODUCT_NAME: Dashboard of Doom
         PRODUCT_MODULE_NAME: DashboardOfDoom
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
-        MARKETING_VERSION: 6.5.0
-        CURRENT_PROJECT_VERSION: '180'
+        MARKETING_VERSION: 6.6.0
+        CURRENT_PROJECT_VERSION: '181'
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development
         DEVELOPMENT_TEAM: 8J2G689FCZ

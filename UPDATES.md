@@ -4,6 +4,21 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.7.0, ios v6.6.0, notifications with warning values per sensor family, 16:10)
+
+- both apps send a local notice when a reading reaches its warning or critical limit. eight families with their own switch: weather, hazards, level, radiation, particles, covid, energy and fuel. polls are left out
+- every rule has two limits the user can change, with defaults from the dwd (heat, frost, gusts, heavy rain), the uba index bands (pm10, pm2.5, no2) and the eu ozone thresholds. hazards take a minimum severity instead
+- decision: level takes no number. a gauge on the spree reads about 1.5 m and one on the elbe about 3 m, so each gauge is compared against its own pegelonline marks: the first flood stage or the mean high water, then the second stage, highest navigable level or record high above it. the marks travel in `customData["marks"]`, fetched per gauge at about 2 kb
+- decision: every fetched sensor is checked, not only the nearest, each with its own key and its own notice
+- decision: notify only on escalation, re-arm on easing, and never repeat a key and level within 6 hours, so a value hovering at a limit stays quiet. current weather and the forecast share a key as two inputs, so an announced frost does not notify again when it arrives
+- decision: nothing is judged on the berlin fallback location, so a cold background launch cannot warn about berlin. seen working in the simulator: with location permission pending every check was skipped, once granted the checks ran
+- ios wakes itself with a background refresh task while notifications are on, and doom-kit-process gained `refreshAllAndWait` and `refreshSubscriptionsAndWait` so the task can wait for the refreshes before it completes
+- the master switch starts off and asks for permission when turned on. ios has a notifications card with a page per family, macos a notify settings tab with a section per family
+- not done: the time sensitive entitlement. critical notices request time sensitive delivery and fall back to ordinary alerts without it. it changes signing, and the macos developer id profile is manual, so it waits for an explicit decision
+- the roadmap entry is deleted now that the work is done, as the roadmap's own rule says
+- validation: package tests pass (process 22, services), 124 macos and 183 ios tests pass, both apps build. in the simulator at hkw with lowered limits the notifier posted a radiation notice for the real reading, which ios refused only because the permission prompt was unanswered, and a relaunch did not post it again
+- version bump: macos 6.6.0 to 6.7.0 (154) and ios 6.5.0 to 6.6.0 (181), MINOR on both: a new feature and new settings, nothing removed
+
 ### 2026-09-26 (macos v6.6.0, hazards, energy and fuel on macos, and a roadmap, 15:20)
 
 - the notifications plan is parked in a new `ROADMAP.md`: warning and critical limits per sensor family on both platforms, level measured against each gauge's own pegelonline marks, every fetched sensor checked, and an ios background refresh task. it records the defaults with their dwd, uba and eu basis and the live finding that 561 of 737 gauges publish marks
