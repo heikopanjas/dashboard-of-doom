@@ -49,16 +49,22 @@ class LevelController: ProcessController {
     func candidate(for station: Station) async throws -> SensorCandidate {
         var measurement: [ProcessValue<Dimension>] = []
         try Task.checkCancellation()
+        async let marks = self.fetchMarks(station: station)
         if let level = try await self.fetchMeasurements(station: station) {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: level, distance: self.measurementDistance))
             measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
         }
         // The sensor is named after its gauge, as every other source is named after its station. The waterway is what a level chart is
-        // titled with, and it does not fit the standard interface, so it travels in customData.
+        // titled with, and the gauge's flood marks are what its warnings compare against; neither fits the standard interface, so both
+        // travel in customData. A gauge that publishes no marks, or a failed request, simply leaves the key out.
+        var customData: [String: Any] = ["icon": "water.waves", "waterway": station.waterway]
+        if let marks = await marks, marks.isEmpty == false {
+            customData["marks"] = marks
+        }
+        try Task.checkCancellation()
         return SensorCandidate(
-            id: station.id, name: station.gauge, location: station.location,
-            customData: ["icon": "water.waves", "waterway": station.waterway],
+            id: station.id, name: station.gauge, location: station.location, customData: customData,
             measurements: [.water(.level): measurement.sorted(by: { $0.timestamp < $1.timestamp })])
     }
 
@@ -232,6 +238,28 @@ class LevelController: ProcessController {
             measurements = try Self.parseLevels(data: data)
         }
         return measurements
+    }
+
+    /// The gauge's characteristic values, never throwing: marks only add warnings, so a failure must not cost the gauge its readings.
+    private func fetchMarks(station: Station) async -> [String: Double]? {
+        guard let data = try? await LevelService.fetchCharacteristics(for: station.id, networkManager: self.networkManager) else { return nil }
+        return Self.parseMarks(data: data)
+    }
+
+    /// The characteristic values of the station's W series, keyed by their PEGELONLINE short names (`MHW`, `M_I`, `HSW` and so on), in
+    /// metres like the readings. PEGELONLINE gives them in centimetres above the gauge zero, the same reference as the readings.
+    static func parseMarks(data: Data) -> [String: Double]? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let series = json["timeseries"] as? [[String: Any]],
+            let level = series.first(where: { $0["shortname"] as? String == "W" }),
+            let values = level["characteristicValues"] as? [[String: Any]]
+        else { return nil }
+        var marks: [String: Double] = [:]
+        for value in values {
+            guard let name = value["shortname"] as? String, let centimetres = value["value"] as? Double else { continue }
+            marks[name] = centimetres / 100
+        }
+        return marks
     }
 
     private static func parseTimestamp(string: String) -> Date? {

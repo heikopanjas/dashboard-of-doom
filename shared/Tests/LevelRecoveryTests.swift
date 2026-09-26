@@ -52,6 +52,34 @@ import Testing
         #expect(candidate.name == "BERLIN-MÜHLENDAMM UP")
         #expect(candidate.customData["waterway"] as? String == "Spree")
         #expect(candidate.customData["station"] == nil)
+        // The marks request failed with the rest, and the gauge is kept without them.
+        #expect(candidate.customData["marks"] == nil)
         await network.stopMonitoring()
+    }
+
+    @Test func theGaugesFloodMarksTravelInCustomDataInMetres() async throws {
+        let characteristics = #"{"uuid":"id","timeseries":[{"shortname":"Q","characteristicValues":[{"shortname":"MQ","value":50.0}]},{"shortname":"W","unit":"cm","characteristicValues":[{"shortname":"MHW","value":412.0},{"shortname":"M_I","value":300.0},{"shortname":"HSW","value":310.0}]}]}"#
+        let network = NetworkManager(
+            transport: { request in
+                let url = try #require(request.url)
+                let isMarks = url.absoluteString.contains("includeCharacteristicValues=true")
+                let response = try #require(HTTPURLResponse(url: url, statusCode: isMarks ? 200 : 503, httpVersion: nil, headerFields: nil))
+                return (isMarks ? Data(characteristics.utf8) : Data(), response)
+            }, makeMonitor: { Monitor() }, probeURL: nil)
+        await network.startMonitoring()
+        try await network.waitForConnection(timeout: .seconds(2))
+        let controller = LevelController(networkManager: network)
+        let station = LevelController.Station(id: "id", waterway: "Aller", gauge: "CELLE", location: Location(latitude: 52.6, longitude: 10.1))
+        let candidate = try await controller.candidate(for: station)
+        let marks = try #require(candidate.customData["marks"] as? [String: Double])
+        // Only the W series counts: the discharge series' MQ is not a level.
+        #expect(marks == ["MHW": 4.12, "M_I": 3.0, "HSW": 3.1])
+        await network.stopMonitoring()
+    }
+
+    @Test func aStationWithoutMarksParsesToNothing() {
+        #expect(LevelController.parseMarks(data: Data(#"{"timeseries":[{"shortname":"W"}]}"#.utf8)) == nil)
+        #expect(LevelController.parseMarks(data: Data(#"{"timeseries":[{"shortname":"W","characteristicValues":[]}]}"#.utf8)) == [:])
+        #expect(LevelController.parseMarks(data: Data("not json".utf8)) == nil)
     }
 }

@@ -31,6 +31,22 @@ public class LevelService {
         }
     }
 
+    /// The station with its time series and their characteristic values: mean and flood levels, and where the state publishes them, the
+    /// flood reporting stages. About 2 KB per gauge; the full station list with them is 1.3 MB, so it is fetched per gauge.
+    public static func fetchCharacteristics(for id: String, networkManager: NetworkManager = .shared) async throws -> Data? {
+        trace.debug("Fetching water level characteristics for station: \(id)")
+        let urlString = "https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/\(id).json?includeTimeseries=true&includeCharacteristicValues=true"
+        let result = await networkManager.performDataRequest(urlString: urlString)
+        switch result {
+            case .success(let data):
+                trace.debug("Fetched water level characteristics for station: \(id)")
+                return data
+            case .failure(let error):
+                trace.error("Failed to fetch water level characteristics for station: \(id): \(error.localizedDescription)")
+                return nil
+        }
+    }
+
     public static func fetchForecast(for id: String, networkManager: NetworkManager = .shared) async throws -> Data? {
         trace.debug("Fetching water level forecast for station: \(id)")
         let urlString = "https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/\(id)/WV/measurements.json"
