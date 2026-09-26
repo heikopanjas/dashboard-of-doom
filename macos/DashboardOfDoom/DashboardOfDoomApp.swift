@@ -128,6 +128,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         #if DEBUG
         AppSecrets.runSelfCheckIfRequested()
         #endif
+        // Before anything can post, so notices show while the app is in front.
+        NotificationCenterPoster.shared.activate()
         AppProcess.shared.start()
         self.pointOfInterestPresenter.start(updates: AppLocation.shared.updates())
 

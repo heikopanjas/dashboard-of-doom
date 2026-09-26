@@ -16,6 +16,7 @@ enum SettingsTab: String, CaseIterable {
     case energy = "Energy"
     case polls = "Polls"
     case places = "Places"
+    case notifications = "Notify"
     case about = "About"
 
     var icon: String {
@@ -30,6 +31,7 @@ enum SettingsTab: String, CaseIterable {
         case .energy: return "fuelpump"
         case .polls: return "chart.bar"
         case .places: return "mappin.and.ellipse"
+        case .notifications: return "bell"
         case .about: return "info.circle"
         }
     }
@@ -70,8 +72,8 @@ struct RefreshRatePicker: View {
 // MARK: - Settings View
 
 struct SettingsView: View {
-    /// Wide enough for all eleven tab buttons in one row.
-    static let width: CGFloat = 800
+    /// Wide enough for all twelve tab buttons in one row.
+    static let width: CGFloat = 840
 
     let selection: SettingsSelection
 
@@ -161,6 +163,8 @@ struct SettingsView: View {
                     pollsContent
                 case .places:
                     PointOfInterestSettingsView(presenter: self.pointOfInterestPresenter)
+                case .notifications:
+                    NotificationSettingsView(levelPresenter: self.levelPresenter)
                 case .about:
                     aboutContent
                 }
