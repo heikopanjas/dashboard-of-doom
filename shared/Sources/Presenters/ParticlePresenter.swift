@@ -15,7 +15,7 @@ import SwiftUI
         super.init()
         let id = self.id
         self.subscription = ConditionalSubscription(
-            defaults: defaults, enableKey: "showParticles", intervalKey: "particleRefreshInterval", fallback: 30,
+            defaults: defaults, enableKey: SourcePreferences.particlesKey, intervalKey: "particleRefreshInterval", fallback: 30,
             register: { [weak self] interval in
                 guard let self else { return }
                 if let register { register(self, interval) }

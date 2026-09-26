@@ -60,15 +60,14 @@ struct MapView: View {
     @Environment(ParticlePresenter.self) private var particle
     @Environment(SurveyPresenter.self) private var surveys
 
-    // Settings - using @AppStorage to observe changes and trigger re-render
+    // One switch per source: on, it updates and its label is on the map; off, both stop. Weather always updates, and its switch only hides
+    // the label. @AppStorage observes them, so a change redraws the labels at once.
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage(SourcePreferences.covidEnableKey) private var covidEnabled = SourcePreferences.covidEnabledByDefault
-    @AppStorage("showCovid") private var showCovid: Bool = true
     @AppStorage(SourcePreferences.waterKey) private var showLevels: Bool = true
-    @AppStorage("showRadiation") private var showRadiation: Bool = true
-    @AppStorage("showParticles") private var showParticles: Bool = true
+    @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
+    @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @AppStorage(SourcePreferences.pollsEnableKey) private var pollsEnabled = SourcePreferences.pollsEnabledByDefault
-    @AppStorage("showElectionPolls") private var showElectionPolls: Bool = true
 
     private var viewModel = MapPresenter.shared
 
@@ -145,7 +144,7 @@ struct MapView: View {
         #else
         var result = [MapAnnotationSnapshot(id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true, showsLabel: self.showWeather)]
         #endif
-        if self.showCovid == true, self.covidEnabled == true {
+        if self.covidEnabled == true {
             result.append(MapAnnotationSnapshot(id: "covid", presenter: self.incidence, selector: .covid(.incidence)))
         }
         if self.showParticles == true, let selector = self.particle.measurements.first?.key {
@@ -157,7 +156,7 @@ struct MapView: View {
         if self.showRadiation == true {
             result.append(MapAnnotationSnapshot(id: "radiation", presenter: self.radiation, selector: .radiation(.total)))
         }
-        if self.showElectionPolls == true, self.pollsEnabled == true {
+        if self.pollsEnabled == true {
             result.append(MapAnnotationSnapshot(id: "surveys", presenter: self.surveys, selector: .survey(.fascists)))
         }
         #if os(iOS)

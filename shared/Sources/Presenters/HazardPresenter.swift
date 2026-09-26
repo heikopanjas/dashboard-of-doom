@@ -48,7 +48,7 @@ import Observation
         self.now = now
         let id = self.id
         self.subscription = ConditionalSubscription(
-            defaults: defaults, enableKey: "showHazards", intervalKey: "hazardRefreshInterval", fallback: 15,
+            defaults: defaults, enableKey: SourcePreferences.hazardsKey, intervalKey: "hazardRefreshInterval", fallback: 15,
             register: { [weak self] interval in
                 guard let self else { return }
                 if let register { register(self, interval) }

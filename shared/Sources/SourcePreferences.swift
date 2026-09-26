@@ -134,8 +134,7 @@ enum SourcePreferences {
     static let waterKey = "showWater"
     static let pollsEnableKey = "enableElectionPolls"
     static let pollsEnabledByDefault = false
-    /// COVID is off by default on iOS: fetching and the tab follow this key, the map label follows `showCovid` as well. macOS keeps its one
-    /// switch, on by default, the way polls differ between the platforms.
+    /// COVID is off by default on iOS and on by default on macOS, the way polls differ between the platforms.
     static let covidEnableKey = "enableCovid"
     static let covidEnabledByDefault = false
     #else
@@ -146,13 +145,49 @@ enum SourcePreferences {
     static let covidEnabledByDefault = true
     #endif
 
+    /// The switches of the other sources, the same key on both platforms. On by default.
+    static let radiationKey = "showRadiation"
+    static let particlesKey = "showParticles"
+    static let hazardsKey = "showHazards"
+
+    /// Every source family except weather has one switch. On, it updates and shows its value on the home map; off, it stops updating and
+    /// its tab and label go. This is the one way to read one: unset is the family's default, and `bool(forKey:)` also reads the strings a
+    /// launch argument such as `-enableCovid YES` arrives as, which `as? Bool` would not.
+    static func enabled(key: String, default value: Bool, defaults: UserDefaults = .standard) -> Bool {
+        guard defaults.object(forKey: key) != nil else { return value }
+        return defaults.bool(forKey: key)
+    }
+
     static func pollsVisible(defaults: UserDefaults = .standard) -> Bool {
-        let enabled = defaults.object(forKey: Self.pollsEnableKey) as? Bool ?? Self.pollsEnabledByDefault
-        return enabled && (defaults.object(forKey: "showElectionPolls") as? Bool ?? true)
+        return Self.enabled(key: Self.pollsEnableKey, default: Self.pollsEnabledByDefault, defaults: defaults)
     }
 
     static func covidVisible(defaults: UserDefaults = .standard) -> Bool {
-        let enabled = defaults.object(forKey: Self.covidEnableKey) as? Bool ?? Self.covidEnabledByDefault
-        return enabled && (defaults.object(forKey: "showCovid") as? Bool ?? true)
+        return Self.enabled(key: Self.covidEnableKey, default: Self.covidEnabledByDefault, defaults: defaults)
     }
+
+    static func waterVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.waterKey, default: true, defaults: defaults)
+    }
+
+    static func radiationVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.radiationKey, default: true, defaults: defaults)
+    }
+
+    static func particlesVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.particlesKey, default: true, defaults: defaults)
+    }
+
+    static func hazardsVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.hazardsKey, default: true, defaults: defaults)
+    }
+
+    static func energyVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.energyEnableKey, default: Self.energyEnabledByDefault, defaults: defaults)
+    }
+
+    /// The keys of every source switch, so a view can watch them all.
+    static let switchKeys = [
+        Self.covidEnableKey, Self.waterKey, Self.radiationKey, Self.particlesKey, Self.hazardsKey, Self.energyEnableKey, Self.pollsEnableKey
+    ]
 }

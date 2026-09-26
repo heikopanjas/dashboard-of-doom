@@ -15,7 +15,7 @@ import SwiftUI
         super.init()
         let id = self.id
         self.subscription = ConditionalSubscription(
-            defaults: defaults, enableKey: "showRadiation", intervalKey: "radiationRefreshInterval", fallback: 15,
+            defaults: defaults, enableKey: SourcePreferences.radiationKey, intervalKey: "radiationRefreshInterval", fallback: 15,
             register: { [weak self] interval in
                 guard let self else { return }
                 if let register { register(self, interval) }

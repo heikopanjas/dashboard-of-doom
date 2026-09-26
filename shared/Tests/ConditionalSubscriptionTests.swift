@@ -138,6 +138,20 @@ struct ConditionalSubscriptionTests {
         }
     }
 
+    @Test func aLaunchArgumentStringStartsTheSource() throws {
+        // `-enableCovid YES` arrives as a string: the tab showed while the fetch stayed off, until the switch was read with bool(forKey:).
+        let suite = "ConditionalSubscriptionTests.string.\(UUID())"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set("YES", forKey: "enableSomething")
+        var registrations = 0
+        let subscription = ConditionalSubscription(
+            defaults: defaults, enableKey: "enableSomething", intervalKey: "somethingRefreshInterval", fallback: 60, defaultEnabled: false,
+            register: { _ in registrations += 1 }, remove: {})
+        #expect(subscription.isEnabled == true)
+        #expect(registrations == 1)
+    }
+
     @Test func persistedChangesAreObservedWithoutAViewOrManualNotification() async throws {
         let suite = "ConditionalSubscriptionTests.automatic.\(UUID())"
         let defaults = try #require(UserDefaults(suiteName: suite))

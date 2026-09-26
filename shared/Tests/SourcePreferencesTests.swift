@@ -65,6 +65,50 @@ import Testing
         #endif
     }
 
+    @Test func aSwitchReadsUnsetAsItsDefaultAndAcceptsLaunchArgumentStrings() {
+        let defaults = self.defaults()
+        #expect(SourcePreferences.enabled(key: "switch", default: true, defaults: defaults) == true)
+        #expect(SourcePreferences.enabled(key: "switch", default: false, defaults: defaults) == false)
+        defaults.set(false, forKey: "switch")
+        #expect(SourcePreferences.enabled(key: "switch", default: true, defaults: defaults) == false)
+        // A launch argument such as -enableCovid YES arrives as a string, which `as? Bool` would have ignored.
+        defaults.set("YES", forKey: "switch")
+        #expect(SourcePreferences.enabled(key: "switch", default: false, defaults: defaults) == true)
+        defaults.set("NO", forKey: "switch")
+        #expect(SourcePreferences.enabled(key: "switch", default: true, defaults: defaults) == false)
+    }
+
+    @Test func everySourceIsVisibleExactlyWhileItsOneSwitchIsOn() {
+        let defaults = self.defaults()
+        let sources: [(String, (UserDefaults) -> Bool)] = [
+            (SourcePreferences.covidEnableKey, { SourcePreferences.covidVisible(defaults: $0) }),
+            (SourcePreferences.waterKey, { SourcePreferences.waterVisible(defaults: $0) }),
+            (SourcePreferences.radiationKey, { SourcePreferences.radiationVisible(defaults: $0) }),
+            (SourcePreferences.particlesKey, { SourcePreferences.particlesVisible(defaults: $0) }),
+            (SourcePreferences.hazardsKey, { SourcePreferences.hazardsVisible(defaults: $0) }),
+            (SourcePreferences.energyEnableKey, { SourcePreferences.energyVisible(defaults: $0) }),
+            (SourcePreferences.pollsEnableKey, { SourcePreferences.pollsVisible(defaults: $0) }),
+        ]
+        #expect(Set(sources.map { $0.0 }) == Set(SourcePreferences.switchKeys))
+        for (key, visible) in sources {
+            defaults.set(true, forKey: key)
+            #expect(visible(defaults) == true, "\(key)")
+            defaults.set(false, forKey: key)
+            #expect(visible(defaults) == false, "\(key)")
+        }
+    }
+
+    @Test func theSwitchKeysAreThePersistedNames() {
+        #expect(SourcePreferences.radiationKey == "showRadiation")
+        #expect(SourcePreferences.particlesKey == "showParticles")
+        #expect(SourcePreferences.hazardsKey == "showHazards")
+        #if os(macOS)
+        #expect(SourcePreferences.waterKey == "showLevels")
+        #expect(SourcePreferences.covidEnableKey == "showCovid")
+        #expect(SourcePreferences.pollsEnableKey == "showElectionPolls")
+        #endif
+    }
+
     @Test func theHistoricalSensorKeysStay() {
         // The settings now say Any Waterway and Any Station, but the stored names stay so nobody's choice resets.
         #expect(SourcePreferences.nearestLevelSensorKey == "nearestLevelSensor")

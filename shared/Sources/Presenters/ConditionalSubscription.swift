@@ -15,7 +15,7 @@ final class ConditionalSubscription {
     private var isRegistered = false
 
     var isEnabled: Bool {
-        return self.defaults.object(forKey: self.enableKey) as? Bool ?? self.defaultEnabled
+        return SourcePreferences.enabled(key: self.enableKey, default: self.defaultEnabled, defaults: self.defaults)
     }
 
     init(

@@ -97,7 +97,7 @@ struct IOSPolicyTests {
         #expect(ColorPresenter.accents.map(\.id) == ["orange", "cyan", "blue"])
     }
 
-    @Test func legacyKeysAndPollVisibilityRemainIndependent() throws {
+    @Test func eachSourceHasOneSwitchUnderItsHistoricalKey() throws {
         let suite = "IOSPolicyTests.\(UUID())"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -105,14 +105,14 @@ struct IOSPolicyTests {
         #expect(SourcePreferences.pollsEnableKey == "enableElectionPolls")
         #expect(SourcePreferences.pollsEnabledByDefault == false)
         #expect(SourcePreferences.pollsVisible(defaults: defaults) == false)
-        // COVID is the same shape: its own enable key on iOS, off until switched on, and the map label needs both keys.
+        // COVID is the same shape: off until switched on. The map label follows the one switch; the old map key no longer counts.
         #expect(SourcePreferences.covidEnableKey == "enableCovid")
         #expect(SourcePreferences.covidEnabledByDefault == false)
         #expect(SourcePreferences.covidVisible(defaults: defaults) == false)
         defaults.set(true, forKey: SourcePreferences.covidEnableKey)
         #expect(SourcePreferences.covidVisible(defaults: defaults) == true)
         defaults.set(false, forKey: "showCovid")
-        #expect(SourcePreferences.covidVisible(defaults: defaults) == false)
+        #expect(SourcePreferences.covidVisible(defaults: defaults) == true)
         // Energy is on by default and has one key, since it has nothing on the map.
         #expect(SourcePreferences.energyEnableKey == "enableEnergy")
         #expect(SourcePreferences.energyEnabledByDefault == true)
@@ -125,11 +125,12 @@ struct IOSPolicyTests {
         NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: defaults)
         #expect(registrations == 1)
         #expect(SourcePreferences.pollsVisible(defaults: defaults) == true)
+        // The old map-only key changes nothing any more: neither the fetch nor the label.
         defaults.set(false, forKey: "showElectionPolls")
         NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: defaults)
         #expect(registrations == 1)
         #expect(removals == 0)
-        #expect(SourcePreferences.pollsVisible(defaults: defaults) == false)
+        #expect(SourcePreferences.pollsVisible(defaults: defaults) == true)
         defaults.set(false, forKey: "enableElectionPolls")
         NotificationCenter.default.post(name: UserDefaults.didChangeNotification, object: defaults)
         #expect(removals == 1)
