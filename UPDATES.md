@@ -4,6 +4,14 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-27 (macos v6.8.0, ios v6.7.0, home section spacing and headings, 00:45)
+
+- every home section heading sits the same distance below its divider on macOS, 5 points, as current conditions does; nearest places added the stack's default spacing on top, so it now uses none there on macos, while ios, whose home stack spaces every row alike, is unchanged
+- a little room between the nearest places heading and the first place, on both platforms
+- the warnings card heading is a headline with its icon like the other home sections, with the last update under it in small grey type, on both platforms
+- the general tab of the macos settings uses the gearshape symbol instead of gear
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-27 (macos v6.8.0, ios v6.7.0, map labels projected from the visible rectangle, 00:25)
 
 - fix: in the macos popup every label and connector sat about 23 points above its dot, on every map. `MapReader`'s conversion returned points that far off inside the popover while mapkit drew the dots correctly; in the separate window it had matched
