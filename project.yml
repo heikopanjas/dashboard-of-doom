@@ -237,6 +237,7 @@ targets:
       - Models/DataSources.swift
       - Models/StatusBarValue.swift
       - Views/StatusItemDisplayView.swift
+      - Views/DashboardPopoverSize.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

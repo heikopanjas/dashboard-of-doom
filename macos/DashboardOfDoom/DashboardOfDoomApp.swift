@@ -19,8 +19,8 @@ struct DashboardOfDoomApp: App {
 
 // MARK: - Dashboard
 
-/// The dashboard's content with every presenter in its environment and the theme setting applied, hosted in the AppKit window.
-private struct DashboardRootView: View {
+/// The dashboard's content with every presenter in its environment and the theme setting applied, hosted in the status item's popup.
+struct DashboardRootView: View {
     let appDelegate: AppDelegate
     @AppStorage("alwaysUseDarkTheme") private var alwaysUseDarkTheme: Bool = true
 
@@ -66,7 +66,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let settingsSelection = SettingsSelection()
     var settingsPanel: NSPanel?
 
-    @ObservationIgnored private var dashboardWindow: NSWindow?
     @ObservationIgnored private var statusItemController: StatusItemController?
     @ObservationIgnored private var themeObserver: NSObjectProtocol?
     @ObservationIgnored private var shutdownTask: Task<Void, Never>?
@@ -140,54 +139,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return presenter.faceplate[value.selector]
     }
 
-    // MARK: - Dashboard Window
+    // MARK: - Dashboard
 
-    /// The dashboard window, built once and kept, so closing it keeps its tab and its frame. An AppKit window like the settings panel: a
-    /// SwiftUI `Window` scene could only be opened with the `openWindow` action, which the app got from the menu bar extra it no longer has.
-    private func makeDashboardWindow() -> NSWindow {
-        let hostingController = NSHostingController(rootView: DashboardRootView(appDelegate: self))
-        // The content's own minimum size, 700 by 720, becomes the window's.
-        hostingController.sizingOptions = [.minSize]
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 859), styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered, defer: false)
-        window.title = "Dashboard of Doom"
-        window.contentViewController = hostingController
-        window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 800, height: 859))
-        // Remembers where the user put it; the first time it opens centred.
-        if window.setFrameUsingName("DashboardWindow") == false {
-            window.center()
-        }
-        window.setFrameAutosaveName("DashboardWindow")
-        return window
-    }
-
-    func showDashboard() -> Void {
-        let window = self.dashboardWindow ?? self.makeDashboardWindow()
-        self.dashboardWindow = window
-        NSRunningApplication.current.activate(options: [.activateAllWindows])
-        NSApp.activate()
-        window.makeKeyAndOrderFront(nil)
-        window.orderFrontRegardless()
-    }
-
-    func hideDashboard() -> Void {
-        self.dashboardWindow?.close()
-    }
-
+    /// The global shortcut opens and closes the dashboard popup under the status item, the same popup a click opens.
     func toggleDashboard() -> Void {
-        guard let window = self.dashboardWindow, window.isVisible == true else {
-            self.showDashboard()
-            return
-        }
-        // Visible but buried behind another app: raise it rather than hide it.
-        if NSApp.isActive == true, window.isKeyWindow == true {
-            self.hideDashboard()
-        }
-        else {
-            self.showDashboard()
-        }
+        self.statusItemController?.togglePopover()
     }
 
     // MARK: - Settings Window
