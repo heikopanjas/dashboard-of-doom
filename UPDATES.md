@@ -4,6 +4,35 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-27 (macos v6.8.0, ios v6.7.0, map labels projected from the visible rectangle, 00:25)
+
+- fix: in the macos popup every label and connector sat about 23 points above its dot, on every map. `MapReader`'s conversion returned points that far off inside the popover while mapkit drew the dots correctly; in the separate window it had matched
+- decision: `CollisionMapView` projects labels, connectors and place markers itself from the visible map rectangle each camera change reports (`MapProjection`). the maps cannot rotate or pitch, so the rectangle fills the view and the projection is plain arithmetic, the same in a window, the popup and on ios; the retry passes that waited for mapreader to register its map are gone
+- two earlier attempts were tried and removed: re-projecting when the popup reopens, and turning off the popup's safe area. neither changed the offset, since the cause was the conversion itself
+- verified by the user on screen after the change
+- validation: 168 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-27 (macos v6.8.0, the home tab scrolls and carries the warnings, 00:10)
+
+- the macos home tab scrolls like the ios home screen: the map at a fixed 500 points, then the forecast, the conditions, the nearest places and the warnings card while the warnings switch is on
+- decision: the macos warnings tab is gone and the warnings live only on home, as on ios; `HazardCardView` moved to shared unchanged and replaces the macos `WarningsView`, so both apps show the same card with the dwd source note
+- the toolbar is eight tabs now; the warnings settings tab stays for the switch and the refresh interval
+- validation: 165 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, the dashboard is a popup on the status item again, 23:50)
+
+- a left click on the status item opens the full tabbed dashboard in a popover under it again, as before the separate window of september 7; a click elsewhere closes it, and it keeps its tab
+- decision: the popup replaces the window; there is no separate dashboard window any more
+- decision: settings, about and quit moved to a right click, or control click, on the status item; the popup itself gets no extra controls, and open dashboard left the menu since a click does it
+- decision: the global shortcut toggles the popup
+- the popup is 800 wide and as tall as fits below the menu bar, up to 860 and never below the 720 the content needs, so a 13 inch display still shows it whole (`DashboardPopoverSize`, tested)
+- the roadmap entry for the popup is removed; the settings cleanup is the last one left
+- not verified on screen: clicking, the right click menu and the hotkey need the user, since the terminal can neither see nor click the menu bar; the app builds, launches and runs
+- validation: 165 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
 ### 2026-09-26 (macos v6.8.0, the status item shows one or two chosen values, 23:20)
 
 - the macos status item shows one or two values the user ticks in settings, general, menu bar, from any sources, after a small vertical dod tag; one at menu bar text size, two stacked in a smaller font
