@@ -43,6 +43,17 @@ struct NearestPlacesView: View {
         }
     }
 
+    /// The gap between the divider this view draws and its content, so the heading sits as far below the divider as every other Home
+    /// section's. The macOS Home stack has no spacing and pads each section by 5, so nothing is added there; the iOS stack has the default
+    /// spacing between its rows, which this matches.
+    private static var dividerSpacing: CGFloat? {
+        #if os(macOS)
+        return 0
+        #else
+        return nil
+        #endif
+    }
+
     private var places: [Place] {
         return Self.nearest(points: self.presenter.allPoints, from: self.userLocation)
     }
@@ -50,7 +61,7 @@ struct NearestPlacesView: View {
     var body: some View {
         let places = self.places
         if places.isEmpty == false {
-            VStack {
+            VStack(spacing: Self.dividerSpacing) {
                 // Same modifiers as the dividers ContentView puts between the other home rows.
                 Divider()
                     .padding(.horizontal, 5)
@@ -62,6 +73,8 @@ struct NearestPlacesView: View {
                     }
                     .font(.headline)
                     .accentLabel()
+                    // A little room between the heading and the first place.
+                    .padding(.bottom, 4)
                     ForEach(places) { place in
                         HStack(spacing: 6) {
                             Image(systemName: place.category.symbol)

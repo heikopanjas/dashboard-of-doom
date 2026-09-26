@@ -39,21 +39,26 @@ struct HazardCardView: View {
         }
     }
 
+    /// A headline like the other Home sections ("Next 24 hours", "Current conditions", "Nearest places"), with the time of the last
+    /// update under it, since a list of warnings says nothing about how current it is.
     private var header: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
                 Text("Warnings nearby")
                 Spacer()
             }
+            .font(.headline)
             .accentLabel()
             HStack {
                 Text("Last update: \(Date.absoluteString(date: self.presenter.timestamp))")
                 Spacer()
             }
+            .font(.footnote)
             .foregroundColor(.gray)
         }
-        .font(.footnote)
     }
 
     private func failureLine(_ message: String) -> some View {
