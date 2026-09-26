@@ -4,6 +4,22 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (ios v6.5.0, customData written down as a rule, and level made to follow it, 01:20)
+
+- the owner stated the principle: `customData` is for all required data that does not fit the standard controller interface, and it is there to keep the apps and doomkit as stateless as possible. it is now a rule under architecture patterns rather than four incidental mentions inside feature bullets
+- an audit against it found the codebase largely conforms: no source specific typed fields on the shared models, no process presenter holding source state, controllers holding only injected config, and no source knowledge at all in the location, network, tools and secrets packages
+- level was the exception and is now fixed rather than documented away. `sensor.name` was the waterway and the gauge rode in `customData["station"]`, the reverse of the rule and the opposite of every other source. the sensor is now named after its gauge and the waterway travels in `customData["waterway"]`
+- decision: nothing visible changes. both level chart titles show the waterway, which is what tells three charts in a stack apart while the header names the gauge, so the chart views read the waterway out of `customData` instead of out of the name. this is a data model correction, not a ui change
+- `LevelController.Station` lost its ambiguous `name` field for `waterway` and `gauge`, so no field needs a comment to say which name it holds. the waterway match against the bundled network and the re-casing both still act on the waterway
+- the re-casing stays attached to the waterway on purpose: `capitalizeGerman` splits on whitespace and would turn a gauge into `Berlin-mühlendamm Up`. gauges are re-cased for display by `SensorHeaderView.displayName`, which keeps the hyphen and the `OP` and `UP` suffixes
+- `SensorHeaderView.title` collapsed to one lookup, since every source now answers `sensor.name`
+- particles wrote `customData["station"]` with the identical string it passed as the sensor name, so that key is gone; with level converted, the `station` key has left the codebase
+- two dead paths removed: covid wrote a `name` key nothing read, and `ProcessPresenter.label` read a `label` key no production controller wrote and no view consumed, so it answered `<Unknown>` for every real source. removing it is a public api change in doom-kit-process
+- decision: `ProcessSelector` stays as it is and is recorded as an accepted asymmetry. it enumerates all eight sources and embeds pegelonline codes, uba component ids and dawum party ids inside a package, but selectors key measurements and route charts, so `customData` cannot absorb them without losing type safety
+- the fixture lost its `namedAfterStation` flag, which existed only for level's inversion, and its level sensors gained a waterway and gauge shaped names; the nearest level chart used to read `HKW fixture Level` and now reads `Spree Level` like the two below it
+- validation: 89 macos, 146 ios and 20 process package tests, both apps build, ui test passes; the screenshot shows all three level charts titled `Spree Level` with headers reading `Berlin-Mühlendamm OP` and `Berlin-Charlottenburg UP`, the same two strings in the same two places as before
+- version bump: none; folded into the pending ios 6.5.0 (180). user visible only in that it should be invisible
+
 ### 2026-09-26 (ios v6.5.0, the covid tab draws its district, 00:40)
 
 - the covid tab now starts with a map of the reporting district: the boundary shaded purple with a stroke, one label at the centroid with the incidence, and the reader's black dot
