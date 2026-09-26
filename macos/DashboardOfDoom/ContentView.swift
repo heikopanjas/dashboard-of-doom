@@ -3,16 +3,20 @@ import SwiftUI
 enum DashboardTab: String, CaseIterable {
     case home = "Home"
     case weather = "Weather"
+    case warnings = "Warnings"
     case covid = "COVID-19"
     case sensors = "Sensors"
+    case energy = "Energy"
     case polls = "Polls"
 
     var icon: String {
         switch self {
         case .home: return "house"
         case .weather: return "cloud.sun"
+        case .warnings: return "exclamationmark.triangle"
         case .covid: return "facemask"
         case .sensors: return "gauge"
+        case .energy: return "fuelpump"
         case .polls: return "chart.bar"
         }
     }
@@ -46,10 +50,14 @@ struct ContentView: View {
                     MapView().padding()
                 case .weather:
                     ForecastView().padding()
+                case .warnings:
+                    WarningsView().padding()
                 case .covid:
                     CovidView().padding()
                 case .sensors:
                     SensorsView().padding()
+                case .energy:
+                    EnergyView().padding()
                 case .polls:
                     SurveyView().padding()
                 }

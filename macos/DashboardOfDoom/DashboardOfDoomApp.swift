@@ -27,6 +27,9 @@ struct DashboardOfDoomApp: App {
                 .environment(self.appDelegate.radiationPresenter)
                 .environment(self.appDelegate.particlePresenter)
                 .environment(self.appDelegate.surveyPresenter)
+                .environment(self.appDelegate.hazardPresenter)
+                .environment(self.appDelegate.energyPresenter)
+                .environment(self.appDelegate.fuelPresenter)
                 .environment(self.appDelegate.colorPresenter)
                 .environment(self.appDelegate)
                 .environment(self.appDelegate.pointOfInterestPresenter)
@@ -104,6 +107,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let radiationPresenter = RadiationPresenter()
     let particlePresenter = ParticlePresenter()
     let surveyPresenter = SurveyPresenter()
+    let hazardPresenter = HazardPresenter()
+    let energyPresenter = EnergyPresenter()
+    let fuelPresenter = FuelPresenter()
     let colorPresenter = ColorPresenter()
     let pointOfInterestPresenter = PointOfInterestPresenter(fetch: { category, location in
         return try await PointOfInterestController().fetch(category: category, location: location)
@@ -119,6 +125,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @ObservationIgnored private var shutdownTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        AppSecrets.runSelfCheckIfRequested()
+        #endif
         AppProcess.shared.start()
         self.pointOfInterestPresenter.start(updates: AppLocation.shared.updates())
 
@@ -242,13 +251,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 levelPresenter: self.levelPresenter,
                 particlePresenter: self.particlePresenter,
                 surveyPresenter: self.surveyPresenter,
+                fuelPresenter: self.fuelPresenter,
                 pointOfInterestPresenter: self.pointOfInterestPresenter
             )
             let hostingController = NSHostingController(rootView: settingsView)
-            hostingController.view.frame = NSRect(x: 0, y: 0, width: 660, height: 400)
+            hostingController.view.frame = NSRect(x: 0, y: 0, width: SettingsView.width, height: 400)
 
             let panel = NSPanel(
-                contentRect: NSRect(x: 0, y: 0, width: 660, height: 400),
+                contentRect: NSRect(x: 0, y: 0, width: SettingsView.width, height: 400),
                 styleMask: [.titled, .closable],
                 backing: .buffered,
                 defer: false
