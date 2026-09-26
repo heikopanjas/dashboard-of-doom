@@ -21,6 +21,9 @@ struct CollisionMapView: View {
         let size: CGSize
     }
     @State private var layout = LayoutState()
+    /// The map's visible rectangle as of its last camera change. Labels and place markers are projected from it (`MapProjection`), not
+    /// through `MapProxy`, whose conversion was off inside the macOS popup.
+    @State private var visibleRect: MKMapRect?
 
     private struct Request: Equatable {
         let items: [AnnotationLayout.Item]
@@ -47,7 +50,7 @@ struct CollisionMapView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            MapReader { proxy in
+            Group {
                 let poiTrigger = POITrigger(inputs: self.pointsOfInterest.map(PointOfInterestProjection.Input.init), size: geometry.size)
                 let trigger = Trigger(
                     annotations: self.annotations.map {
@@ -84,63 +87,42 @@ struct CollisionMapView: View {
                         annotations: self.annotations, items: self.layout.request?.items ?? [], placements: self.layout.placements,
                         showsPointsOfInterest: self.showsPointsOfInterest)
                 }
-                .onMapCameraChange(frequency: .continuous) { _ in
-                    self.update(self.request(proxy: proxy, size: geometry.size))
-                    self.projectPOIs(poiTrigger, proxy: proxy)
+                .onMapCameraChange(frequency: .continuous) { context in
+                    self.visibleRect = context.rect
+                    self.update(self.request(size: geometry.size))
+                    self.projectPOIs(poiTrigger)
                 }
-                .task(id: trigger) {
-                    await self.refreshProjection(proxy: proxy, size: geometry.size)
+                // Annotations or size changed while the camera did not: project again from the rectangle the map last reported.
+                .onChange(of: trigger) { _, _ in
+                    self.update(self.request(size: geometry.size))
                 }
-                .task(id: poiTrigger) {
-                    for attempt in 0 ..< 8 {
-                        do { try await Task.sleep(for: .milliseconds(16)) }
-                        catch { return }
-                        guard Task.isCancelled == false else { return }
-                        let projection = self.makePOIProjection(poiTrigger, proxy: proxy)
-                        if projection.projectedCount == poiTrigger.inputs.count || attempt == 7 {
-                            if projection != self.poiProjection { self.poiProjection = projection }
-                            return
-                        }
-                    }
+                .onChange(of: poiTrigger) { _, newValue in
+                    self.projectPOIs(newValue)
                 }
                 .allowsHitTesting(false)
             }
         }
     }
 
-    private func makePOIProjection(_ trigger: POITrigger, proxy: MapProxy) -> PointOfInterestProjection {
+    private func makePOIProjection(_ trigger: POITrigger) -> PointOfInterestProjection {
         return PointOfInterestProjection.project(trigger.inputs, viewport: CGRect(origin: .zero, size: trigger.size)) {
-            proxy.convert($0.coordinate, to: .local)
+            self.project($0.coordinate, size: trigger.size)
         }
     }
 
-    private func projectPOIs(_ trigger: POITrigger, proxy: MapProxy) {
-        let projection = self.makePOIProjection(trigger, proxy: proxy)
+    private func projectPOIs(_ trigger: POITrigger) {
+        let projection = self.makePOIProjection(trigger)
         if projection != self.poiProjection { self.poiProjection = projection }
     }
 
-    private func refreshProjection(proxy: MapProxy, size: CGSize) async -> Void {
-        // MapReader registers the replacement map after SwiftUI's update pass. It can
-        // temporarily return nil even when only label visibility changed and the camera did not.
-        for attempt in 0 ..< 8 {
-            do {
-                try await Task.sleep(for: .milliseconds(16))
-            }
-            catch {
-                return
-            }
-            guard Task.isCancelled == false else { return }
-            let request = self.request(proxy: proxy, size: size)
-            if request.items.count == self.annotations.count || attempt == 7 {
-                self.update(request)
-                return
-            }
-        }
+    private func project(_ coordinate: CLLocationCoordinate2D, size: CGSize) -> CGPoint? {
+        guard let visibleRect = self.visibleRect else { return nil }
+        return MapProjection.point(for: coordinate, in: visibleRect, size: size)
     }
 
-    private func request(proxy: MapProxy, size: CGSize) -> Request {
+    private func request(size: CGSize) -> Request {
         let items = self.annotations.compactMap { annotation -> AnnotationLayout.Item? in
-            guard let point = proxy.convert(annotation.location.coordinate, to: .local), point.x.isFinite, point.y.isFinite else { return nil }
+            guard let point = self.project(annotation.location.coordinate, size: size) else { return nil }
             let diameter: CGFloat = annotation.user == true ? 15 : 11
             return AnnotationLayout.Item(
                 id: annotation.id, point: point,
