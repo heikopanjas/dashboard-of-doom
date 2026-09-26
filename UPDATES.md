@@ -4,6 +4,18 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.8.0, ios v6.7.0, one enable switch per source family, 22:00)
+
+- every source family except weather has one switch on both platforms: on, it updates, shows its value on the home map and has its tab; off, it stops updating and its tab and label go, and an open tab of it returns to home
+- decision: the historical keys stay, so nobody's choice resets. ios drops its second, map only keys for covid and polls (`showCovid`, `showElectionPolls`); a user who had a label off but the source on now sees the label
+- decision: ios settings has one sources card with the seven switches; the home card keeps only weather, whose switch still just hides the temperature label because weather always updates. source sections show only while the source is on, and the covid section, which held only its switch, is gone
+- decision: the ios environment tab loses the section and labels of a source that is off and leaves the toolbar only when both level and radiation are off
+- macos filters its toolbar by the switches and returns to home when the open tab's source goes off; its weather toggle is now "show on home map"
+- fix: a switch is read one way everywhere, `SourcePreferences.enabled`, so a launch argument such as `-enableCovid YES` starts the fetch as well as showing the tab; `ConditionalSubscription` read it with `as? Bool` and ignored the string
+- verified live on macos: with water level, covid, radiation and polls off in the user's settings, only particles, warnings and energy were fetched
+- validation: 148 macos and 207 ios tests pass, the ios ui test passes, both apps build
+- version bump: ios 6.6.1 to 6.7.0 (182), MINOR, settings and tabs change behaviour; folded into the unreleased macos 6.8.0
+
 ### 2026-09-26 (macos v6.8.0, ios v6.6.1, home map camera follows the switches, 21:40)
 
 - fix: switching polls and radiation off in settings left the home map framing them. only the `onChange` handlers in `MapView` told the camera, and the view only exists while the home tab is on screen; a switched off source no longer refreshes, so nothing else did
