@@ -157,7 +157,7 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Adaptive Branding**: Text title in light mode, logo image in dark mode
 - **Settings Window**: Comprehensive configuration for preferences and data sources
 - **Dark Mode Optimized**: Native macOS appearance with pure black backgrounds
-- **System Integration**: Native macOS notifications and alerts
+- **Dashboard Tabs**: Home map, Weather, Warnings, COVID-19, Sensors, Energy, and Polls
 - **Low Resource Usage**: Optimized for background operation with minimal system impact
 
 ### Data Sources & Monitoring
@@ -167,7 +167,9 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Air Quality**: PM10, PM2.5, O3, NO2 particle concentrations from UBA
 - **Weather & Forecasting**: Current conditions and ARIMA-based future predictions
 - **Water Levels**: Hydrological data from federal waterway stations
-- **Civil Protection**: NINA hazard alerts and emergency notifications
+- **Civil Protection**: NINA warnings that cover or lie near your location. There are no push notifications yet; they are planned in [ROADMAP.md](ROADMAP.md)
+- **Energy Prices**: Brent and WTI crude from the US EIA, and the EU LNG price from ACER
+- **Fuel Stations**: The dearest or cheapest filling stations nearby from tankerkoenig.de (CC BY 4.0, data from MTS-K), with a free API key
 - **Political Surveys**: Election polling data and trend analysis
 - **Points of Interest**: Nearby hospitals, pharmacies, and essential services
 

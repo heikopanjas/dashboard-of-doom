@@ -4,6 +4,22 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-26 (macos v6.6.0, hazards, energy and fuel on macos, and a roadmap, 15:20)
+
+- the notifications plan is parked in a new `ROADMAP.md`: warning and critical limits per sensor family on both platforms, level measured against each gauge's own pegelonline marks, every fetched sensor checked, and an ios background refresh task. it records the defaults with their dwd, uba and eu basis and the live finding that 561 of 737 gauges publish marks
+- rationale: the notifications work has to cover families macos did not have, so those came first, and the research should not have to be repeated when the plan is picked up
+- macos gains a warnings tab and an energy tab. the backend was already compiled on macos, so this is views, three presenters in the app delegate and settings
+- decision: warnings are a tab of their own rather than a card under the home map, which stays a full-size map
+- decision: the settings panel widens from 660 to 800 points for two new tabs, warnings and energy, instead of folding hazards into another tab
+- `SensorMapView` and `FuelMapView` moved to shared so macos can show the fuel map. the only platform switch is the map height: ios keeps 367 and 667 on ipad, macos uses a fixed 367 like its charts. ios behaviour is unchanged
+- the energy explainer texts moved to a shared `EnergyExplainers`, so both platforms print the same footnotes
+- the macos energy chart uses the macos drag overlay, since the ios interactive overlay is built on a uikit gesture recognizer
+- the warnings view checks `showHazards` before anything else, because the hazard presenter never leaves loading while switched off and the tab would otherwise spin forever
+- the signed macos debug build passed `--keychain-check` with no entitlement change, and it found the tankerkoenig key stored on ios and fetched stations with it, so icloud keychain carries keys between the apps
+- readme: the claim of native notifications is replaced by the tab list and a pointer to the roadmap, and energy and fuel are listed as sources
+- validation: both apps build, 89 macos and 146 ios tests pass, the same counts as before
+- version bump: macos 6.5.4 to 6.6.0 (MINOR - new user visible tabs and settings, nothing removed), build 152 to 153. ios unchanged
+
 ### 2026-09-26 (ios v6.5.0, customData written down as a rule, and level made to follow it, 01:20)
 
 - the owner stated the principle: `customData` is for all required data that does not fit the standard controller interface, and it is there to keep the apps and doomkit as stateless as possible. it is now a rule under architecture patterns rather than four incidental mentions inside feature bullets
