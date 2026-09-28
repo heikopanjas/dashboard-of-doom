@@ -72,6 +72,26 @@ import SwiftUI
         }
     }
 
+    /// The solid color of a party's gradient, for the forecast line.
+    func color(selector: ProcessSelector) -> Color {
+        switch selector {
+            case .survey(.fascists), .survey(.afd), .survey(.cducsu), .survey(.cdu), .survey(.csu):
+                return Color.fascists
+            case .survey(.bsw), .survey(.clowns), .survey(.fdp), .survey(.freie_waehler):
+                return Color.clowns
+            case .survey(.spd):
+                return .red
+            case .survey(.gruene):
+                return .green
+            case .survey(.linke):
+                return .purple
+            case .survey(.sonstige):
+                return .gray
+            default:
+                return Color.chart
+        }
+    }
+
     func refreshData(location: Location) async -> Void {
         guard self.subscription?.isEnabled == true, Task.isCancelled == false else { return }
         trace.debug("SurveyPresenter.refreshData() called, ID: \(self.id)")

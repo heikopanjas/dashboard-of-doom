@@ -69,14 +69,23 @@ enum IOSPreviewData {
             if presenter === runtime.levels {
                 customData["waterway"] = "Spree"
             }
+            // Level and radiation end at now and continue as a forecast, so the screenshots show both kinds: the provider's with a band
+            // that widens, the app's own estimate with a constant one.
+            var series = measurements
+            var forecasts: [ProcessSelector: ProcessForecast] = [:]
+            if presenter === runtime.levels || presenter === runtime.radiation {
+                series = Array(measurements.prefix(25))
+                let levels = presenter === runtime.levels
+                forecasts[selector] = Self.forecast(after: series, origin: levels ? .provider("PEGELONLINE") : .estimate("usual range"), widening: levels)
+            }
             let sensor = ProcessSensor(
                 name: presenter === runtime.levels ? "BERLIN-HKW UP" : "HKW fixture", location: location, placemark: "HKW, Berlin",
-                customData: customData, measurements: [selector: measurements], timestamp: date)
+                customData: customData, measurements: [selector: series], timestamp: date, forecasts: forecasts)
             presenter.replace(readings: [
                 ProcessReading(
-                    sensor: sensor, measurements: [selector: measurements], current: [selector: measurements[24]],
+                    sensor: sensor, measurements: [selector: series], current: [selector: measurements[24]],
                     faceplate: [selector: String(format: "%.2f %@", value, unit.symbol)], range: [selector: 0 ... max(value * 1.5, 1)],
-                    trend: [selector: "arrow.right"])
+                    trend: [selector: "arrow.right"], forecasts: forecasts)
             ])
             // Forecasts and prices have no place on the map.
             if presenter !== runtime.forecast && presenter !== runtime.energy {
@@ -167,8 +176,23 @@ enum IOSPreviewData {
         presenter.replace(readings: [
             ProcessReading(
                 sensor: reading.sensor, measurements: reading.measurements.merging(measurements) { $1 },
-                current: reading.current.merging(current) { $1 }, faceplate: reading.faceplate, range: reading.range, trend: reading.trend)
+                current: reading.current.merging(current) { $1 }, faceplate: reading.faceplate, range: reading.range, trend: reading.trend,
+                forecasts: reading.forecasts)
         ])
+    }
+
+    /// A day ahead of a fixture series, hourly. A widening band looks like a provider's percentiles, a constant one like the app's usual
+    /// range.
+    private static func forecast(after series: [ProcessValue<Dimension>], origin: ProcessForecast.Origin, widening: Bool) -> ProcessForecast? {
+        guard let last = series.last else { return nil }
+        let points = (1 ... 24).map { hour in
+            let value = last.value.value * (1 + 0.05 * sin(Double(hour) / 4))
+            let spread = last.value.value * (widening ? 0.01 * Double(hour) : 0.1)
+            return ProcessForecast.Point(
+                timestamp: last.timestamp.addingTimeInterval(Double(hour) * 3600), value: Measurement(value: value, unit: last.value.unit),
+                lower: value - spread, upper: value + spread)
+        }
+        return ProcessForecast(origin: origin, issued: last.timestamp, points: points)
     }
 
     /// Single samples for the conditions row. Pressure is in millibars so the

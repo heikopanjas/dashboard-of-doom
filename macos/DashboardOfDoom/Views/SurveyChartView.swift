@@ -5,6 +5,7 @@ import SwiftUI
 struct SurveyChartView: View {
     @Environment(SurveyPresenter.self) private var presenter
     @State private var timestamp: Date?
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
     let selector: ProcessSelector
 
     private let shortLabels: [ProcessSelector: String] = [
@@ -69,6 +70,11 @@ struct SurveyChartView: View {
         .survey(.werte_union): "WerteUnion"
     ]
 
+    /// The forecast after the last measurement, while forecasts are switched on.
+    private var forecast: ProcessForecast? {
+        return self.showForecasts ? presenter.forecasts[self.selector] : nil
+    }
+
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
@@ -92,6 +98,9 @@ struct SurveyChartView: View {
                     }
                 }
                 Spacer()
+                if let forecast = self.forecast {
+                    ForecastLegend(origin: forecast.origin, color: self.presenter.color(selector: self.selector))
+                }
             }
             Chart {
                 ForEach(presenter.measurements[selector] ?? []) { measurement in
@@ -111,6 +120,11 @@ struct SurveyChartView: View {
                     )
                     .interpolationMethod(.catmullRom)
                     .foregroundStyle(presenter.gradient(selector: selector))
+                }
+
+                if let forecast = self.forecast {
+                    ForecastMarks(
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: self.presenter.color(selector: self.selector), xLabel: "Timestamp", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
@@ -162,9 +176,12 @@ struct SurveyChartView: View {
                             .quality(measurement.quality)
                         }
                     }
+                    else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
+                        ForecastMarker(point: point, origin: forecast.origin, format: "%.1f%@", color: Color.accentColor, xLabel: "Timestamp", yLabel: "Value")
+                    }
                 }
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast))
             .chartOverlay { geometryProxy in
                 GeometryReader { geometryReader in
                     Rectangle()

@@ -193,6 +193,15 @@ enum SourcePreferences {
         return Self.enabled(key: Self.energyEnableKey, default: Self.energyEnabledByDefault, defaults: defaults)
     }
 
+    /// Forecasts on the source charts, the provider's where it publishes one and the app's own estimate elsewhere. One switch for every
+    /// source, the same key on both platforms, on by default. It is not a source switch: it removes no tab.
+    static let forecastsKey = "showForecasts"
+    static let forecastsEnabledByDefault = true
+
+    static func forecastsVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.forecastsKey, default: Self.forecastsEnabledByDefault, defaults: defaults)
+    }
+
     /// The keys of every source switch, so a view can watch them all.
     static let switchKeys = [
         Self.covidEnableKey, Self.waterKey, Self.radiationKey, Self.particlesKey, Self.hazardsKey, Self.energyEnableKey, Self.pollsEnableKey

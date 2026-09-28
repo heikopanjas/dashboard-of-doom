@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var hasFuelKey = false
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
     @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts: Bool = SourcePreferences.forecastsEnabledByDefault
 
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var covid
@@ -131,6 +132,30 @@ struct SettingsView: View {
                 Toggle("Election Polls", isOn: $enableElectionPolls)
                 HStack {
                     Text("A source that is on keeps updating, shows its value on the map and has its tab; warnings show on the Home screen. Turning one off stops it and removes its tab and its label. Weather always updates.")
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+
+        // One switch for every source's forecast; it is not a source switch and removes no tab.
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Forecasts")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                Toggle("Show Forecasts", isOn: $showForecasts)
+                    .onChange(of: showForecasts) { _, _ in
+                        // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
+                        AppProcess.shared.refreshSubscription(subscriber: particles)
+                    }
+                HStack {
+                    Text(ForecastDisplay.settingsExplanation)
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()

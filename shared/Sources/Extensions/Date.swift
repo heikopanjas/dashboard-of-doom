@@ -207,9 +207,13 @@ extension Date {
         return self.absoluteString(fmtStr: "yyyy-MM-dd")
     }
 
-    static func fromString(_ string: String, format: String) -> Date? {
+    /// Parses in `timeZone`, or in the device's time zone when it is nil.
+    static func fromString(_ string: String, format: String, timeZone: TimeZone? = nil) -> Date? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = format
+        if let timeZone {
+            dateFormatter.timeZone = timeZone
+        }
         return dateFormatter.date(from: string)
     }
 }

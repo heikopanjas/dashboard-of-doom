@@ -47,6 +47,10 @@ import Observation
         return self.readings.first?.trend ?? [:]
     }
 
+    public var forecasts: [ProcessSelector: ProcessForecast] {
+        return self.readings.first?.forecasts ?? [:]
+    }
+
     /// Publishes the readings of a refresh. An empty array is ignored, so a failed or cancelled refresh keeps the last good values.
     public func publish(readings: [ProcessReading]) -> Void {
         guard readings.isEmpty == false else { return }

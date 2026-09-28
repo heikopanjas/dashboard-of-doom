@@ -7,12 +7,10 @@ import Foundation
 class CovidController: ProcessController {
     private let measurementDistance: TimeInterval
     private let measurementDuration: Double
-    private let forecastDuration: TimeInterval
 
     init() {
         self.measurementDistance = 24 * 60 * 60  // 1 day
         self.measurementDuration = 167.0  // 167 days
-        self.forecastDuration = Double(Int(self.measurementDuration / 4)) * self.measurementDistance
     }
 
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
@@ -36,25 +34,21 @@ class CovidController: ProcessController {
             if let incidence = incidence {
                 var measurement: [ProcessValue<Dimension>] = []
                 measurement.append(contentsOf: self.interpolateMeasurements(measurements: incidence, distance: self.measurementDistance))
-                measurement.append(contentsOf: self.forecastMeasurements(data: incidence, duration: self.forecastDuration))
                 measurements[.covid(.incidence)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
             }
             if let cases = cases {
                 var measurement: [ProcessValue<Dimension>] = []
                 measurement.append(contentsOf: self.interpolateMeasurements(measurements: cases, distance: self.measurementDistance))
-                measurement.append(contentsOf: self.forecastMeasurements(data: cases, duration: self.forecastDuration))
                 measurements[.covid(.cases)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
             }
             if let deaths = deaths {
                 var measurement: [ProcessValue<Dimension>] = []
                 measurement.append(contentsOf: self.interpolateMeasurements(measurements: deaths, distance: self.measurementDistance))
-                measurement.append(contentsOf: self.forecastMeasurements(data: deaths, duration: self.forecastDuration))
                 measurements[.covid(.deaths)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
             }
             if let recovered = recovered {
                 var measurement: [ProcessValue<Dimension>] = []
                 measurement.append(contentsOf: self.interpolateMeasurements(measurements: recovered, distance: self.measurementDistance))
-                measurement.append(contentsOf: self.forecastMeasurements(data: recovered, duration: self.forecastDuration))
                 measurements[.covid(.recovered)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
             }
             try Task.checkCancellation()
@@ -328,8 +322,9 @@ class CovidController: ProcessController {
         return incidence
     }
 
-    private static func nowCast(data: [ProcessValue<Dimension>]?, alpha: Double) -> ProcessValue<Dimension>? {
-        guard let data = data, data.count > 0, alpha >= 0.0, alpha <= 1.0 else {
+    /// A value for the day after the last report, blended from the last two. Needs two values; a series of one has nothing to blend.
+    static func nowCast(data: [ProcessValue<Dimension>]?, alpha: Double) -> ProcessValue<Dimension>? {
+        guard let data = data, data.count > 1, alpha >= 0.0, alpha <= 1.0 else {
             return nil
         }
         let historicalData = [ProcessValue<Dimension>](data.reversed())
@@ -371,28 +366,5 @@ class CovidController: ProcessController {
             }
         }
         return interpolatedMeasurement
-    }
-
-    private func forecastMeasurements(data: [ProcessValue<Dimension>], duration: TimeInterval) -> [ProcessValue<Dimension>] {
-        var forecastMeasurements: [ProcessValue<Dimension>] = []
-        if data.count > 0 {
-            let unit = data[0].value.unit
-            let dataPoints = data.map { incidence in
-                TimeSeriesPoint(timestamp: incidence.timestamp, value: incidence.value.value)
-            }
-            let predictor = ARIMAPredictor(parameters: ARIMAParameters(p: 2, d: 1, q: 1), interval: .daily)
-            do {
-                try predictor.addData(dataPoints)
-                let prediction = try predictor.forecast(duration: duration)
-                forecastMeasurements = prediction.forecasts.map { forecast in
-//                    ProcessValue<Dimension>(value: Measurement(value: forecast.value, unit: unit), quality: .uncertain, timestamp: forecast.timestamp)
-                    ProcessValue<Dimension>(value: Measurement(value: 0.0, unit: unit), quality: .unknown, timestamp: forecast.timestamp)
-                }
-            }
-            catch {
-                trace.error("Forecasting error: %@", error.localizedDescription)
-            }
-        }
-        return forecastMeasurements
     }
 }

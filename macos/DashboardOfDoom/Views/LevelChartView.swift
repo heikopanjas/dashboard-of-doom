@@ -5,6 +5,7 @@ import SwiftUI
 struct LevelChartView: View {
     let reading: ProcessReading
     @State private var timestamp: Date?
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
     let selector: ProcessSelector
 
     private let labels: [ProcessSelector: String] = [
@@ -16,11 +17,19 @@ struct LevelChartView: View {
         return (self.reading.sensor.customData?["waterway"] as? String) ?? self.reading.sensor.name
     }
 
+    /// The forecast after the last measurement, while forecasts are switched on.
+    private var forecast: ProcessForecast? {
+        return self.showForecasts ? reading.forecasts[self.selector] : nil
+    }
+
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
                 Text("\(self.waterway) \(self.labels[selector] ?? "<Unknown>")")
                 Spacer()
+                if let forecast = self.forecast {
+                    ForecastLegend(origin: forecast.origin, color: Color.chart)
+                }
             }
             Chart {
                 ForEach(reading.measurements[selector] ?? []) { level in
@@ -37,6 +46,11 @@ struct LevelChartView: View {
                     )
                     .interpolationMethod(.catmullRom)
                     .foregroundStyle(Gradient.linear)
+                }
+
+                if let forecast = self.forecast {
+                    ForecastMarks(
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = reading.current[selector] {
@@ -88,9 +102,12 @@ struct LevelChartView: View {
                             .quality(measurement.quality)
                         }
                     }
+                    else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
+                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f%@", color: Color.accentColor, xLabel: "Date", yLabel: "Level")
+                    }
                 }
             }
-            .chartYScale(domain: reading.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: ForecastDisplay.domain(range: reading.range[selector], forecast: self.forecast))
             .chartOverlay { geometryProxy in
                 GeometryReader { geometryReader in
                     Rectangle()

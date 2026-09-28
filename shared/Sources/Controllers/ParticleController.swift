@@ -18,13 +18,25 @@ class ParticleController: ProcessController {
 
     private let nearestSensor: @Sendable () -> Bool
     private let sensorLimit: @Sendable () -> Int
+    private let showForecasts: @Sendable () -> Bool
+    private let fetchForecast: @Sendable (_ code: String, _ from: Date, _ to: Date) async throws -> Data?
+
+    /// UBA gives its times in CET all year, "date end (CET)" in the response's own legend, so they are read at UTC+1 and not in the
+    /// device's time zone, which put every reading an hour early in summer.
+    static let serviceTimeZone = TimeZone(secondsFromGMT: 3600)
 
     init(
         nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestParticleSensorKey) },
-        sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorParticlesKey) }
+        sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorParticlesKey) },
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible() },
+        fetchForecast: @escaping @Sendable (_ code: String, _ from: Date, _ to: Date) async throws -> Data? = { code, from, to in
+            return try await ParticleService.fetchForecasts(code: code, from: from, to: to)
+        }
     ) {
         self.nearestSensor = nearestSensor
         self.sensorLimit = sensorLimit
+        self.showForecasts = showForecasts
+        self.fetchForecast = fetchForecast
         self.measurementDuration = 21 * 24 * 60 * 60  // 21 days
         self.forecastDuration = 7 * 24 * 60 * 60  // 7 days
     }
@@ -55,8 +67,9 @@ class ParticleController: ProcessController {
         return data
     }
 
-    /// One station's measurements and forecast, or nil when it has none. A failure drops that station only.
-    private func candidate(for result: StationResult, from: Date, to: Date) async throws -> SensorCandidate? {
+    /// One station's measurements and forecast, or nil when it has none. A failure drops that station only; a failed forecast only costs
+    /// the forecast. Internal rather than private so a test can drive it with cached measurements.
+    func candidate(for result: StationResult, from: Date, to: Date) async throws -> SensorCandidate? {
         do {
             try Task.checkCancellation()
             // Use cached measurements if available, otherwise fetch them
@@ -69,21 +82,21 @@ class ParticleController: ProcessController {
                 measurements = try await Self.fetchMeasurements(station: result.station, from: from, to: to)
             }
 
-            if var measurements = measurements {
-                if let forecastInterval = Self.calculateForecastTimeInterval(span: self.forecastDuration) {
+            if let measurements = measurements {
+                // Gap-filled and smoothed whether or not a forecast arrives: that used to happen only when the forecast request succeeded.
+                let series = measurements.mapValues { self.interpolateMeasurement(measurements: $0) }
+                var forecasts: [ProcessSelector: ProcessForecast] = [:]
+                if self.showForecasts() == true, let interval = Self.calculateForecastTimeInterval(span: self.forecastDuration) {
                     try Task.checkCancellation()
-                    if let forecast = try await Self.fetchForecasts(station: result.station, from: forecastInterval.from, to: forecastInterval.to) {
-                        for (selector, values) in measurements {
-                            var actual = self.interpolateMeasurement(measurements: values)
-                            actual.append(contentsOf: forecast[selector] ?? [])
-                            measurements[selector] = actual
-                        }
+                    if let data = try? await self.fetchForecast(result.station.code, interval.from, interval.to) {
+                        // A pollutant the station does not measure has no chart to draw its forecast on.
+                        forecasts = ((try? Self.parseForecasts(data: data)) ?? [:]).filter { series[$0.key] != nil }
                     }
-                    try Task.checkCancellation()
-                    return SensorCandidate(
-                        id: result.station.code, name: result.station.name, location: result.station.location,
-                        customData: ["icon": "aqi.medium"], measurements: measurements)
                 }
+                try Task.checkCancellation()
+                return SensorCandidate(
+                    id: result.station.code, name: result.station.name, location: result.station.location,
+                    customData: ["icon": "aqi.medium"], measurements: series, forecasts: forecasts)
             }
         }
         catch is CancellationError { throw CancellationError() }
@@ -274,7 +287,7 @@ class ParticleController: ProcessController {
                             if let measurementSequence = features[featureId] as? [String: [Any]] {
                                 for (_, measurementValues) in measurementSequence {
                                     if let measurementEnd = measurementValues[0] as? String {
-                                        if let timestamp = Date.fromString(measurementEnd, format: "yyyy-MM-dd HH:mm:ss") {
+                                        if let timestamp = Date.fromString(measurementEnd, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone) {
                                             for measurementItems in measurementValues[3...] {
                                                 if let measurementItem = measurementItems as? [Any] {
                                                     if let componentId = measurementItem[0] as? Int {
@@ -319,56 +332,31 @@ class ParticleController: ProcessController {
         return measurements
     }
 
-    private static func fetchForecasts(station: Station, from: Date, to: Date) async throws -> [ProcessSelector: [ProcessValue<Dimension>]]? {
-        var measurements: [ProcessSelector: [ProcessValue<Dimension>]]? = nil
-        try Task.checkCancellation()
-        if let data = try await ParticleService.fetchForecasts(code: station.code, from: from, to: to) {
-            try Task.checkCancellation()
-            if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
-                if let features = json["data"] as? [String: Any] {
-                    if let featureId = features.keys.first {
-                        if let measurementSequence = features[featureId] as? [String: [Any]] {
-                            for (_, measurementValues) in measurementSequence {
-                                if let measurementEnd = measurementValues[0] as? String {
-                                    if let timestamp = Date.fromString(measurementEnd, format: "yyyy-MM-dd HH:mm:ss") {
-                                        for measurementItems in measurementValues[4...] {
-                                            if let measurementItem = measurementItems as? [Any] {
-                                                if let componentId = measurementItem[0] as? Int {
-                                                    if let selector = ProcessSelector.particle(from: componentId) {
-                                                        if let unit = Self.selectMeasurementUnit(component: selector) {
-                                                            if let value = measurementItem[1] as? Double {
-                                                                let measurement = ProcessValue<Dimension>(
-                                                                    value: Measurement(value: value, unit: unit), quality: .uncertain,
-                                                                    timestamp: timestamp)
-                                                                if measurements == nil {
-                                                                    measurements = [selector: [measurement]]
-                                                                }
-                                                                else if measurements?[selector] == nil {
-                                                                    measurements?[selector] = [measurement]
-                                                                }
-                                                                else {
-                                                                    measurements?[selector]?.append(measurement)
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+    /// UBA's forecast for a station, one provider forecast per pollutant. A row is `[end, created, index, incomplete, [component, value,
+    /// index, index decimal]...]` keyed by its start, all in CET; the value is taken at the end of its hour, as the measurements are.
+    static func parseForecasts(data: Data) throws -> [ProcessSelector: ProcessForecast] {
+        guard let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any],
+            let features = json["data"] as? [String: Any], let featureId = features.keys.first,
+            let rows = features[featureId] as? [String: [Any]]
+        else { return [:] }
+        var points: [ProcessSelector: [ProcessForecast.Point]] = [:]
+        var issued: Date?
+        for (_, row) in rows where row.count > 4 {
+            guard let end = row[0] as? String,
+                let timestamp = Date.fromString(end, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone)
+            else { continue }
+            if let created = row[1] as? String, let date = Date.fromString(created, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone) {
+                issued = max(issued ?? date, date)
+            }
+            for item in row[4...] {
+                guard let item = item as? [Any], item.count > 1, let component = item[0] as? Int,
+                    let selector = ProcessSelector.particle(from: component), let unit = Self.selectMeasurementUnit(component: selector),
+                    let value = item[1] as? Double
+                else { continue }
+                points[selector, default: []].append(ProcessForecast.Point(timestamp: timestamp, value: Measurement(value: value, unit: unit)))
             }
         }
-        if measurements != nil {
-            for (selector, values) in measurements! {
-                measurements?[selector] = values.sorted(by: { $0.timestamp < $1.timestamp })
-            }
-        }
-        return measurements
+        return points.mapValues { ProcessForecast(origin: .provider("UBA"), issued: issued, points: $0) }
     }
 
     static private func selectMeasurementUnit(component: ProcessSelector) -> UnitConcentrationMass? {

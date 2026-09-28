@@ -25,6 +25,9 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
     /// Great-circle distance from the user in metres, when the source resolved it.
     public let distance: Double?
 
+    /// What each series is expected to do after its last measurement, where the provider publishes a forecast or the app estimates one.
+    public let forecasts: [ProcessSelector: ProcessForecast]
+
     public init(name: String, location: Location, measurements: [ProcessSelector: [ProcessValue<Dimension>]], timestamp: Date?) {
         self.name = name
         self.location = location
@@ -34,6 +37,7 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
         self.timestamp = timestamp
         self.sourceID = nil
         self.distance = nil
+        self.forecasts = [:]
     }
 
     public init(name: String, location: Location, placemark: String?, measurements: [ProcessSelector: [ProcessValue<Dimension>]], timestamp: Date?) {
@@ -45,11 +49,12 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
         self.timestamp = timestamp
         self.sourceID = nil
         self.distance = nil
+        self.forecasts = [:]
     }
 
     public init(
         name: String, location: Location, placemark: String?, customData: [String: Any]?, measurements: [ProcessSelector: [ProcessValue<Dimension>]],
-        timestamp: Date?, sourceID: String? = nil, distance: Double? = nil
+        timestamp: Date?, sourceID: String? = nil, distance: Double? = nil, forecasts: [ProcessSelector: ProcessForecast] = [:]
     ) {
         self.name = name
         self.location = location
@@ -59,5 +64,6 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
         self.timestamp = timestamp
         self.sourceID = sourceID
         self.distance = distance
+        self.forecasts = forecasts
     }
 }

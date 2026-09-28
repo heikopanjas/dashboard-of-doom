@@ -118,6 +118,7 @@ struct SettingsView: View {
 
     // Appearance
     @AppStorage("alwaysUseDarkTheme") private var alwaysUseDarkTheme: Bool = true
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts: Bool = SourcePreferences.forecastsEnabledByDefault
 
     // Refresh intervals (in minutes)
     @AppStorage("weatherRefreshInterval") private var weatherRefreshInterval: Int = 5
@@ -195,6 +196,10 @@ struct SettingsView: View {
         }
         .frame(width: Self.width, height: 400)
         .background(Color(light: .white, dark: Color(hex: "#000000")))
+        // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
+        .onChange(of: showForecasts) { _, _ in
+            AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
+        }
         .onChange(of: nearestLevelSensor) { _, _ in
             AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
         }
@@ -234,6 +239,12 @@ struct SettingsView: View {
             }
             Section("Appearance") {
                 Toggle("Always Use Dark Theme", isOn: $alwaysUseDarkTheme)
+            }
+            Section("Charts") {
+                Toggle("Show Forecasts", isOn: $showForecasts)
+                Text(ForecastDisplay.settingsExplanation)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             StatusBarSettingsSection(faceplate: self.faceplate)
         }

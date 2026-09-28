@@ -68,12 +68,12 @@ struct ServiceCase: Sendable {
         Self(
             name: "ParticleService.fetchStations",
             url:
-                #"https://www.umweltbundesamt.de/api/air_data/v3/stations/json?use=airquality&lang=en&date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16"#,
+                #"https://luftdaten.umweltbundesamt.de/api/air-data/v3/stations/json?use=airquality&lang=en&date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16"#,
             fetch: { manager in return try await ParticleService.fetchStations(from: Self.startDate, to: Self.endDate, networkManager: manager) }),
         Self(
             name: "ParticleService.fetchMeasurements",
             url:
-                #"https://www.umweltbundesamt.de/api/air_data/v3/airquality/json?date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16&station=fixture-123"#,
+                #"https://luftdaten.umweltbundesamt.de/api/air-data/v3/airquality/json?date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16&station=fixture-123"#,
             fetch: { manager in
                 return try await ParticleService.fetchMeasurements(
                     code: "fixture-123", from: Self.startDate, to: Self.endDate, networkManager: manager)
@@ -81,7 +81,7 @@ struct ServiceCase: Sendable {
         Self(
             name: "ParticleService.fetchForecasts",
             url:
-                #"https://www.umweltbundesamt.de/api/air_data/v3/airqualityforecast/json?date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16&station=fixture-123"#,
+                #"https://luftdaten.umweltbundesamt.de/api/air-data/v3/airqualityforecast/json?date_from=2024-01-02&time_from=16&date_to=2024-01-03&time_to=16&station=fixture-123"#,
             fetch: { manager in
                 return try await ParticleService.fetchForecasts(
                     code: "fixture-123", from: Self.startDate, to: Self.endDate, networkManager: manager)

@@ -77,6 +77,30 @@ import Testing
         await network.stopMonitoring()
     }
 
+    @Test func theSeriesEndsAtTheLastMeasurement() async throws {
+        let levels = #"[{"timestamp":"2026-09-28T10:00:00+02:00","value":273.0},{"timestamp":"2026-09-28T10:15:00+02:00","value":274.0},{"timestamp":"2026-09-28T10:45:00+02:00","value":275.0}]"#
+        let network = NetworkManager(
+            transport: { request in
+                let url = try #require(request.url)
+                let isLevels = url.path.hasSuffix("/W/measurements.json")
+                let response = try #require(HTTPURLResponse(url: url, statusCode: isLevels ? 200 : 503, httpVersion: nil, headerFields: nil))
+                return (isLevels ? Data(levels.utf8) : Data(), response)
+            }, makeMonitor: { Monitor() }, probeURL: nil)
+        await network.startMonitoring()
+        try await network.waitForConnection(timeout: .seconds(2))
+        let controller = LevelController(networkManager: network)
+        let station = LevelController.Station(id: "id", waterway: "Spree", gauge: "BERLIN-MÜHLENDAMM UP", location: Location(latitude: 52.5, longitude: 13.4))
+        let candidate = try await controller.candidate(for: station)
+        let series = try #require(candidate.measurements[.water(.level)])
+        // The gap at 10:30 is filled; nothing follows 10:45. The zero-valued placeholders that used to stand in for a forecast are gone,
+        // and forecasts travel beside the series, not in it.
+        #expect(series.count == 4)
+        #expect(series.last?.timestamp == ISO8601DateFormatter().date(from: "2026-09-28T10:45:00+02:00"))
+        #expect(series.allSatisfy { $0.quality != .unknown })
+        #expect(candidate.forecasts.isEmpty == true)
+        await network.stopMonitoring()
+    }
+
     @Test func aStationWithoutMarksParsesToNothing() {
         #expect(LevelController.parseMarks(data: Data(#"{"timeseries":[{"shortname":"W"}]}"#.utf8)) == nil)
         #expect(LevelController.parseMarks(data: Data(#"{"timeseries":[{"shortname":"W","characteristicValues":[]}]}"#.utf8)) == [:])

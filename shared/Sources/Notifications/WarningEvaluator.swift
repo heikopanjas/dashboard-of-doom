@@ -66,7 +66,7 @@ enum WarningEvaluator {
         return assessments
     }
 
-    /// The transformer's current value, which already leaves out values of unknown quality, so ARIMA placeholders never count.
+    /// The transformer's current value, which already leaves out values of unknown quality.
     private static func currentAssessment(rule: WarningRule, limits: WarningLimits, reading: ProcessReading) -> WarningAssessment? {
         for selector in rule.current {
             guard let current = reading.current[selector], let value = Self.value(current.value, in: rule) else { continue }

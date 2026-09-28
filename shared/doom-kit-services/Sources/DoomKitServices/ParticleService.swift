@@ -7,7 +7,7 @@ public class ParticleService {
         trace.debug("Fetching particle measurements stations...")
         let hour = Calendar.current.component(.hour, from: from)
         let urlString =
-            "https://www.umweltbundesamt.de/api/air_data/v3/stations/json?use=airquality&lang=en&date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)"
+            "https://luftdaten.umweltbundesamt.de/api/air-data/v3/stations/json?use=airquality&lang=en&date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)"
         let result = await networkManager.performDataRequest(urlString: urlString)
         switch result {
             case .success(let data):
@@ -23,7 +23,7 @@ public class ParticleService {
         trace.debug("Fetching particle measurements for station: \(code)")
         let hour = Calendar.current.component(.hour, from: from)
         let urlString =
-            "https://www.umweltbundesamt.de/api/air_data/v3/airquality/json?date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)&station=\(code)"
+            "https://luftdaten.umweltbundesamt.de/api/air-data/v3/airquality/json?date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)&station=\(code)"
         let result = await networkManager.performDataRequest(urlString: urlString)
         switch result {
             case .success(let data):
@@ -39,7 +39,7 @@ public class ParticleService {
         trace.debug("Fetching particle forecast for station: \(code)")
         let hour = Calendar.current.component(.hour, from: from)
         let urlString =
-            "https://www.umweltbundesamt.de/api/air_data/v3/airqualityforecast/json?date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)&station=\(code)"
+            "https://luftdaten.umweltbundesamt.de/api/air-data/v3/airqualityforecast/json?date_from=\(serviceDateString(from))&time_from=\(hour)&date_to=\(serviceDateString(to))&time_to=\(hour)&station=\(code)"
         let result = await networkManager.performDataRequest(urlString: urlString)
         switch result {
             case .success(let data):

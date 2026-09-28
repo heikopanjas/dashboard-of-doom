@@ -11,6 +11,9 @@ struct SensorCandidate {
     let customData: [String: Any]
     /// One series per selector; a source with a single measurement has a single entry.
     let measurements: [ProcessSelector: [ProcessValue<Dimension>]]
+    /// What the series are expected to do next, where the provider publishes a forecast. A `var` with a default, so the memberwise
+    /// initialiser keeps working for sources without one.
+    var forecasts: [ProcessSelector: ProcessForecast] = [:]
 
     /// Whether any series has a value, so a station that answered with nothing can be told from one that did not.
     var hasData: Bool {
@@ -47,6 +50,6 @@ struct SensorCandidate {
         let distance = haversineDistance(location_0: location, location_1: self.location).converted(to: .meters).value
         return ProcessSensor(
             name: self.name, location: self.location, placemark: placemark, customData: self.customData, measurements: measurements,
-            timestamp: Date.now, sourceID: self.id, distance: distance)
+            timestamp: Date.now, sourceID: self.id, distance: distance, forecasts: self.forecasts)
     }
 }

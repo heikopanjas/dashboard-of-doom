@@ -6,13 +6,11 @@ import Foundation
 
 class RadiationController: ProcessController {
     private let measurementDistance: TimeInterval
-    private let forecastDuration: TimeInterval
     private let sensorLimit: @Sendable () -> Int
 
     init(sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorRadiationKey) }) {
         self.sensorLimit = sensorLimit
         self.measurementDistance = 3600  // 1 hour
-        self.forecastDuration = 1 * 24 * self.measurementDistance  // 1 day
     }
 
     /// The station series come from separate requests, so this many are fetched at a time.
@@ -34,7 +32,6 @@ class RadiationController: ProcessController {
         if let radiation = try await Self.fetchMeasurements(station: station) {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: radiation, distance: self.measurementDistance))
-            measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
         }
         return SensorCandidate(
             id: station.id, name: station.name, location: station.location, customData: ["icon": "atom"],
@@ -143,30 +140,5 @@ class RadiationController: ProcessController {
             }
         }
         return interpolated
-    }
-
-    private func forecastMeasurements(data: [ProcessValue<Dimension>], duration: TimeInterval) -> [ProcessValue<Dimension>] {
-        var forecast: [ProcessValue<Dimension>] = []
-        if data.count > 0 {
-            let unit = data[0].value.unit
-            let dataPoints = data.map { incidence in
-                TimeSeriesPoint(timestamp: incidence.timestamp, value: incidence.value.value)
-            }
-            let predictor = ARIMAPredictor(parameters: ARIMAParameters(p: 2, d: 1, q: 1), interval: .hourly)
-            do {
-                try predictor.addData(dataPoints)
-                let prediction = try predictor.forecast(duration: duration)
-                forecast = prediction.forecasts.map { forecast in
-//                    ProcessValue<Dimension>(
-//                        value: Measurement(value: forecast.value, unit: unit), quality: .uncertain, timestamp: forecast.timestamp)
-                    ProcessValue<Dimension>(
-                        value: Measurement(value: 0.0, unit: unit), quality: .unknown, timestamp: forecast.timestamp)
-                }
-            }
-            catch {
-                trace.error("Forecasting error: %@", error.localizedDescription)
-            }
-        }
-        return forecast
     }
 }

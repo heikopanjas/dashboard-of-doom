@@ -4,6 +4,34 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, solid forecast lines, 15:17)
+
+- forecast lines are solid instead of dashed, and so are the legend swatch and the drag marker's badge outline
+- rationale: the user found the dashed lines made the forecasts unrecognizable; an hourly forecast such as uba's broke into dots. the forecast stays apart from the measurements, which are a filled area, while the forecast is a line without fill
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 2, the show forecasts switch and the uba forecast, 15:13)
+
+- a show forecasts switch, on by default: a charts section on the macos general tab and a forecasts card after sources on ios, with the same footnote; off, the charts hide forecasts at once and no forecast is downloaded
+- particles take the uba forecast from the forecast channel as a provider forecast per pollutant instead of appending it to the measurements; the charts draw it dashed with a uba forecast legend
+- fix: measurements are smoothed whether or not the forecast arrives, and a failed forecast window no longer drops the station
+- fix: uba times are cet all year and are now read as such; the device time zone put every particle reading an hour early in summer
+- the uba requests use the service's current host, luftdaten.umweltbundesamt.de, instead of following a redirect
+- verified live in the simulator at hkw: pm10, pm2.5, ozone and no2 show the uba forecast after the last measurement, which reads 14:00 cest
+- validation: services package, 184 macos and 229 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 1, the forecast channel and its chart marks, 14:54)
+
+- decision with the user: forecasts come back in seven steps; provider forecasts where they exist (pegelonline wv on 43 gauges, uba particles), the app's own estimate elsewhere, always labelled as such; a dashed line with an 80 % band and a hairline at now; one global show forecasts switch, default on; only provider forecasts may warn
+- finding: the old forecasts were not removed on purpose; commit 813e824 of 2025-12-24 replaced the arima output of level, radiation and covid with zero-valued placeholders without a note, so those charts dropped to zero after now
+- a forecast is now its own typed channel, `ProcessForecast` on `ProcessSensor.forecasts`, forwarded by transformer, reading and presenter; rationale: quality cannot mark a forecast, since uncertain already means gap fill, unvalidated, poll and nowcast, and every source can have one
+- the twelve source charts on both platforms draw a forecast, a legend in the title row and a forecast-aware drag marker; the weatherkit charts are untouched
+- the placeholders are gone, so level, radiation and covid end at their last measurement; covid's nowcast no longer crashes on a single value
+- the remaining steps are in roadmap.md
+- validation: 26 process package, 178 macos and 223 ios tests pass, both apps build; the ios fixture screenshots show a provider forecast with a widening band on level and an estimate on radiation
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (macos v6.8.0, settings open from the hidden section of a menu bar manager, 14:05)
 
 - fix: with the status item in ice's hidden section, settings from the right click menu did nothing; the panel was created but never shown

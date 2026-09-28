@@ -7,6 +7,7 @@ import SwiftUI
 struct LevelChartView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
     let selector: ProcessSelector
     let reading: ProcessReading
 
@@ -20,11 +21,19 @@ struct LevelChartView: View {
         return (reading.sensor.customData?["waterway"] as? String) ?? reading.sensor.name
     }
 
+    /// The forecast after the last measurement, while forecasts are switched on.
+    private var forecast: ProcessForecast? {
+        return self.showForecasts ? self.reading.forecasts[self.selector] : nil
+    }
+
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
                 Text("\(Self.waterway(of: self.reading)) \(self.labels[selector] ?? "<Unknown>")")
                 Spacer()
+                if let forecast = self.forecast {
+                    ForecastLegend(origin: forecast.origin, color: Color.chart)
+                }
             }
             .font(.headline)
             .accentLabel()
@@ -43,6 +52,11 @@ struct LevelChartView: View {
                     )
                     .interpolationMethod(.catmullRom)
                     .foregroundStyle(Gradient.linear)
+                }
+
+                if let forecast = self.forecast {
+                    ForecastMarks(
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = self.reading.current[selector] {
@@ -98,9 +112,12 @@ struct LevelChartView: View {
                             .quality(measurement.quality)
                         }
                     }
+                    else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
+                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f%@", color: self.colorScheme.markerColor, xLabel: "Date", yLabel: "Level")
+                    }
                 }
             }
-            .chartYScale(domain: self.reading.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast))
             .chartInteractiveOverlay(timestamp: $timestamp, roundingStrategy: .previousQuarterHour)
         }
     }

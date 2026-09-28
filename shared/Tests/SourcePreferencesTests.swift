@@ -106,6 +106,21 @@ import Testing
         #expect(SourcePreferences.fuelOpenOnly(defaults: defaults) == false)
     }
 
+    @Test func forecastsAreOnUntilTheUserTurnsThemOff() {
+        let defaults = self.defaults()
+        #expect(SourcePreferences.forecastsKey == "showForecasts")
+        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == true)
+        defaults.set(false, forKey: SourcePreferences.forecastsKey)
+        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == false)
+        // A launch argument such as -showForecasts NO arrives as a string.
+        defaults.set("NO", forKey: SourcePreferences.forecastsKey)
+        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == false)
+        defaults.set("YES", forKey: SourcePreferences.forecastsKey)
+        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == true)
+        // It is not a source switch: it removes no tab.
+        #expect(SourcePreferences.switchKeys.contains(SourcePreferences.forecastsKey) == false)
+    }
+
     @Test func theSwitchKeysAreThePersistedNames() {
         #expect(SourcePreferences.radiationKey == "showRadiation")
         #expect(SourcePreferences.particlesKey == "showParticles")

@@ -6,6 +6,7 @@ open class ProcessTransformer {
     public var faceplate: [ProcessSelector: String] = [:]
     public var range: [ProcessSelector: ClosedRange<Double>] = [:]
     public var trend: [ProcessSelector: String] = [:]
+    public var forecasts: [ProcessSelector: ProcessForecast] = [:]
 
     public init() {}
 
@@ -15,6 +16,20 @@ open class ProcessTransformer {
         self.faceplate = self.renderFaceplate(current: self.current)
         self.range = self.renderRange(measurements: self.measurements)
         self.trend = self.renderTrend(measurements: self.measurements)
+        self.forecasts = self.renderForecasts(forecasts: sensor.forecasts, measurements: self.measurements)
+    }
+
+    /// A forecast continues its series, so points at or before the series' last measurement are dropped: where the provider's forecast
+    /// run overlaps the measurements, the measurement wins. A forecast without points after that is dropped whole.
+    open func renderForecasts(
+        forecasts: [ProcessSelector: ProcessForecast], measurements: [ProcessSelector: [ProcessValue<Dimension>]]
+    ) -> [ProcessSelector: ProcessForecast] {
+        var rendered: [ProcessSelector: ProcessForecast] = [:]
+        for (selector, forecast) in forecasts {
+            let last = measurements[selector]?.map(\.timestamp).max() ?? .distantPast
+            rendered[selector] = forecast.trimmed(after: last)
+        }
+        return rendered
     }
 
     open func renderCurrent(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ProcessValue<Dimension>] {

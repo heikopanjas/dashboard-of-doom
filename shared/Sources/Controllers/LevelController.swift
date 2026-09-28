@@ -12,7 +12,6 @@ class LevelController: ProcessController {
     private let sensorLimit: @Sendable () -> Int
     private let otherWaterways: @Sendable () -> Bool
     private let measurementDistance: TimeInterval
-    private let forecastDuration: TimeInterval
 
     init(networkManager: NetworkManager = .shared,
         nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestLevelSensorKey) },
@@ -25,7 +24,6 @@ class LevelController: ProcessController {
         self.sensorLimit = sensorLimit
         self.otherWaterways = otherWaterways
         self.measurementDistance = 900  // 15 minutes
-        self.forecastDuration = 12 * 4 * self.measurementDistance  // 12 hours
     }
 
     /// The gauge series come from separate requests, so this many are fetched at a time.
@@ -53,7 +51,6 @@ class LevelController: ProcessController {
         if let level = try await self.fetchMeasurements(station: station) {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: level, distance: self.measurementDistance))
-            measurement.append(contentsOf: self.forecastMeasurements(data: measurement, duration: self.forecastDuration))
         }
         // The sensor is named after its gauge, as every other source is named after its station. The waterway is what a level chart is
         // titled with, and the gauge's flood marks are what its warnings compare against; neither fits the standard interface, so both
@@ -307,31 +304,6 @@ class LevelController: ProcessController {
             }
         }
         return interpolatedMeasurement
-    }
-
-    private func forecastMeasurements(data: [ProcessValue<Dimension>], duration: TimeInterval) -> [ProcessValue<Dimension>] {
-        var forecastMeasurements: [ProcessValue<Dimension>] = []
-        if data.count > 0 {
-            let unit = data[0].value.unit
-            let dataPoints = data.map { incidence in
-                TimeSeriesPoint(timestamp: incidence.timestamp, value: incidence.value.value)
-            }
-            let predictor = ARIMAPredictor(parameters: ARIMAParameters(p: 2, d: 1, q: 1), interval: .quarterHourly)
-            do {
-                try predictor.addData(dataPoints)
-                let prediction = try predictor.forecast(duration: duration)
-                forecastMeasurements = prediction.forecasts.map { forecast in
-//                    ProcessValue<Dimension>(
-//                        value: Measurement(value: forecast.value, unit: unit), quality: .uncertain, timestamp: forecast.timestamp)
-                    ProcessValue<Dimension>(
-                        value: Measurement(value: 0.0, unit: unit), quality: .unknown, timestamp: forecast.timestamp)
-                }
-            }
-            catch {
-                print("Forecasting error: \(error)")
-            }
-        }
-        return forecastMeasurements
     }
 
     private func capitalizeGerman(text: String) -> String {

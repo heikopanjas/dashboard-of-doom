@@ -8,6 +8,7 @@ public struct ProcessReading: Identifiable {
     public let faceplate: [ProcessSelector: String]
     public let range: [ProcessSelector: ClosedRange<Double>]
     public let trend: [ProcessSelector: String]
+    public let forecasts: [ProcessSelector: ProcessForecast]
 
     /// The sensor's source id, which survives a refresh, so a list of readings keeps its identity. A sensor without one falls back to its
     /// own id, which changes with every refresh.
@@ -36,6 +37,7 @@ public struct ProcessReading: Identifiable {
         self.faceplate = transformer.faceplate
         self.range = transformer.range
         self.trend = transformer.trend
+        self.forecasts = transformer.forecasts
     }
 
     /// Renders every sensor with its own transformer, keeping the order of `sensors`.
@@ -53,7 +55,8 @@ public struct ProcessReading: Identifiable {
         current: [ProcessSelector: ProcessValue<Dimension>] = [:],
         faceplate: [ProcessSelector: String] = [:],
         range: [ProcessSelector: ClosedRange<Double>] = [:],
-        trend: [ProcessSelector: String] = [:]
+        trend: [ProcessSelector: String] = [:],
+        forecasts: [ProcessSelector: ProcessForecast] = [:]
     ) {
         self.sensor = sensor
         self.measurements = measurements
@@ -61,5 +64,6 @@ public struct ProcessReading: Identifiable {
         self.faceplate = faceplate
         self.range = range
         self.trend = trend
+        self.forecasts = forecasts
     }
 }

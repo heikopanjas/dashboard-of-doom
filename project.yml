@@ -239,6 +239,7 @@ targets:
       - Views/StatusItemDisplayView.swift
       - Views/DashboardPopoverSize.swift
       - Views/MapProjection.swift
+      - Presenters/ForecastDisplay.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

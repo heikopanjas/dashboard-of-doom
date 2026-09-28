@@ -8,6 +8,7 @@ struct EnergyChartView: View {
     @Environment(EnergyPresenter.self) private var presenter
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
+    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
     let selector: ProcessSelector
 
     private let labels: [ProcessSelector: String] = [
@@ -16,11 +17,19 @@ struct EnergyChartView: View {
         .energy(.lng): "EU LNG"
     ]
 
+    /// The forecast after the last measurement, while forecasts are switched on.
+    private var forecast: ProcessForecast? {
+        return self.showForecasts ? presenter.forecasts[self.selector] : nil
+    }
+
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
                 Text(self.labels[selector] ?? "<Unknown>")
                 Spacer()
+                if let forecast = self.forecast {
+                    ForecastLegend(origin: forecast.origin, color: Color.chart)
+                }
             }
             .font(.headline)
             .accentLabel()
@@ -37,11 +46,16 @@ struct EnergyChartView: View {
                     // painted far below the plot, behind whatever comes after the chart.
                     AreaMark(
                         x: .value("Date", measurement.timestamp),
-                        yStart: .value("Floor", presenter.range[selector]?.lowerBound ?? 0.0),
+                        yStart: .value("Floor", ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast).lowerBound),
                         yEnd: .value("Value", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom)
                     .foregroundStyle(Gradient.linear)
+                }
+
+                if let forecast = self.forecast {
+                    ForecastMarks(
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
@@ -97,9 +111,12 @@ struct EnergyChartView: View {
                             .quality(measurement.quality)
                         }
                     }
+                    else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
+                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f %@", color: self.colorScheme.markerColor, xLabel: "Date", yLabel: "Value")
+                    }
                 }
             }
-            .chartYScale(domain: presenter.range[selector] ?? 0.0 ... 0.0)
+            .chartYScale(domain: ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast))
             .chartInteractiveOverlay(timestamp: $timestamp, roundingStrategy: .lastDayChange)
         }
     }
