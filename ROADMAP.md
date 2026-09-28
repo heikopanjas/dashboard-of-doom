@@ -2,9 +2,9 @@
 
 Planned work that has not started yet, newest first. An entry records what was decided and why, so the work can start from it without repeating the research. Once work starts, the decisions move to AGENTS.md and UPDATES.md and the entry is deleted.
 
-## Sensor forecasts: steps 5 to 7
+## Sensor forecasts: steps 6 and 7
 
-*Noted 2026-09-28. Steps 1 to 4 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
+*Noted 2026-09-28. Steps 1 to 5 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
 
 - **Which sources publish a forecast** (checked live on 2026-09-28):
   - PEGELONLINE publishes water level forecasts as the timeseries `WV`, at `stations/{id}/WV/measurements.json`, keyless, under DL-DE Zero. They exist on 43 gauges (Elbe, Rhine, Oder, Danube, Saale) and on none in Berlin.
@@ -12,15 +12,6 @@ Planned work that has not started yet, newest first. An entry records what was d
   - Adding `includeForecastTimeseries=true` to the station request the app already makes for the flood marks lists a `WV` entry when there is one, so detection costs no extra request.
   - UBA publishes air quality forecasts about 3 days ahead, hourly, for PM10, PM2.5, NO2 and O3; the app uses them since step 2.
   - BfS, the COVID feeds, DAWUM, EIA/ACER and Tankerkoenig publish none. For oil, EIA's monthly STEO outlook exists only as an Excel file.
-- **Step 5, the engine:** a new `Forecasting/` folder in DoomKitTools.
-  - `Forecaster` regularises by linear interpolation, applies a transform (identity, log or log1p), clamps to bounds, and keeps 80 % coverage.
-  - Models:
-    - `RandomWalkModel`: band ±z·σ·√h, with σ from 1.4826·MAD.
-    - `DampedTrendModel`: ETS(A,Ad,N) fitted by grid search, with a variance that grows with the horizon.
-    - `SeasonalModel(period:)`.
-    - `HarmonicModel` for tides: M2 12.42 h and M4 6.21 h by least squares, with R² detection.
-    - `BaselineModel`: the median with quantile bands.
-  - `Backtest` uses rolling origins and reports MASE and coverage. Tests use seeded synthetic series.
 - **Step 6, the app's own estimates**, through `SeriesEstimate`, fitted on the raw parsed series, never the gap-filled one. It has a staleness guard and falls back to the random walk when a model does worse than naive.
   - 6a radiation: usual range, 24 h.
   - 6b energy: last price in log space, 30 days.

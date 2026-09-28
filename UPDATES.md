@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (sensor forecasts step 5, the forecasting engine, 15:57)
+
+- a forecasting engine in doomkittools: a forecaster that puts a series on an even grid, transforms, predicts, transforms back and clamps, five models (last value, damped trend, seasonal pattern, tide, usual range) and a rolling-origin backtest
+- decision: a band that widens with the horizon for every model that wanders, 80 % coverage to match pegelonline's percentiles, and linear interpolation instead of carrying values forward, which would narrow the band
+- on seeded synthetic series each model beats repeating the last value on its own kind of series and its band holds about 80 %; the damped trend does worse than the last value on a tide, which is why tidal gauges need detecting
+- nothing in the apps uses it yet; step 6 does
+- validation: 37 tools package tests pass in debug and release, both apps build
+- version bump: none; package only
+
 ### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 4, warnings from provider forecasts, 15:50)
 
 - the uba forecast warns for pm10, pm2.5, no2 and ozone, and the pegelonline forecast warns when a gauge is expected to reach its flood marks, both within the next 24 hours; the notice names the provider
