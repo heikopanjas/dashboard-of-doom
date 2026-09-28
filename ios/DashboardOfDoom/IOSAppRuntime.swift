@@ -13,6 +13,7 @@ final class IOSAppRuntime {
     let energy = EnergyPresenter()
     let fuel = FuelPresenter()
     let colors = ColorPresenter()
+    let simulation = SimulationPresenter()
     let pointsOfInterest = PointOfInterestPresenter(fetch: { category, location in
         #if DEBUG
         if IOSPreviewData.isEnabled == true { return IOSPreviewData.points(category: category) }

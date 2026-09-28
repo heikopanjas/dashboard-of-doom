@@ -242,6 +242,7 @@ targets:
       - Presenters/ForecastDisplay.swift
       - Controllers/SeriesEstimate.swift
       - Presenters/SimulationSelection.swift
+      - Presenters/SimulationPresenter.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

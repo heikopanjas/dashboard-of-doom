@@ -35,6 +35,19 @@ import Testing
         #expect(selection.status == .inGermany(address: "Augustusbrücke, 01067 Dresden"))
         #expect(selection.canStart == true)
         #expect(selection.location == Location(latitude: 51.054, longitude: 13.738))
+        // The capsule's short name is the town.
+        #expect(selection.placeName == "Dresden")
+    }
+
+    @Test func withoutATownTheNameIsTheAddress() async {
+        let selection = SimulationSelection(geocoding: GeocodingService { _ in
+            return GeocodedPlace(name: "Hallig Hooge", isoCountryCode: "DE")
+        })
+        await selection.select(Location(latitude: 54.57, longitude: 8.55))
+        #expect(selection.placeName == "Hallig Hooge")
+        // A pick outside Germany has no name to show.
+        await selection.select(Location(latitude: 48.86, longitude: 2.35))
+        #expect(selection.placeName == nil)
     }
 
     @Test func aNeighbourInsideTheBoxCannot() async {

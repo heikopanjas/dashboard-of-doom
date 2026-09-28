@@ -157,7 +157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.makeKeyAndOrderFront(nil)
             return
         }
-        let view = SimulationView(start: AppLocation.shared.state.location) { [weak self] location in
+        let view = SimulationView(start: AppLocation.shared.state.location) { [weak self] location, _ in
             AppLocation.shared.simulate(location)
             self?.simulationWindow?.close()
         }

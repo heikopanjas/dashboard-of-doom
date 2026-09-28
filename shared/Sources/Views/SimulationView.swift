@@ -2,14 +2,14 @@ import DoomKitLocation
 import MapKit
 import SwiftUI
 
-/// The simulation window's content: a search field, a map of Germany to pick a place on, and Start. Start hands the place to `onStart`,
-/// which makes the whole app behave as if the Mac were there.
+/// The simulation window's content on macOS and the simulation sheet's on iOS: a search field, a map of Germany to pick a place on, and
+/// Start. Start hands the place and its name to `onStart`, which makes the whole app behave as if the device were there.
 struct SimulationView: View {
     /// Germany, for the search and as the limit of the camera.
     static let germany = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 51.15, longitude: 10.45), span: MKCoordinateSpan(latitudeDelta: 7.9, longitudeDelta: 9.3))
 
-    let onStart: (Location) -> Void
+    let onStart: (Location, String?) -> Void
     @State private var search = SimulationSearch()
     @State private var selection = SimulationSelection()
     @State private var query = ""
@@ -18,7 +18,7 @@ struct SimulationView: View {
     @State private var mapSize = CGSize.zero
     @FocusState private var searching: Bool
 
-    init(start: Location, onStart: @escaping (Location) -> Void) {
+    init(start: Location, onStart: @escaping (Location, String?) -> Void) {
         self.onStart = onStart
         self._camera = State(initialValue: .region(MKCoordinateRegion(center: start.coordinate, latitudinalMeters: 60_000, longitudinalMeters: 60_000)))
     }
@@ -33,26 +33,56 @@ struct SimulationView: View {
                     self.suggestions
                 }
             }
-            HStack {
-                Text(self.statusText)
-                    .foregroundStyle(self.selection.status == .outside ? Color.red : Color.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Spacer()
-                Button("Start") {
-                    guard let location = self.selection.location else { return }
-                    self.onStart(location)
-                }
-                .keyboardShortcut(.defaultAction)
-                .buttonStyle(.borderedProminent)
-                .disabled(self.selection.canStart == false)
-            }
-            .padding()
+            self.footer
         }
+        #if os(macOS)
         .frame(minWidth: 560, minHeight: 520)
+        #endif
         .onChange(of: self.query) { _, query in
             self.search.update(query: query)
         }
+    }
+
+    private var status: some View {
+        Text(self.statusText)
+            .foregroundStyle(self.selection.status == .outside ? Color.red : Color.secondary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    /// The status and Start: side by side in a window, stacked on a phone, where the bottom action spans the width.
+    @ViewBuilder private var footer: some View {
+        #if os(iOS)
+        VStack(spacing: 10) {
+            self.status
+                .frame(maxWidth: .infinity, alignment: .leading)
+            self.startButton
+                .controlSize(.large)
+        }
+        .padding()
+        #else
+        HStack {
+            self.status
+            Spacer()
+            self.startButton
+        }
+        .padding()
+        #endif
+    }
+
+    private var startButton: some View {
+        Button {
+            guard let location = self.selection.location else { return }
+            self.onStart(location, self.selection.placeName)
+        } label: {
+            Text("Start")
+                #if os(iOS)
+                .frame(maxWidth: .infinity)
+                #endif
+        }
+        .keyboardShortcut(.defaultAction)
+        .buttonStyle(.borderedProminent)
+        .disabled(self.selection.canStart == false)
     }
 
     private var searchField: some View {
@@ -77,9 +107,17 @@ struct SimulationView: View {
             }
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .controlBackgroundColor)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(nsColor: .separatorColor)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(Self.fieldBackground))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Self.fieldBorder))
     }
+
+    #if os(macOS)
+    private static let fieldBackground = Color(nsColor: .controlBackgroundColor)
+    private static let fieldBorder = Color(nsColor: .separatorColor)
+    #else
+    private static let fieldBackground = Color(uiColor: .secondarySystemBackground)
+    private static let fieldBorder = Color(uiColor: .separator)
+    #endif
 
     /// Clicks become coordinates by the map's visible rectangle, the arithmetic the labels use, rather than `MapReader`, which placed
     /// points off inside the dashboard popup.

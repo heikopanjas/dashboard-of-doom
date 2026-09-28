@@ -2,6 +2,7 @@ import DoomKitLocation
 import SwiftUI
 
 struct LocationSettingsView: View {
+    @Environment(SimulationPresenter.self) private var simulation
     @State private var state = AppLocation.shared.state
 
     var body: some View {
@@ -58,6 +59,10 @@ struct LocationSettingsView: View {
     }
 
     private var detail: String {
+        if self.state.origin == .simulated {
+            let place = self.simulation.placeName.map { ", \($0)" } ?? ""
+            return "Readings come from sensors near a simulated place\(place). Stop the simulation with the location icon at the top."
+        }
         let origin =
             self.state.origin == .fallback
             ? "Readings come from sensors near the default location, HKW in Berlin."

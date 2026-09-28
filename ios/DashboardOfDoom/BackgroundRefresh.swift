@@ -63,13 +63,15 @@ enum BackgroundRefresh {
         }
     }
 
+    /// Waits for a first fix while the app only knows the fallback. A simulated place needs no waiting: the refresh is for it, and its
+    /// warnings are paused anyway.
     private static func waitForMeasuredLocation() async {
-        guard AppLocation.shared.state.origin != .measured else { return }
+        guard AppLocation.shared.state.origin == .fallback else { return }
         let updates = AppLocation.shared.updates()
         let timeout = Self.locationTimeout
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
-                for await state in updates where state.origin == .measured { return }
+                for await state in updates where state.origin != .fallback { return }
             }
             group.addTask {
                 try? await Task.sleep(for: timeout)

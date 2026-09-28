@@ -23,6 +23,8 @@ import Observation
 
     private(set) var location: Location?
     private(set) var status: Status = .none
+    /// A short name for the place, its town where the geocoder gives one, else its address: what the iOS SIM capsule shows.
+    private(set) var placeName: String?
     @ObservationIgnored private let geocoding: GeocodingService
     @ObservationIgnored private var generation = UUID()
 
@@ -42,6 +44,7 @@ import Observation
         let generation = UUID()
         self.generation = generation
         self.location = location
+        self.placeName = nil
         guard Self.latitudes.contains(location.latitude), Self.longitudes.contains(location.longitude) else {
             self.status = .outside
             return
@@ -51,7 +54,9 @@ import Observation
         guard self.generation == generation else { return }
         if let place, place.isoCountryCode == "DE" {
             let address = place.address(full: true)
-            self.status = .inGermany(address: address.isEmpty ? String(format: "%.4f, %.4f", location.latitude, location.longitude) : address)
+            let shown = address.isEmpty ? String(format: "%.4f, %.4f", location.latitude, location.longitude) : address
+            self.status = .inGermany(address: shown)
+            self.placeName = place.locality ?? shown
         }
         else {
             self.status = .outside

@@ -33,6 +33,9 @@ struct ContentView: View {
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
     @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @State private var selectedScreen = Screen.home
+    @Environment(SimulationPresenter.self) private var simulation
+    @State private var showsSimulation = false
+    @State private var confirmsStop = false
     @State private var navigationVisible = Visibility.hidden
     @State private var navigationTitle = ""
     @State private var containerWidth: CGFloat = 0
@@ -102,7 +105,17 @@ struct ContentView: View {
                         .padding(.top, 10)
                         .padding(.leading, 5)
                         .accessibilityAddTraits(.isHeader)
+                        // The counterpart of the orange SIM tag in the macOS menu bar: on every screen while a place is simulated.
+                        if self.simulation.isSimulating == true {
+                            SimulationCapsule(name: self.simulation.placeName) {
+                                self.confirmsStop = true
+                            }
+                            .padding(.top, 10)
+                        }
                         Spacer()
+                        self.simulationMenu
+                            .padding(.top, 10)
+                            .padding(.trailing, 5)
                     }
                     switch selectedScreen {
                         case .home:
@@ -337,7 +350,50 @@ struct ContentView: View {
                     AppProcess.shared.refreshSubscriptions()
                 }
             }
+            .sheet(isPresented: self.$showsSimulation) {
+                NavigationStack {
+                    SimulationView(start: AppLocation.shared.state.location) { location, name in
+                        self.simulation.start(location, name: name)
+                        self.showsSimulation = false
+                    }
+                    .navigationTitle("Simulation")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                self.showsSimulation = false
+                            }
+                        }
+                    }
+                }
+            }
+            .confirmationDialog("Stop the simulation?", isPresented: self.$confirmsStop, titleVisibility: .visible) {
+                Button("Stop Simulation", role: .destructive) {
+                    self.simulation.stop()
+                }
+            } message: {
+                Text("The app goes back to where you are.")
+            }
         }
         .tint(self.colors.tint(for: self.colorScheme))
+    }
+
+    /// The same two entries as the macOS menu: Simulation… opens the sheet, also while simulating, so one place can follow another;
+    /// Stop Simulation goes back to the real location and is disabled while nothing is simulated.
+    private var simulationMenu: some View {
+        Menu {
+            Button("Simulation…", systemImage: "location.magnifyingglass") {
+                self.showsSimulation = true
+            }
+            Button("Stop Simulation", systemImage: "location.slash", role: .destructive) {
+                self.simulation.stop()
+            }
+            .disabled(self.simulation.isSimulating == false)
+        } label: {
+            Image(systemName: "location.magnifyingglass")
+                .font(.title3)
+                .frame(minWidth: 44, minHeight: 34)
+        }
+        .accessibilityLabel("Simulation")
     }
 }

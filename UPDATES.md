@@ -4,6 +4,16 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (ios v6.7.0, location simulation on ios, 23:14)
+
+- ios gets the macos simulation: an icon at the upper right of every screen opens a menu with simulation… and stop simulation, the sheet has the same search, map of germany and start, and an orange sim · place capsule sits next to the title while simulating, a tap offering to stop
+- decisions with the user: the entry point is an icon at the upper right, the indicator a capsule by the title
+- the simulation view moved to shared code with small platform switches; a new shared simulation presenter carries the state and the place's name for swiftui
+- the location card in settings names the simulated place, and the background refresh no longer waits for a real fix while simulating
+- verified in the ios simulator by a ui test from hkw to dresden and back; radiation followed only after about a minute, because bfs answered each request in 20 to 30 s that evening, not because of the simulation
+- validation: 223 macos and 267 ios tests, location and process package tests pass, both apps build
+- version bump: none; folded into the unreleased ios 6.7.0
+
 ### 2026-09-28 (macos v6.8.0, stop simulation as its own menu entry, 21:05)
 
 - simulation… stays in the menu and opens the window during a simulation too, with stop simulation as its own entry below it, disabled while nothing is simulated
