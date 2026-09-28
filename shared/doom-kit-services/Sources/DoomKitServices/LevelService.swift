@@ -5,7 +5,9 @@ import Foundation
 public class LevelService {
     public static func fetchStations(networkManager: NetworkManager = .shared) async throws -> Data? {
         trace.debug("Fetching level measurements stations...")
-        let urlString = "https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json"
+        // Only stations with a water level series: the list also holds gauges that measure only clearance height or discharge, and the
+        // nearest of those (Koblenz-Lützel DFH, beside the Rhine gauge) gave the Level tab a gauge with nothing to show.
+        let urlString = "https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json?timeseries=W"
         let result = await networkManager.performDataRequest(urlString: urlString)
         switch result {
             case .success(let data):

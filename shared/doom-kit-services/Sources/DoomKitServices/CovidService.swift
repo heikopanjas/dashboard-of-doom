@@ -10,7 +10,8 @@ public class CovidService {
             "https://sgx.geodatenzentrum.de/wfs_vg250?service=WFS&version=2.0.0&request=GetFeature"
             + "&typeNames=vg250:vg250_krs"
             + "&bbox=\(box.minLongitude),\(box.minLatitude),\(box.maxLongitude),\(box.maxLatitude),EPSG:4326"
-            + "&outputFormat=application/json&count=20"
+            // Without it the service answers in its native UTM zone 32 metres, which no latitude-longitude code can read.
+            + "&outputFormat=application/json&count=20&srsName=EPSG:4326"
 
         trace.debug("Fetching covid districts near location: \(location.latitude), \(location.longitude), radius: \(radius)m")
 

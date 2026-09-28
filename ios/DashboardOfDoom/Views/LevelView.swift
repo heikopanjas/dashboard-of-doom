@@ -25,7 +25,8 @@ struct LevelView: View {
                     SensorHeaderView(reading: reading, isNearest: index == 0, color: Color.sensor(selector: .water(.level), index: index))
 
                     ForEach(ProcessSelector.Water.allCases, id: \.self) { selector in
-                        if reading.isAvailable(selector: .water(selector)) {
+                        // Any value counts: a level can be zero or below its gauge zero at low water, as the Rhine at Koblenz was.
+                        if reading.isAvailable(selector: .water(selector), treshold: -.infinity) {
                             VStack {
                                 LevelChartView(selector: .water(selector), reading: reading)
                             }

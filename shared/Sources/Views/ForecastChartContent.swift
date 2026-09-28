@@ -146,13 +146,16 @@ struct ForecastLegend: View {
     }
 }
 
-/// The badge behind a forecast marker's label: neutral and outlined, where a measurement's badge is colored by its quality.
+/// The badge behind a forecast marker's label: neutral and outlined, where a measurement's badge is colored by its quality, and opaque
+/// like it, so the chart underneath never shows through.
 struct ForecastBadgeViewModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
     func body(content: Content) -> some View {
         content
-            .background(RoundedRectangle(cornerRadius: 13).fill(Color.gray.opacity(0.35)))
+            .background(BadgeBackground(tint: .gray, opacity: 0.35, colorScheme: self.colorScheme))
             .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.secondary, lineWidth: 1))
-            .foregroundStyle(Color.primary)
+            .foregroundStyle(BadgeBackground.text(for: self.colorScheme))
     }
 }
 

@@ -102,7 +102,13 @@ class CovidController: ProcessController {
         try Task.checkCancellation()
         guard let data = try await CovidService.fetchDistricts(for: location, radius: 30000) else { return nil }
         try Task.checkCancellation()
-        guard let candidates = try await Self.parseDistricts(data: data), candidates.isEmpty == false else { return nil }
+        return try Self.resolveDistrict(from: data, for: location)
+    }
+
+    /// The district of `location` among the service's candidates: the one containing it, else the nearest. Internal so a test can feed
+    /// it a response.
+    static func resolveDistrict(from data: Data, for location: Location) throws -> District? {
+        guard let candidates = try Self.parseDistricts(data: data), candidates.isEmpty == false else { return nil }
 
         let resolved: District?
         if let contained = candidates.first(where: { district in
@@ -176,7 +182,7 @@ class CovidController: ProcessController {
         }
     }
 
-    static private func parseDistricts(data: Data) async throws -> [District]? {
+    static private func parseDistricts(data: Data) throws -> [District]? {
         guard let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any],
               let features = json["features"] as? [[String: Any]]
         else { return nil }
@@ -190,6 +196,19 @@ class CovidController: ProcessController {
                   let polygons = Self.parsePolygons(from: geometry),
                   let centroid = Self.centroid(of: polygons)
             else { continue }
+            // VG250 gives a coastal district's waters as separate features (geofactor 1 and 2; land is 3 and 4). Only the land counts:
+            // the Wadden Sea off Dithmarschen would otherwise be a district of its own, drawn as one and geocoded in the sea. A point in
+            // the water still finds its district as the nearest land.
+            if let geofactor = properties["gf"] as? Int, geofactor < 3 {
+                continue
+            }
+            // Coordinates that cannot be latitudes and longitudes are projected metres: the service answers in UTM unless asked for
+            // EPSG:4326. Resolving on them matched no district and geocoded a centroid far off the globe, which dropped the sensor and
+            // left the last district on screen; better no candidate than a wrong one.
+            guard polygons.allSatisfy({ ring in ring.allSatisfy { abs($0.latitude) <= 90 && abs($0.longitude) <= 180 } }) else {
+                trace.error("District %@ has no latitude-longitude geometry", id)
+                continue
+            }
             districts.append(District(id: id, name: name, location: centroid, polygons: polygons))
         }
         return districts

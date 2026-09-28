@@ -35,8 +35,11 @@ import Testing
     @Test func theDomainGrowsToHoldTheForecastAndItsBand() {
         #expect(ForecastDisplay.domain(range: 0 ... 5, forecast: nil) == 0 ... 5)
         #expect(ForecastDisplay.domain(range: nil, forecast: nil) == 0 ... 0)
-        #expect(ForecastDisplay.domain(range: 0 ... 5, forecast: self.forecast([4, 6])) == 0 ... 6)
-        #expect(ForecastDisplay.domain(range: 2 ... 5, forecast: self.forecast([3, 4], band: 1.5)) == 1.5 ... 5.5)
+        // Beyond the range, with a twentieth of the span as room.
+        #expect(ForecastDisplay.domain(range: 0 ... 5, forecast: self.forecast([4, 6])) == 0 ... 6.3)
+        #expect(ForecastDisplay.domain(range: 0 ... 5, forecast: self.forecast([1, 4])) == 0 ... 5)
+        let banded = ForecastDisplay.domain(range: 2 ... 5, forecast: self.forecast([3, 4], band: 1.5))
+        #expect(abs(banded.lowerBound - 1.3) < 0.000_001 && abs(banded.upperBound - 5.7) < 0.000_001)
         #expect(ForecastDisplay.domain(range: 0 ... 5, forecast: self.forecast([])) == 0 ... 5)
     }
 

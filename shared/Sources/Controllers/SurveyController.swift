@@ -162,6 +162,32 @@ class SurveyController: ProcessController {
         "Thüringen": Location(latitude: 50.9787, longitude: 11.0328)
     ]
 
+    /// The federal states by the first two digits of a district's official key (AGS), in the German names DAWUM uses.
+    static let federalStates: [String: String] = [
+        "01": "Schleswig-Holstein", "02": "Hamburg", "03": "Niedersachsen", "04": "Bremen", "05": "Nordrhein-Westfalen", "06": "Hessen",
+        "07": "Rheinland-Pfalz", "08": "Baden-Württemberg", "09": "Bayern", "10": "Saarland", "11": "Berlin", "12": "Brandenburg",
+        "13": "Mecklenburg-Vorpommern", "14": "Sachsen", "15": "Sachsen-Anhalt", "16": "Thüringen"
+    ]
+
+    static func federalState(forDistrict id: String) -> String? {
+        return Self.federalStates[String(id.prefix(2))]
+    }
+
+    /// The state the location lies in, from the district the COVID source resolves: its key starts with the state's. Not from the
+    /// geocoder, which names states in the device's language ("Bavaria"), so they matched none of DAWUM's German names but Berlin's,
+    /// and every other state silently showed the Bundestag's polls.
+    private static func federalState(for location: Location) async throws -> String? {
+        guard let data = try await CovidService.fetchDistricts(for: location, radius: 30000),
+            let district = try CovidController.resolveDistrict(from: data, for: location)
+        else { return nil }
+        return Self.federalState(forDistrict: district.id)
+    }
+
+    /// Whether DAWUM's parliament shortcut names `state`: "Bayern", or "Nordrhein-Westfalen (NRW)".
+    static func parliament(_ shortcut: String, isFor state: String) -> Bool {
+        return shortcut == state || shortcut.hasPrefix(state + " ")
+    }
+
     private func refreshLocalSurveys(for location: Location) async throws -> ProcessSensor? {
         var sensor: ProcessSensor? = nil
         var sensorName = germany.name
@@ -176,17 +202,21 @@ class SurveyController: ProcessController {
         }
 
         try Task.checkCancellation()
-        if let constituency = try await GeocodingService.fetchConstituency(location: location) {
+        if let state = try await Self.federalState(for: location) {
             try Task.checkCancellation()
-            if let parliaments = try await parseParliaments(from: data) {
-                try Task.checkCancellation()
-                for parliament in parliaments where parliament.name.contains(constituency) {
-                    sensorName = constituency
-                    sensorLocation = Self.parliamentCoordinates[constituency] ?? location
-                    parliamentId = parliament.id
-                    break
-                }
+            if let parliaments = try await parseParliaments(from: data),
+                let parliament = parliaments.first(where: { Self.parliament($0.name, isFor: state) })
+            {
+                sensorName = state
+                sensorLocation = Self.parliamentCoordinates[state] ?? location
+                parliamentId = parliament.id
             }
+            else {
+                trace.error("No state parliament polls for %@", state)
+            }
+        }
+        else {
+            trace.error("No federal state found for the location; showing the Bundestag polls")
         }
 
         // Reuse the data we already fetched

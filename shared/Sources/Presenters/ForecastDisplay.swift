@@ -59,7 +59,12 @@ enum ForecastDisplay {
         let range = range ?? 0.0 ... 0.0
         guard let forecast, forecast.points.isEmpty == false else { return range }
         let values = forecast.points.flatMap { [$0.value.value, $0.lower, $0.upper].compactMap { $0 } }
-        return min(range.lowerBound, values.min() ?? range.lowerBound) ... max(range.upperBound, values.max() ?? range.upperBound)
+        guard let low = values.min(), let high = values.max() else { return range }
+        // Where the forecast leaves the range, a little room beyond it, so its line does not run along the edge of the plot.
+        let room = (max(range.upperBound, high) - min(range.lowerBound, low)) * 0.05
+        let lower = low < range.lowerBound ? low - room : range.lowerBound
+        let upper = high > range.upperBound ? high + room : range.upperBound
+        return lower ... upper
     }
 
     /// The forecast point a drag marker at `timestamp` shows: the nearest point within half the forecast's spacing. The drag rounds to

@@ -14,7 +14,7 @@ struct ServiceCase: Sendable {
         Self(
             name: "CovidService.fetchDistricts",
             url:
-                #"https://sgx.geodatenzentrum.de/wfs_vg250?service=WFS&version=2.0.0&request=GetFeature&typeNames=vg250:vg250_krs&bbox=13.386771272770513,52.5089081027668,13.423228727229485,52.5310918972332,EPSG:4326&outputFormat=application/json&count=20"#,
+                #"https://sgx.geodatenzentrum.de/wfs_vg250?service=WFS&version=2.0.0&request=GetFeature&typeNames=vg250:vg250_krs&bbox=13.386771272770513,52.5089081027668,13.423228727229485,52.5310918972332,EPSG:4326&outputFormat=application/json&count=20&srsName=EPSG:4326"#,
             fetch: { manager in
                 return try await CovidService.fetchDistricts(
                     for: Location(latitude: 52.52, longitude: 13.405), radius: 1234.75, networkManager: manager)
@@ -50,7 +50,7 @@ struct ServiceCase: Sendable {
             name: "HazardService.fetchHazardRegion", url: #"https://warnung.bund.de/api31/warnings/fixture-123.geojson"#,
             fetch: { manager in return try await HazardService.fetchHazardRegion(for: "fixture-123", networkManager: manager) }),
         Self(
-            name: "LevelService.fetchStations", url: #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json"#,
+            name: "LevelService.fetchStations", url: #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations.json?timeseries=W"#,
             fetch: { manager in return try await LevelService.fetchStations(networkManager: manager) }),
         Self(
             name: "LevelService.fetchMeasurements",

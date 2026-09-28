@@ -18,7 +18,9 @@ struct LevelView: View {
                 }
                 else {
                     SensorCardGrid(readings: readings, colorSelector: .water(.level)) { reading in
-                        ForEach(ProcessSelector.Water.allCases.filter { reading.isAvailable(selector: .water($0)) }, id: \.self) { selector in
+                        // Any value counts: a level can be zero or below its gauge zero at low water, as the Rhine at Koblenz was.
+                        ForEach(ProcessSelector.Water.allCases.filter { reading.isAvailable(selector: .water($0), treshold: -.infinity) }, id: \.self) {
+                            selector in
                             VStack {
                                 LevelChartView(reading: reading, selector: .water(selector))
                             }
