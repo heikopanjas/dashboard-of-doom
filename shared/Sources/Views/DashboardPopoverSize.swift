@@ -16,4 +16,27 @@ enum DashboardPopoverSize {
         return CGSize(width: Self.width, height: height)
     }
 }
+
+/// Where the dashboard popup is anchored, in screen coordinates. The popup hangs from an invisible window at the status item's position
+/// rather than from the item itself, because menu bar managers such as Ice and Bartender move the item off screen when they rehide their
+/// section, which a click inside the popup triggers, and a popover closes when the view it hangs from leaves the screen.
+enum DashboardPopoverAnchor {
+    static let fallbackWidth: CGFloat = 22
+    static let fallbackInset: CGFloat = 8
+
+    /// `button` is the status item's frame on screen, nil without a window; `screens` are the frames of all screens. A button no screen
+    /// shows, hidden by a menu bar manager, gives a place at the right end of the menu bar on `menuBarScreen`.
+    static func rect(button: CGRect?, screens: [CGRect], menuBarScreen: CGRect?, menuBarHeight: CGFloat) -> CGRect {
+        if let button, screens.contains(where: { $0.contains(CGPoint(x: button.midX, y: button.midY)) }) {
+            return button
+        }
+        guard let screen = menuBarScreen else { return button ?? .zero }
+        return CGRect(
+            x: screen.maxX - Self.fallbackInset - Self.fallbackWidth,
+            y: screen.maxY - menuBarHeight,
+            width: Self.fallbackWidth,
+            height: menuBarHeight
+        )
+    }
+}
 #endif

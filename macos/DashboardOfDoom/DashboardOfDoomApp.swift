@@ -190,6 +190,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             panel.contentViewController = hostingController
             panel.center()
             panel.isReleasedWhenClosed = false
+            // A panel hides while its app is inactive, and the activation above is only a request: opened from a menu bar manager's hidden
+            // section, the app can stay inactive, and the panel would never appear.
+            panel.hidesOnDeactivate = false
 
             self.settingsPanel = panel
 

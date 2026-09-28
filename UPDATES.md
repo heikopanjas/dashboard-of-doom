@@ -4,6 +4,25 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, settings open from the hidden section of a menu bar manager, 14:05)
+
+- fix: with the status item in ice's hidden section, settings from the right click menu did nothing; the panel was created but never shown
+- cause: an nspanel hides while its app is inactive, and the app did not become active when the menu came from the hidden section; the activation call is only a request
+- decision: the settings panel and the popup's anchor panel no longer hide on deactivation; the settings panel now stays visible when another app comes to the front, like an ordinary window
+- fix: the popup's fallback anchor used the status bar thickness, 22 points, where the menu bar under a notch is taller; it now takes the height from the screen
+- validation: 172 macos tests pass, the macos app builds; not verified on screen with ice, which needs the user
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-28 (macos v6.8.0, popup stays open under menu bar managers, 13:47)
+
+- fix: with a menu bar manager such as ice, a click on a tab in the dashboard popup closed it; without one it stayed open
+- cause: the popup hung from the status item, which the manager moves off screen when it rehides its section on a click outside the menu bar, and a popover closes when its anchor leaves the screen
+- decision: the popup hangs from an invisible click-through panel placed where the item is when it opens; an item hidden off screen gives a place at the right end of the menu bar, so the hotkey works then too
+- a press on the item while the popup is open closes it and no longer reopens it
+- not verified on screen: the popup with ice needs the user
+- validation: 172 macos tests pass, the macos app builds
+- version bump: none; folded into the unreleased macos 6.8.0
+
 ### 2026-09-27 (macos v6.8.0, ios v6.7.0, home section spacing and headings, 00:45)
 
 - every home section heading sits the same distance below its divider on macOS, 5 points, as current conditions does; nearest places added the stack's default spacing on top, so it now uses none there on macos, while ios, whose home stack spaces every row alike, is unchanged
