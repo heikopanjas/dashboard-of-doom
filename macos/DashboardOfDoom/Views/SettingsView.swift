@@ -199,6 +199,7 @@ struct SettingsView: View {
         // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
         .onChange(of: showForecasts) { _, _ in
             AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
+            AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
         }
         .onChange(of: nearestLevelSensor) { _, _ in
             AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)

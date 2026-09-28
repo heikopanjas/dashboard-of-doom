@@ -62,6 +62,13 @@ struct ServiceCase: Sendable {
                 #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/fixture-123.json?includeTimeseries=true&includeCharacteristicValues=true"#,
             fetch: { manager in return try await LevelService.fetchCharacteristics(for: "fixture-123", networkManager: manager) }),
         Self(
+            name: "LevelService.fetchCharacteristics with forecast",
+            url:
+                #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/fixture-123.json?includeTimeseries=true&includeCharacteristicValues=true&includeForecastTimeseries=true"#,
+            fetch: { manager in
+                return try await LevelService.fetchCharacteristics(for: "fixture-123", includeForecast: true, networkManager: manager)
+            }),
+        Self(
             name: "LevelService.fetchForecast",
             url: #"https://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/fixture-123/WV/measurements.json"#,
             fetch: { manager in return try await LevelService.fetchForecast(for: "fixture-123", networkManager: manager) }),

@@ -4,6 +4,16 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 3, the pegelonline level forecast, 15:40)
+
+- level gauges with a pegelonline forecast show it as a provider forecast after the measurements: 43 gauges on the elbe, rhine, oder, danube and saale, none in berlin
+- decision: the station request made for the flood marks also asks which series the gauge forecasts, so only a gauge with a forecast costs a second request; nothing is asked while show forecasts is off
+- the oder's 10 and 90 percentiles are the band; where the run turns from forecast to estimate is recorded but not yet drawn differently
+- the show forecasts switch now refreshes level too, and its footnote names the rivers
+- verified live in the simulator at dresden: the elbe chart continues from 0.62 m with the falling forecast; the simulator is back at hkw
+- validation: services package, 191 macos and 236 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (macos v6.8.0, ios v6.7.0, solid forecast lines, 15:17)
 
 - forecast lines are solid instead of dashed, and so are the legend swatch and the drag marker's badge outline

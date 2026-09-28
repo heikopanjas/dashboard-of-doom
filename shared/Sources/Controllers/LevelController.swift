@@ -11,6 +11,7 @@ class LevelController: ProcessController {
     private let nearestSensor: @Sendable () -> Bool
     private let sensorLimit: @Sendable () -> Int
     private let otherWaterways: @Sendable () -> Bool
+    private let showForecasts: @Sendable () -> Bool
     private let measurementDistance: TimeInterval
 
     init(networkManager: NetworkManager = .shared,
@@ -18,11 +19,13 @@ class LevelController: ProcessController {
         sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorLevelKey) },
         otherWaterways: @escaping @Sendable () -> Bool = {
             return UserDefaults.standard.bool(forKey: SourcePreferences.multiSensorLevelOtherWaterwaysKey)
-        }) {
+        },
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible() }) {
         self.networkManager = networkManager
         self.nearestSensor = nearestSensor
         self.sensorLimit = sensorLimit
         self.otherWaterways = otherWaterways
+        self.showForecasts = showForecasts
         self.measurementDistance = 900  // 15 minutes
     }
 
@@ -47,7 +50,8 @@ class LevelController: ProcessController {
     func candidate(for station: Station) async throws -> SensorCandidate {
         var measurement: [ProcessValue<Dimension>] = []
         try Task.checkCancellation()
-        async let marks = self.fetchMarks(station: station)
+        let showForecasts = self.showForecasts()
+        async let pendingCharacteristics = self.fetchCharacteristics(station: station, includeForecast: showForecasts)
         if let level = try await self.fetchMeasurements(station: station) {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: level, distance: self.measurementDistance))
@@ -56,13 +60,24 @@ class LevelController: ProcessController {
         // titled with, and the gauge's flood marks are what its warnings compare against; neither fits the standard interface, so both
         // travel in customData. A gauge that publishes no marks, or a failed request, simply leaves the key out.
         var customData: [String: Any] = ["icon": "water.waves", "waterway": station.waterway]
-        if let marks = await marks, marks.isEmpty == false {
+        let characteristics = await pendingCharacteristics
+        if let marks = characteristics.marks, marks.isEmpty == false {
             customData["marks"] = marks
+        }
+        // Only a gauge that lists a forecast is asked for one: most have none, and asking would cost each of them a request and a 404.
+        var forecasts: [ProcessSelector: ProcessForecast] = [:]
+        if showForecasts == true, characteristics.hasForecast == true {
+            try Task.checkCancellation()
+            if let data = try? await LevelService.fetchForecast(for: station.id, networkManager: self.networkManager),
+                let forecast = Self.parseForecast(data: data)
+            {
+                forecasts[.water(.level)] = forecast
+            }
         }
         try Task.checkCancellation()
         return SensorCandidate(
             id: station.id, name: station.gauge, location: station.location, customData: customData,
-            measurements: [.water(.level): measurement.sorted(by: { $0.timestamp < $1.timestamp })])
+            measurements: [.water(.level): measurement.sorted(by: { $0.timestamp < $1.timestamp })], forecasts: forecasts)
     }
 
     struct Station: ProcessLocatable {
@@ -237,10 +252,48 @@ class LevelController: ProcessController {
         return measurements
     }
 
-    /// The gauge's characteristic values, never throwing: marks only add warnings, so a failure must not cost the gauge its readings.
-    private func fetchMarks(station: Station) async -> [String: Double]? {
-        guard let data = try? await LevelService.fetchCharacteristics(for: station.id, networkManager: self.networkManager) else { return nil }
-        return Self.parseMarks(data: data)
+    /// The gauge's characteristic values and whether it has a forecast, never throwing: marks only add warnings and a forecast only adds a
+    /// line, so a failure must not cost the gauge its readings.
+    private func fetchCharacteristics(station: Station, includeForecast: Bool) async -> (marks: [String: Double]?, hasForecast: Bool) {
+        guard let data = try? await LevelService.fetchCharacteristics(for: station.id, includeForecast: includeForecast, networkManager: self.networkManager)
+        else { return (nil, false) }
+        return (Self.parseMarks(data: data), Self.hasForecast(data: data))
+    }
+
+    /// Whether the station's time series include the water level forecast, `WV`. Only listed when the request asked for forecasts.
+    static func hasForecast(data: Data) -> Bool {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let series = json["timeseries"] as? [[String: Any]]
+        else { return false }
+        return series.contains { $0["shortname"] as? String == "WV" }
+    }
+
+    /// PEGELONLINE's water level forecast as a provider forecast, in metres like the readings: the value, the 10 and 90 percentiles as
+    /// the band where the forecast has them (so far only the Oder's), and the run's time as `issued`. The run turns from `forecast` to
+    /// `estimate` after the first days, the forecaster's own rougher extension; where it does is kept as `customData["estimateFrom"]`.
+    static func parseForecast(data: Data) -> ProcessForecast? {
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return nil }
+        var points: [ProcessForecast.Point] = []
+        var issued: Date?
+        var estimateFrom: Date?
+        for item in json {
+            guard let centimetres = item["value"] as? Double, let string = item["timestamp"] as? String,
+                let timestamp = Self.parseTimestamp(string: string)
+            else { continue }
+            let value = Measurement<Dimension>(value: centimetres / 100, unit: UnitLength.meters)
+            let lower = (item["percentile10"] as? Double).map { $0 / 100 }
+            let upper = (item["percentile90"] as? Double).map { $0 / 100 }
+            let hasBand = lower != nil && upper != nil
+            points.append(ProcessForecast.Point(timestamp: timestamp, value: value, lower: hasBand ? lower : nil, upper: hasBand ? upper : nil))
+            if let initialized = (item["initialized"] as? String).flatMap({ Self.parseTimestamp(string: $0) }) {
+                issued = max(issued ?? initialized, initialized)
+            }
+            if item["type"] as? String == "estimate" {
+                estimateFrom = min(estimateFrom ?? timestamp, timestamp)
+            }
+        }
+        guard points.isEmpty == false else { return nil }
+        return ProcessForecast(
+            origin: .provider("PEGELONLINE"), issued: issued, points: points, customData: estimateFrom.map { ["estimateFrom": $0] })
     }
 
     /// The characteristic values of the station's W series, keyed by their PEGELONLINE short names (`MHW`, `M_I`, `HSW` and so on), in

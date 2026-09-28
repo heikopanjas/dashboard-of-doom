@@ -153,6 +153,7 @@ struct SettingsView: View {
                     .onChange(of: showForecasts) { _, _ in
                         // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
                         AppProcess.shared.refreshSubscription(subscriber: particles)
+                        AppProcess.shared.refreshSubscription(subscriber: level)
                     }
                 HStack {
                     Text(ForecastDisplay.settingsExplanation)

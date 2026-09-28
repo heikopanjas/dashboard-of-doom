@@ -2,9 +2,9 @@
 
 Planned work that has not started yet, newest first. An entry records what was decided and why, so the work can start from it without repeating the research. Once work starts, the decisions move to AGENTS.md and UPDATES.md and the entry is deleted.
 
-## Sensor forecasts: steps 3 to 7
+## Sensor forecasts: steps 4 to 7
 
-*Noted 2026-09-28. Steps 1 and 2 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
+*Noted 2026-09-28. Steps 1 to 3 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
 
 - **Which sources publish a forecast** (checked live on 2026-09-28):
   - PEGELONLINE publishes water level forecasts as the timeseries `WV`, at `stations/{id}/WV/measurements.json`, keyless, under DL-DE Zero. They exist on 43 gauges (Elbe, Rhine, Oder, Danube, Saale) and on none in Berlin.
@@ -12,10 +12,6 @@ Planned work that has not started yet, newest first. An entry records what was d
   - Adding `includeForecastTimeseries=true` to the station request the app already makes for the flood marks lists a `WV` entry when there is one, so detection costs no extra request.
   - UBA publishes air quality forecasts about 3 days ahead, hourly, for PM10, PM2.5, NO2 and O3; the app uses them since step 2.
   - BfS, the COVID feeds, DAWUM, EIA/ACER and Tankerkoenig publish none. For oil, EIA's monthly STEO outlook exists only as an Excel file.
-- **Step 3, level WV:**
-  - `LevelService.fetchCharacteristics(includeForecast:)`.
-  - `LevelController` fetches `WV` only where the gauge lists it and the switch is on.
-  - `parseForecast` converts cm to m, maps p10/p90 to the band and `initialized` to `issued`, and records where `type` turns `estimate` in the forecast's `customData["estimateFrom"]`.
 - **Step 4, warnings:**
   - `WarningRule.providerForecast` for particle PM10, PM2.5, NO2 and O3.
   - `WarningEvaluator` takes the worst provider point within 24 h as the input "forecast", and the highest WV point against the gauge's marks on `level.marks.<sourceID>`.

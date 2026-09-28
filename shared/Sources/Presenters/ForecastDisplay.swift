@@ -15,7 +15,7 @@ enum ForecastDisplay {
 
     /// The footnote under the Show Forecasts switch on both platforms. It says what the switch does to the data as well as to the charts.
     static let settingsExplanation =
-        "Continues a source's chart past now with a line, where the source publishes a forecast of its own, such as UBA's for particulate matter. The weather forecast is not affected. Off, forecasts are neither downloaded nor shown."
+        "Continues a source's chart past now with a line, where the source publishes a forecast of its own: UBA's for particulate matter, PEGELONLINE's for gauges on the Elbe, Rhine, Oder, Danube and Saale. The weather forecast is not affected. Off, forecasts are neither downloaded nor shown."
 
     /// The legend in a chart's title row, next to a line swatch.
     static func legend(for origin: ProcessForecast.Origin) -> String {
