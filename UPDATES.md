@@ -4,6 +4,53 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, stop simulation as its own menu entry, 21:05)
+
+- simulation… stays in the menu and opens the window during a simulation too, with stop simulation as its own entry below it, disabled while nothing is simulated
+- rationale: the user wants to move from one simulated place to another without going back to the real location in between; replacing the entry forced a stop first
+- validation: the macos app builds; the menu needs the user on screen
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, level gauges at low water, 20:31)
+
+- fix: simulating koblenz, the nearest gauge had no chart and read n/a, the rhine gauge had no chart, and a lahn gauge drew its values below the plot over the axis labels
+- cause: the station list included gauges without a water level (koblenz-lützel measures only clearance height); a chart was only shown for values above zero, while the rhine stood at −4 cm; and the level axis always started at zero
+- the station list asks for water level gauges only, any level counts as data, and the axis reaches below zero with the data
+- a forecast that leaves the measured range gets a little room, so its line does not run along the edge
+- verified live in the ios simulator at koblenz: the rhine gauge with its pegelonline forecast, the mosel and the lahn gauges, all inside their plots; the simulator is back at hkw
+- validation: services package and 220 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, state polls and readable chart badges, 18:39)
+
+- fix: state polls showed the bundestag's for every state but berlin; simulating passau and koblenz showed the same numbers as berlin's federal ones
+- cause: the state came from the geocoder, which names it in the device's language (bavaria, rhineland-palatinate), and matched none of dawum's german names but berlin's
+- decision: the state now comes from the bkg district key the covid source already resolves, whose first two digits are the state's; passau shows bavaria's polls and koblenz rhineland-palatinate's
+- fix: chart value badges were hard to read in dark mode, the macos default: dark green with black text, the chart showing through. they are opaque now, with white text in dark mode and unchanged in light mode
+- verified live in the ios simulator at passau and koblenz, and with the dark fixture; the simulator is back at hkw
+- validation: 217 macos and 261 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, covid districts outside berlin, 17:59)
+
+- fix: covid showed nothing new for any district outside berlin and kept the last one; a simulation at büsum kept showing berlin mitte
+- cause: the bkg district service answers in utm metres unless asked for latitude and longitude, and the app read the metres as degrees, so the district never matched and its centroid could not be geocoded, which dropped the sensor; berlin worked only through its bundled borough file
+- the request asks for epsg:4326, the parser refuses geometry that cannot be degrees, and only land features count, so the wadden sea is no district of its own
+- verified live in the ios simulator at büsum: dithmarschen with its outline, then back to hkw
+- validation: services package and 215 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, location simulation, 17:45)
+
+- simulation… in the status item's right-click menu opens a window with a search field, a map of germany and a start button; start shows the whole app as if the mac were at the picked place, and the entry reads stop simulation until it is stopped
+- decision: the location manager simulates, not a second source: real fixes keep coming but are only remembered, so a simulation is not overwritten, and stopping returns to the last real fix at once; the streams stay open, so the maps and nearest places follow
+- decision: the coordinator refreshes every source when a simulation starts, moves or ends; on macos a new location otherwise waits for each source's own interval
+- decisions with the user: warnings pause while simulating, a simulation ends when the app quits, and the status item tag reads sim in orange
+- only places in germany can be simulated: the reverse-geocoded country decides, the bounding box is a pre-check
+- not verified on screen: the menu, the window and the tag need the user, since the terminal cannot click the menu bar
+- validation: location and process package tests in debug and release, 212 macos and 256 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
 ### 2026-09-28 (macos v6.8.0, ios v6.7.0, one show forecast switch per source, 17:05)
 
 - decision with the user: the global show forecasts switch is replaced by one show forecast switch per source, in that source's own settings: a forecast section on the macos covid-19, level, radiation, particles, energy and polls tabs, and a row in the ios water, radiation, particulate matter, energy and election polls cards

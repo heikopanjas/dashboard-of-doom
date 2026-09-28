@@ -3,8 +3,11 @@ import Testing
 
 @MainActor
 @Suite struct StatusItemDisplayViewTests {
-    @Test func theTagIsAlwaysTheApps() {
+    @Test func theTagNamesTheAppOrASimulation() {
         #expect(StatusItemDisplayView.tag == "DOD")
+        // Three letters each, in a column of fixed width, so the item keeps its width when a simulation starts.
+        #expect(StatusItemDisplayView.simulationTag == "SIM")
+        #expect(StatusItemDisplayView.simulationTag.count == StatusItemDisplayView.tag.count)
     }
 
     @Test func theWidthFollowsTheWidestValue() {

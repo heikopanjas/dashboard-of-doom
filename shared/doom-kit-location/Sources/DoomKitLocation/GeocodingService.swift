@@ -13,6 +13,13 @@ public struct GeocodingService: Sendable {
         }
     }
 
+    /// Everything the geocoder knows about the place, such as its country.
+    public func place(for location: Location) async throws -> GeocodedPlace? {
+        let place = try await self.lookup(location)
+        try Task.checkCancellation()
+        return place
+    }
+
     public func address(for location: Location, full: Bool = true) async throws -> String? {
         let place = try await self.lookup(location)
         try Task.checkCancellation()

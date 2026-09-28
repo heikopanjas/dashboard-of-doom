@@ -40,11 +40,16 @@ public final class ProcessCoordinator {
         let updates = self.locationManager.updates()
         self.locationTask = Task { [weak self] in
             var previous: Location?
+            var previousOrigin = LocationState.Origin.fallback
             for await state in updates {
                 guard Task.isCancelled == false, self?.lifecycle == lifecycle else { return }
-                guard state.origin == .measured, state.location != previous else { continue }
+                guard state.location != previous || state.origin != previousOrigin else { continue }
+                // The fallback at launch is what the first refresh already used; a return to it from a simulation is not.
+                guard state.origin != .fallback || previousOrigin != .fallback else { continue }
+                let simulation = state.origin == .simulated || previousOrigin == .simulated
                 previous = state.location
-                self?.receive(location: state.location)
+                previousOrigin = state.origin
+                self?.receive(location: state.location, origin: state.origin, simulation: simulation)
             }
         }
         self.locationManager.start()
@@ -73,10 +78,15 @@ public final class ProcessCoordinator {
         self.scheduler.start()
     }
 
-    private func receive(location: Location) {
+    /// A new location updates what the next refreshes use. Every source refreshes at once for the first real fix, for every fix under
+    /// `.everyMovement`, and whenever a simulation starts, moves or ends, since the user is waiting to see the other place.
+    private func receive(location: Location, origin: LocationState.Origin, simulation: Bool) {
         self.scheduler.updateContext(location)
-        if self.hasPerformedInitialRefresh == false || self.locationRefreshPolicy == .everyMovement {
+        let first = origin == .measured && self.hasPerformedInitialRefresh == false
+        if first == true {
             self.hasPerformedInitialRefresh = true
+        }
+        if first == true || simulation == true || self.locationRefreshPolicy == .everyMovement {
             self.scheduler.refreshAll()
         }
     }

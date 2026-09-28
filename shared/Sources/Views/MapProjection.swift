@@ -16,4 +16,14 @@ enum MapProjection {
         guard x.isFinite, y.isFinite else { return nil }
         return CGPoint(x: x, y: y)
     }
+
+    /// The inverse: the coordinate under a point of the view, for a click on the map.
+    static func coordinate(for point: CGPoint, in visibleRect: MKMapRect, size: CGSize) -> CLLocationCoordinate2D? {
+        guard visibleRect.isNull == false, visibleRect.width > 0, visibleRect.height > 0, size.width > 0, size.height > 0 else { return nil }
+        let mapPoint = MKMapPoint(
+            x: visibleRect.minX + point.x / size.width * visibleRect.width, y: visibleRect.minY + point.y / size.height * visibleRect.height)
+        let coordinate = mapPoint.coordinate
+        guard CLLocationCoordinate2DIsValid(coordinate) else { return nil }
+        return coordinate
+    }
 }

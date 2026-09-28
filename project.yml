@@ -241,6 +241,7 @@ targets:
       - Views/MapProjection.swift
       - Presenters/ForecastDisplay.swift
       - Controllers/SeriesEstimate.swift
+      - Presenters/SimulationSelection.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

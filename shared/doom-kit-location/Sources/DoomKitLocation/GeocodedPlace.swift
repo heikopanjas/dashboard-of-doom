@@ -5,11 +5,13 @@ public struct GeocodedPlace: Sendable, Equatable {
     public var subLocality: String?
     public var administrativeArea: String?
     public var subAdministrativeArea: String?
+    /// ISO 3166-1 alpha-2, "DE" for Germany.
+    public var isoCountryCode: String?
 
     public init(
         name: String? = nil, postalCode: String? = nil, locality: String? = nil,
         subLocality: String? = nil, administrativeArea: String? = nil,
-        subAdministrativeArea: String? = nil
+        subAdministrativeArea: String? = nil, isoCountryCode: String? = nil
     ) {
         self.name = name
         self.postalCode = postalCode
@@ -17,6 +19,7 @@ public struct GeocodedPlace: Sendable, Equatable {
         self.subLocality = subLocality
         self.administrativeArea = administrativeArea
         self.subAdministrativeArea = subAdministrativeArea
+        self.isoCountryCode = isoCountryCode
     }
 
     public var constituency: String? {

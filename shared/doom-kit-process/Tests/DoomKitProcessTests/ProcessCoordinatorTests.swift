@@ -21,8 +21,11 @@ struct ProcessCoordinatorTests {
         func start() { self.starts += 1 }
         func stop() { self.stops += 1; self.continuation?.finish() }
         func measure(_ latitude: Double) {
+            self.set(latitude, origin: .measured)
+        }
+        func set(_ latitude: Double, origin: LocationState.Origin) {
             self.state.location = Location(latitude: latitude, longitude: 13)
-            self.state.origin = .measured
+            self.state.origin = origin
             self.continuation?.yield(self.state)
         }
     }
@@ -88,6 +91,51 @@ struct ProcessCoordinatorTests {
         #expect(await events.next()?.latitude == 54)
         #expect(source.starts == 2)
         coordinator.stop()
+    }
+
+    @Test func aSimulationRefreshesEverythingWhenItStartsMovesAndEnds() async {
+        let source = LocationSource()
+        let network = NetworkSource()
+        let clock = CoordinatorTestClock()
+        let coordinator = ProcessCoordinator(locationSource: source, networkSource: network, clock: clock.clock)
+        defer { coordinator.stop() }
+        let subscriber = Subscriber(coordinator: coordinator)
+        coordinator.add(subscriber: subscriber, timeout: 30)
+        var events = subscriber.events.stream.makeAsyncIterator()
+        coordinator.start()
+        #expect(await events.next()?.latitude == 52)
+        source.measure(53)
+        #expect(await events.next()?.latitude == 53)
+        // Real movement after the first fix only updates the context on macOS, as before.
+        source.measure(54)
+        source.set(51, origin: .simulated)
+        #expect(await events.next()?.latitude == 51)
+        source.set(50, origin: .simulated)
+        #expect(await events.next()?.latitude == 50)
+        // The end of a simulation refreshes too, back at the real location.
+        source.set(54, origin: .measured)
+        #expect(await events.next()?.latitude == 54)
+        #expect(subscriber.values.map(\.latitude) == [52, 53, 51, 50, 54])
+    }
+
+    @Test func aSimulationEndingAtTheFallbackRefreshesAndLeavesTheFirstFixToCome() async {
+        let source = LocationSource()
+        let network = NetworkSource()
+        let clock = CoordinatorTestClock()
+        let coordinator = ProcessCoordinator(locationSource: source, networkSource: network, clock: clock.clock)
+        defer { coordinator.stop() }
+        let subscriber = Subscriber(coordinator: coordinator)
+        coordinator.add(subscriber: subscriber, timeout: 30)
+        var events = subscriber.events.stream.makeAsyncIterator()
+        coordinator.start()
+        #expect(await events.next()?.latitude == 52)
+        source.set(51, origin: .simulated)
+        #expect(await events.next()?.latitude == 51)
+        source.set(52, origin: .fallback)
+        #expect(await events.next()?.latitude == 52)
+        // No real fix came during the simulation, so the first one still refreshes everything.
+        source.measure(53)
+        #expect(await events.next()?.latitude == 53)
     }
 
     @Test func everyMovementRefreshesAndDuplicateCoordinatesDoNot() async {

@@ -17,6 +17,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private weak var appDelegate: AppDelegate?
     private var defaultsObserver: NSObjectProtocol?
     private var shownValues: [String] = []
+    private var shownTag = StatusItemDisplayView.tag
+    private var locationTask: Task<Void, Never>?
+    /// Opens the window to pick a place, also while a simulation runs, so one simulated place can follow another without a return to the
+    /// real location in between.
+    private let simulationItem = NSMenuItem(title: "Simulation…", action: #selector(openSimulation), keyEquivalent: "")
+    /// Ends the simulation; enabled only while one runs, set each time the menu opens.
+    private let stopSimulationItem = NSMenuItem(title: "Stop Simulation", action: #selector(stopSimulation), keyEquivalent: "")
     /// The uptime at which a press on the item closed the popup, so the mouse-up of that click does not open it again.
     private var closedByItemPress: TimeInterval?
 
@@ -41,6 +48,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             MainActor.assumeIsolated { self?.update() }
         }
         self.observe()
+        // A simulation can start in its window or end in the menu; the tag follows the location either way.
+        let updates = AppLocation.shared.updates()
+        self.locationTask = Task { [weak self] in
+            for await _ in updates {
+                self?.update()
+            }
+        }
     }
 
     /// The text for these values: the nearest reading's faceplate, the string the map labels show.
@@ -61,15 +75,18 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let values = Self.texts(for: StatusBarPreferences.displayed()) { value in
             return self.appDelegate?.faceplate(for: value)
         }
-        guard values != self.shownValues, let button = self.statusItem.button else { return }
+        let simulating = AppLocation.shared.isSimulating
+        let tag = simulating ? StatusItemDisplayView.simulationTag : StatusItemDisplayView.tag
+        guard values != self.shownValues || tag != self.shownTag, let button = self.statusItem.button else { return }
         self.shownValues = values
+        self.shownTag = tag
         let width = StatusItemDisplayView.requiredWidth(for: values)
         let height = button.bounds.height > 0 ? button.bounds.height : NSStatusBar.system.thickness
         self.statusItem.length = width
         self.displayView.frame = NSRect(x: 0, y: 0, width: width, height: height)
         self.displayView.autoresizingMask = [.height]
-        self.displayView.configure(values: values)
-        button.setAccessibilityLabel(values.joined(separator: ", "))
+        self.displayView.configure(values: values, tag: tag)
+        button.setAccessibilityLabel(((simulating ? ["Simulated location"] : []) + values).joined(separator: ", "))
     }
 
     // MARK: - Clicks
@@ -151,6 +168,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     /// The menu anchored to the item: assigned for one click and removed again, so a left click keeps reaching the action.
     private func showMenu() -> Void {
         self.popover.performClose(nil)
+        self.stopSimulationItem.isEnabled = AppLocation.shared.isSimulating
         self.statusItem.menu = self.menu
         self.statusItem.button?.performClick(nil)
         self.statusItem.menu = nil
@@ -158,6 +176,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu()
+        // The items set their own enabled state; the menu would otherwise enable every item with a target.
+        menu.autoenablesItems = false
+        menu.addItem(self.simulationItem)
+        menu.addItem(self.stopSimulationItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(self.openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "About…", action: #selector(self.openAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(self.quit), keyEquivalent: "q"))
@@ -165,6 +188,14 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             item.target = self
         }
         return menu
+    }
+
+    @objc private func openSimulation() {
+        self.appDelegate?.showSimulation()
+    }
+
+    @objc private func stopSimulation() {
+        AppLocation.shared.endSimulation()
     }
 
     @objc private func openSettings() {

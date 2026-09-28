@@ -3,9 +3,10 @@ import AppKit
 
 /// The content of the macOS status item: a small vertical "DOD" tag, then one value at the size of menu bar text, or two stacked in a
 /// smaller font. Ported from senor-particle's `StatusItemDisplayView` (github.com/heikopanjas/senor-particle), where the tag names the
-/// device; here it always names the app.
+/// device; here it names the app, or reads SIM in orange while the app shows a simulated location.
 final class StatusItemDisplayView: NSView {
     static let tag = "DOD"
+    static let simulationTag = "SIM"
 
     private static let tagFont = NSFont.monospacedSystemFont(ofSize: 6.5, weight: .semibold)
     private static let singleValueFont = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)
@@ -15,6 +16,8 @@ final class StatusItemDisplayView: NSView {
     private static let tagWidth: CGFloat = 7
 
     private var values: [String] = []
+    /// Not `tag`, which every `NSView` already has.
+    private var tagText = StatusItemDisplayView.tag
 
     override var isFlipped: Bool { return true }
 
@@ -23,8 +26,10 @@ final class StatusItemDisplayView: NSView {
         return nil
     }
 
-    func configure(values: [String]) -> Void {
+    /// Both tags have three letters in a fixed column, so the item keeps its width when the tag changes.
+    func configure(values: [String], tag: String = StatusItemDisplayView.tag) -> Void {
         self.values = values
+        self.tagText = tag
         self.needsDisplay = true
     }
 
@@ -42,12 +47,13 @@ final class StatusItemDisplayView: NSView {
         return ceil(Self.horizontalPadding * 2 + Self.tagWidth + Self.tagValueGap + widest)
     }
 
-    /// The tag's letters one under the other, centred in their column, in the secondary label color.
+    /// The tag's letters one under the other, centred in their column, in the secondary label color, or orange for a simulation.
     private func drawTag(x: CGFloat) -> Void {
-        let attributes: [NSAttributedString.Key: Any] = [.font: Self.tagFont, .foregroundColor: NSColor.secondaryLabelColor]
+        let color = self.tagText == Self.simulationTag ? NSColor.systemOrange : NSColor.secondaryLabelColor
+        let attributes: [NSAttributedString.Key: Any] = [.font: Self.tagFont, .foregroundColor: color]
         let lineHeight = Self.tagFont.ascender - Self.tagFont.descender
-        var y = max((self.bounds.height - CGFloat(Self.tag.count) * lineHeight) / 2, 0)
-        for character in Self.tag {
+        var y = max((self.bounds.height - CGFloat(self.tagText.count) * lineHeight) / 2, 0)
+        for character in self.tagText {
             let letter = NSAttributedString(string: String(character), attributes: attributes)
             letter.draw(at: NSPoint(x: x + (Self.tagWidth - letter.size().width) / 2, y: y))
             y += lineHeight

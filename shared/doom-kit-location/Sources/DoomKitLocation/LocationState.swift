@@ -1,7 +1,8 @@
 import Foundation
 
 public struct LocationState: Sendable, Equatable {
-    public enum Origin: Sendable { case fallback, measured }
+    /// Where the location came from: the fallback until a first fix, a fix, or a place the user chose to see the app from.
+    public enum Origin: Sendable { case fallback, measured, simulated }
     public enum Authorization: Sendable { case notDetermined, restricted, denied, authorized }
     public enum AuthorizationScope: Sendable { case unknown, whenInUse, always }
     public enum Tracking: Sendable { case stopped, starting, tracking }

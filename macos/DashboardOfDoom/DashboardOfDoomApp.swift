@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let settingsSelection = SettingsSelection()
     var settingsPanel: NSPanel?
+    var simulationWindow: NSWindow?
 
     @ObservationIgnored private var statusItemController: StatusItemController?
     @ObservationIgnored private var themeObserver: NSObjectProtocol?
@@ -144,6 +145,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// The global shortcut opens and closes the dashboard popup under the status item, the same popup a click opens.
     func toggleDashboard() -> Void {
         self.statusItemController?.togglePopover()
+    }
+
+    // MARK: - Simulation Window
+
+    /// The window to pick a place to simulate, from the status item's menu. Built fresh each time, centred on where the app is now, so an
+    /// earlier pick does not linger; Start simulates the pick and closes it.
+    func showSimulation() {
+        if let window = self.simulationWindow, window.isVisible == true {
+            NSApp.activate()
+            window.makeKeyAndOrderFront(nil)
+            return
+        }
+        let view = SimulationView(start: AppLocation.shared.state.location) { [weak self] location in
+            AppLocation.shared.simulate(location)
+            self?.simulationWindow?.close()
+        }
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 640, height: 600), styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered, defer: false)
+        window.title = "Simulation"
+        window.contentViewController = NSHostingController(rootView: view)
+        window.setContentSize(NSSize(width: 640, height: 600))
+        window.isReleasedWhenClosed = false
+        window.center()
+        self.simulationWindow = window
+        // The app has no Dock icon and is never active on its own, so it activates first for the window to take the keyboard.
+        NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 
     // MARK: - Settings Window

@@ -19,7 +19,7 @@ final class NativeGeocoder {
             return GeocodedPlace(
                 name: place.name, postalCode: place.postalCode, locality: place.locality,
                 subLocality: place.subLocality, administrativeArea: place.administrativeArea,
-                subAdministrativeArea: place.subAdministrativeArea)
+                subAdministrativeArea: place.subAdministrativeArea, isoCountryCode: place.isoCountryCode)
         } onCancel: {
             Task { @MainActor in self.geocoder.cancelGeocode() }
         }
