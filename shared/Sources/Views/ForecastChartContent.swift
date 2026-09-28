@@ -4,14 +4,21 @@ import SwiftUI
 
 /// A forecast after a series' last measurement: its uncertainty band as a translucent range, its value as a solid line in the series'
 /// color, both starting where the measurements end, and a hairline at now. The measured series stays the filled area, so the two can
-/// always be told apart.
+/// always be told apart. In dark mode the line is dimmed, since at full strength it was too bright against the black chart.
 struct ForecastMarks: ChartContent {
     let forecast: ProcessForecast
     /// The last measurement, where the line and the band start, so the forecast continues the series instead of floating beside it.
     let anchor: ProcessValue<Dimension>?
     let color: Color
+    /// Passed in by the chart, since chart content cannot read the environment.
+    let colorScheme: ColorScheme
     var xLabel = "Date"
     var yLabel = "Value"
+
+    /// The line's color, which the legend's swatch shares: the series' color, at 40 % in dark mode.
+    static func lineColor(_ color: Color, in colorScheme: ColorScheme) -> Color {
+        return colorScheme == .dark ? color.opacity(0.4) : color
+    }
 
     private struct Sample: Identifiable {
         let timestamp: Date
@@ -56,7 +63,7 @@ struct ForecastMarks: ChartContent {
                 series: .value("Series", "forecast")
             )
             .interpolationMethod(.monotone)
-            .foregroundStyle(self.color)
+            .foregroundStyle(Self.lineColor(self.color, in: self.colorScheme))
             // Solid: a dashed line broke an hourly forecast into dots that could not be read as a series.
             .lineStyle(StrokeStyle(lineWidth: 1.5))
         }
@@ -111,6 +118,7 @@ struct ForecastMarker: ChartContent {
 /// fit beside it, it shortens, and in the end shows the swatch alone, rather than push the title onto a second line. The drag marker still
 /// names the method.
 struct ForecastLegend: View {
+    @Environment(\.colorScheme) private var colorScheme
     let origin: ProcessForecast.Origin
     let color: Color
 
@@ -141,21 +149,21 @@ struct ForecastLegend: View {
             path.move(to: CGPoint(x: 0, y: 4))
             path.addLine(to: CGPoint(x: 16, y: 4))
         }
-        .stroke(self.color, style: StrokeStyle(lineWidth: 1.5))
+        .stroke(ForecastMarks.lineColor(self.color, in: self.colorScheme), style: StrokeStyle(lineWidth: 1.5))
         .frame(width: 16, height: 8)
     }
 }
 
-/// The badge behind a forecast marker's label: neutral and outlined, where a measurement's badge is colored by its quality, and opaque
-/// like it, so the chart underneath never shows through.
+/// The badge behind a forecast marker's label: neutral gray, where a measurement's badge is colored by its quality, and opaque like it, so
+/// the chart underneath never shows through. Without an outline, the user's choice. On the dark base the gray is stronger, since at the
+/// light mode's strength it was too dark for the black text.
 struct ForecastBadgeViewModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
-            .background(BadgeBackground(tint: .gray, opacity: 0.35, colorScheme: self.colorScheme))
-            .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.secondary, lineWidth: 1))
-            .foregroundStyle(BadgeBackground.text(for: self.colorScheme))
+            .background(BadgeBackground(tint: .gray, opacity: self.colorScheme == .dark ? 0.9 : 0.35, colorScheme: self.colorScheme))
+            .foregroundStyle(BadgeBackground.text)
     }
 }
 

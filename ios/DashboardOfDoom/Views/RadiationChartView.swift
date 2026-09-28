@@ -50,7 +50,7 @@ struct RadiationChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Radiation")
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Radiation")
                 }
 
                 if let measurement = self.reading.current[selector] {

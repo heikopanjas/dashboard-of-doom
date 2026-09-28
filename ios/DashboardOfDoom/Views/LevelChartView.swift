@@ -56,7 +56,7 @@ struct LevelChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Level")
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = self.reading.current[selector] {

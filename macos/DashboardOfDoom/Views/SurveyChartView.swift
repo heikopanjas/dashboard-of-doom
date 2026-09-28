@@ -3,6 +3,7 @@ import Charts
 import SwiftUI
 
 struct SurveyChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(SurveyPresenter.self) private var presenter
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.polls.key) private var showForecasts = ForecastFamily.enabledByDefault
@@ -122,7 +123,7 @@ struct SurveyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: self.presenter.color(selector: self.selector), xLabel: "Timestamp", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: self.presenter.color(selector: self.selector), colorScheme: self.colorScheme, xLabel: "Timestamp", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
