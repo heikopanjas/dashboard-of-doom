@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 4, warnings from provider forecasts, 15:50)
+
+- the uba forecast warns for pm10, pm2.5, no2 and ozone, and the pegelonline forecast warns when a gauge is expected to reach its flood marks, both within the next 24 hours; the notice names the provider
+- decision: a forecast is another input on the reading's own key, as the weatherkit forecast already is, so a value that was announced does not notify again when it arrives
+- only provider forecasts warn, never the app's own estimates, and nothing warns from a forecast while show forecasts is off
+- the ios warning explainers for level and particles mention the forecasts
+- validation: 195 macos and 240 ios tests pass, both apps build; a real forecast warning was not triggered, since nothing near hkw forecasts over a limit
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 3, the pegelonline level forecast, 15:40)
 
 - level gauges with a pegelonline forecast show it as a provider forecast after the measurements: 43 gauges on the elbe, rhine, oder, danube and saale, none in berlin

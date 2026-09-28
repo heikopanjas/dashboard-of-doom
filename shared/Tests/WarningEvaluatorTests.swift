@@ -16,7 +16,8 @@ import Testing
 
     private func reading(
         _ selector: ProcessSelector, current: Measurement<Dimension>? = nil, series: [ProcessValue<Dimension>] = [],
-        sourceID: String? = nil, customData: [String: Any]? = nil, name: String = "Station"
+        sourceID: String? = nil, customData: [String: Any]? = nil, name: String = "Station",
+        forecasts: [ProcessSelector: ProcessForecast] = [:]
     ) -> ProcessReading {
         let sensor = ProcessSensor(
             name: name, location: Self.hkw, placemark: "Tiergarten", customData: customData,
@@ -24,7 +25,15 @@ import Testing
             timestamp: Self.now, sourceID: sourceID, distance: 0)
         var currentValues: [ProcessSelector: ProcessValue<Dimension>] = [:]
         if let current { currentValues[selector] = ProcessValue(value: current, quality: .good, timestamp: Self.now) }
-        return ProcessReading(sensor: sensor, measurements: sensor.measurements, current: currentValues)
+        return ProcessReading(sensor: sensor, measurements: sensor.measurements, current: currentValues, forecasts: forecasts)
+    }
+
+    /// A forecast of hourly points, `values` keyed by hours from now.
+    private func forecast(_ origin: ProcessForecast.Origin, _ values: [Double: Double], _ unit: Dimension) -> ProcessForecast {
+        let points = values.map { hours, value in
+            ProcessForecast.Point(timestamp: Self.now.addingTimeInterval(hours * 3600), value: Measurement(value: value, unit: unit))
+        }
+        return ProcessForecast(origin: origin, points: points)
     }
 
     private func hour(_ offset: Double, _ value: Double, _ unit: Dimension, quality: ProcessQuality = .uncertain) -> ProcessValue<Dimension> {
@@ -130,6 +139,64 @@ import Testing
         // A gauge without marks raises nothing.
         let plain = self.reading(.water(.level), current: Measurement(value: 9, unit: UnitLength.meters), sourceID: "canal")
         #expect(WarningEvaluator.assessments(readings: [plain], defaults: self.defaults(), now: Self.now).isEmpty)
+    }
+
+    @Test func aProvidersForecastCountsItsWorstHourWithinADay() {
+        let unit = UnitConcentrationMass.microgramsPerCubicMeter
+        let uba = self.forecast(.provider("UBA"), [-2: 900, 5: 40, 8: 62, 30: 500], unit)
+        let reading = self.reading(
+            .particle(.pm10), current: Measurement(value: 20, unit: unit), sourceID: "DEBE010", forecasts: [.particle(.pm10): uba])
+        let assessments = WarningEvaluator.assessments(readings: [reading], defaults: self.defaults(), now: Self.now)
+            .filter { $0.key == "particle.pm10.DEBE010" }
+        // The past hour and the one beyond the day do not count; the worst hour between does, as a second input on the same key.
+        #expect(assessments.map { $0.input } == ["current", "forecast"])
+        #expect(assessments.map { $0.level } == [.normal, .warning])
+        #expect(assessments.last?.body.hasPrefix("Tiergarten: 62 µg/m³ expected ") == true)
+        #expect(assessments.last?.body.contains("(UBA forecast)") == true)
+    }
+
+    @Test func theAppsOwnEstimateNeverWarns() {
+        let unit = UnitConcentrationMass.microgramsPerCubicMeter
+        let estimate = self.forecast(.estimate("trend"), [3: 900], unit)
+        let reading = self.reading(
+            .particle(.pm10), current: Measurement(value: 20, unit: unit), sourceID: "DEBE010", forecasts: [.particle(.pm10): estimate])
+        let assessments = WarningEvaluator.assessments(readings: [reading], defaults: self.defaults(), now: Self.now)
+        #expect(assessments.contains { $0.input == "forecast" } == false)
+    }
+
+    @Test func withForecastsSwitchedOffNoForecastWarns() {
+        let defaults = self.defaults()
+        defaults.set(false, forKey: SourcePreferences.forecastsKey)
+        let unit = UnitConcentrationMass.microgramsPerCubicMeter
+        let reading = self.reading(
+            .particle(.pm10), current: Measurement(value: 20, unit: unit), sourceID: "DEBE010",
+            forecasts: [.particle(.pm10): self.forecast(.provider("UBA"), [3: 900], unit)])
+        #expect(WarningEvaluator.assessments(readings: [reading], defaults: defaults, now: Self.now).contains { $0.input == "forecast" } == false)
+        let marks: [String: Any] = ["icon": "water.waves", "marks": ["M_I": 3.0, "M_II": 3.4]]
+        let gauge = self.reading(
+            .water(.level), current: Measurement(value: 2, unit: UnitLength.meters), sourceID: "celle", customData: marks, name: "CELLE",
+            forecasts: [.water(.level): self.forecast(.provider("PEGELONLINE"), [3: 3.5], UnitLength.meters)])
+        #expect(WarningEvaluator.assessments(readings: [gauge], defaults: defaults, now: Self.now).map { $0.input } == ["current"])
+    }
+
+    @Test func aGaugesForecastIsJudgedAgainstItsMarks() {
+        let marks: [String: Any] = ["icon": "water.waves", "marks": ["M_I": 3.0, "M_II": 3.4]]
+        let wv = self.forecast(.provider("PEGELONLINE"), [2: 2.8, 6: 3.2, 12: 3.1, 40: 5.0], UnitLength.meters)
+        let gauge = self.reading(
+            .water(.level), current: Measurement(value: 250, unit: UnitLength.centimeters), sourceID: "celle", customData: marks,
+            name: "CELLE", forecasts: [.water(.level): wv])
+        let assessments = WarningEvaluator.assessments(readings: [gauge], defaults: self.defaults(), now: Self.now)
+        #expect(assessments.map { $0.key } == ["level.marks.celle", "level.marks.celle"])
+        #expect(assessments.map { $0.input } == ["current", "forecast"])
+        #expect(assessments.map { $0.level } == [.normal, .warning])
+        let body = assessments.last?.body ?? ""
+        #expect(body.hasPrefix("CELLE: 3.20 m expected ") == true)
+        #expect(body.hasSuffix(", at or above flood stage I at 3.00 m (PEGELONLINE forecast).") == true)
+        // An estimate for the same gauge would not count.
+        let estimated = self.reading(
+            .water(.level), current: Measurement(value: 250, unit: UnitLength.centimeters), sourceID: "celle", customData: marks,
+            name: "CELLE", forecasts: [.water(.level): self.forecast(.estimate("trend"), [6: 3.9], UnitLength.meters)])
+        #expect(WarningEvaluator.assessments(readings: [estimated], defaults: self.defaults(), now: Self.now).map { $0.input } == ["current"])
     }
 
     @Test func hazardsAreJudgedBySeverityOnePerWarning() {

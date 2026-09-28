@@ -112,6 +112,9 @@ struct WarningRule: Identifiable {
     let range: ClosedRange<Double>
     /// Decimals shown for a limit.
     let fractionDigits: Int
+    /// Whether the provider's own forecast of the `current` selectors counts as well, its next 24 hours, while Show Forecasts is on. Only
+    /// a provider's: the app's own estimates never warn. Last and defaulted, so the rules without one leave it out.
+    var providerForecast = false
 
     static let catalogue: [WarningRule] = [
         WarningRule(
@@ -137,22 +140,22 @@ struct WarningRule: Identifiable {
             id: "particle.pm10", family: .particles, label: "PM10", current: [.particle(.pm10)], forecast: nil, direction: .above,
             unit: UnitConcentrationMass.microgramsPerCubicMeter, symbol: "µg/m³", defaultWarning: 50, defaultCritical: 100,
             basis: "The UBA air quality index rates PM10 poor from 50 µg/m³ and very poor from 100 µg/m³.", range: 0 ... 2000,
-            fractionDigits: 0),
+            fractionDigits: 0, providerForecast: true),
         WarningRule(
             id: "particle.pm25", family: .particles, label: "PM2.5", current: [.particle(.pm25)], forecast: nil, direction: .above,
             unit: UnitConcentrationMass.microgramsPerCubicMeter, symbol: "µg/m³", defaultWarning: 25, defaultCritical: 50,
             basis: "The UBA air quality index rates PM2.5 poor from 25 µg/m³ and very poor from 50 µg/m³.", range: 0 ... 2000,
-            fractionDigits: 0),
+            fractionDigits: 0, providerForecast: true),
         WarningRule(
             id: "particle.no2", family: .particles, label: "Nitrogen Dioxide", current: [.particle(.no2)], forecast: nil, direction: .above,
             unit: UnitConcentrationMass.microgramsPerCubicMeter, symbol: "µg/m³", defaultWarning: 100, defaultCritical: 200,
             basis: "The UBA air quality index rates NO2 poor from 100 µg/m³ and very poor from 200 µg/m³.", range: 0 ... 2000,
-            fractionDigits: 0),
+            fractionDigits: 0, providerForecast: true),
         WarningRule(
             id: "particle.o3", family: .particles, label: "Ozone", current: [.particle(.o3)], forecast: nil, direction: .above,
             unit: UnitConcentrationMass.microgramsPerCubicMeter, symbol: "µg/m³", defaultWarning: 180, defaultCritical: 240,
             basis: "The EU information threshold for ozone is 180 µg/m³ and its alert threshold 240 µg/m³, which the UBA index rates poor and very poor.",
-            range: 0 ... 2000, fractionDigits: 0),
+            range: 0 ... 2000, fractionDigits: 0, providerForecast: true),
         WarningRule(
             id: "radiation.total", family: .radiation, label: "Dose Rate", current: [.radiation(.total)], forecast: nil, direction: .above,
             unit: UnitRadiation.microsieverts, symbol: "µSv/h", defaultWarning: 0.5, defaultCritical: 1.0,

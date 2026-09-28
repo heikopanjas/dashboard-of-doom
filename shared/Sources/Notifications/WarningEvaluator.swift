@@ -46,11 +46,16 @@ enum WarningEvaluator {
     // MARK: - Readings
 
     static func assessments(readings: [ProcessReading], defaults: UserDefaults = .standard, now: Date = .now) -> [WarningAssessment] {
+        // Read here rather than trusted from the readings: a forecast fetched before the switch went off must not warn after it.
+        let forecasts = SourcePreferences.forecastsVisible(defaults: defaults)
         var assessments: [WarningAssessment] = []
         for reading in readings {
             guard let family = WarningFamily.of(reading) else { continue }
             if family == .level {
                 if let assessment = Self.levelAssessment(reading: reading) { assessments.append(assessment) }
+                if forecasts == true, let assessment = Self.levelForecastAssessment(reading: reading, now: now) {
+                    assessments.append(assessment)
+                }
                 continue
             }
             for rule in WarningRule.rules(for: family) {
@@ -59,6 +64,11 @@ enum WarningEvaluator {
                     assessments.append(assessment)
                 }
                 if let assessment = Self.forecastAssessment(rule: rule, limits: limits, reading: reading, now: now) {
+                    assessments.append(assessment)
+                }
+                if forecasts == true,
+                    let assessment = Self.providerForecastAssessment(rule: rule, limits: limits, reading: reading, now: now)
+                {
                     assessments.append(assessment)
                 }
             }
@@ -82,26 +92,51 @@ enum WarningEvaluator {
     /// The worst hour of the next day. It keeps that hour, so the notice can say when.
     private static func forecastAssessment(rule: WarningRule, limits: WarningLimits, reading: ProcessReading, now: Date) -> WarningAssessment? {
         guard let selector = rule.forecast, let series = reading.measurements[selector] else { return nil }
-        let end = now.addingTimeInterval(Self.forecastWindow)
-        var worst: (value: Double, timestamp: Date)?
-        for measurement in series where measurement.timestamp > now && measurement.timestamp <= end && measurement.quality != .unknown {
-            guard let value = Self.value(measurement.value, in: rule) else { continue }
-            let isWorse: Bool
-            if let worst {
-                isWorse = rule.direction == .above ? value > worst.value : value < worst.value
-            }
-            else {
-                isWorse = true
-            }
-            if isWorse { worst = (value, measurement.timestamp) }
+        let samples = series.filter { $0.quality != .unknown }.compactMap { measurement in
+            Self.value(measurement.value, in: rule).map { (value: $0, timestamp: measurement.timestamp) }
         }
-        guard let worst else { return nil }
+        guard let worst = Self.worst(samples, direction: rule.direction, now: now) else { return nil }
         let level = Self.level(worst.value, limits: limits, direction: rule.direction)
         return WarningAssessment(
             key: Self.key(rule.id, reading: reading), input: "forecast", family: rule.family, level: level,
             title: Self.title(rule.label, level: level),
             body: "\(Self.place(of: reading)): \(rule.format(worst.value)) expected \(Self.when(worst.timestamp, now: now)). "
                 + Self.limitSentence(level, limits: limits, rule: rule))
+    }
+
+    /// The worst point of a provider's forecast within the next day, for the rules that let one count. It shares the rule's key with the
+    /// current value as another input, like the weather forecast, so an announced value does not notify again when it arrives.
+    private static func providerForecastAssessment(
+        rule: WarningRule, limits: WarningLimits, reading: ProcessReading, now: Date
+    ) -> WarningAssessment? {
+        guard rule.providerForecast == true else { return nil }
+        for selector in rule.current {
+            guard let forecast = reading.forecasts[selector], case .provider(let provider) = forecast.origin else { continue }
+            let samples = forecast.points.compactMap { point in
+                Self.value(point.value, in: rule).map { (value: $0, timestamp: point.timestamp) }
+            }
+            guard let worst = Self.worst(samples, direction: rule.direction, now: now) else { continue }
+            let level = Self.level(worst.value, limits: limits, direction: rule.direction)
+            return WarningAssessment(
+                key: Self.key(rule.id, reading: reading), input: "forecast", family: rule.family, level: level,
+                title: Self.title(rule.label, level: level),
+                body: "\(Self.place(of: reading)): \(rule.format(worst.value)) expected \(Self.when(worst.timestamp, now: now)) (\(provider) forecast). "
+                    + Self.limitSentence(level, limits: limits, rule: rule))
+        }
+        return nil
+    }
+
+    /// The worst of `samples` after now and within the forecast window: the highest for a limit above, the lowest for one below.
+    private static func worst(
+        _ samples: [(value: Double, timestamp: Date)], direction: WarningDirection, now: Date
+    ) -> (value: Double, timestamp: Date)? {
+        let end = now.addingTimeInterval(Self.forecastWindow)
+        var worst: (value: Double, timestamp: Date)?
+        for sample in samples where sample.timestamp > now && sample.timestamp <= end {
+            if let current = worst, (direction == .above ? sample.value <= current.value : sample.value >= current.value) { continue }
+            worst = sample
+        }
+        return worst
     }
 
     // MARK: - Level
@@ -138,20 +173,38 @@ enum WarningEvaluator {
     private static func levelAssessment(reading: ProcessReading) -> WarningAssessment? {
         guard let marks = Self.marks(of: reading.sensor), let current = reading.current[.water(.level)] else { return nil }
         let value = current.value.converted(to: UnitLength.meters).value
-        var level = WarningLevel.normal
-        var mark = marks.warning
-        if let critical = marks.critical, value >= critical.value {
-            level = .critical
-            mark = critical
-        }
-        else if value >= marks.warning.value {
-            level = .warning
-        }
+        let (level, mark) = Self.level(value, marks: marks)
         let verb = level == .normal ? "below" : "at or above"
         return WarningAssessment(
             key: Self.key("level.marks", reading: reading), input: "current", family: .level, level: level,
             title: Self.title("High Water", level: level),
             body: String(format: "%@: %.2f m, %@ %@ at %.2f m.", reading.sensor.name, value, verb, Self.markLabel(mark.name), mark.value))
+    }
+
+    /// The highest point of the gauge's official forecast within the next day, against the same marks and under the same key as its
+    /// current level, as another input. The app's own estimates never count.
+    private static func levelForecastAssessment(reading: ProcessReading, now: Date) -> WarningAssessment? {
+        guard let marks = Self.marks(of: reading.sensor), let forecast = reading.forecasts[.water(.level)],
+            case .provider(let provider) = forecast.origin
+        else { return nil }
+        let samples = forecast.points.map { (value: $0.value.converted(to: UnitLength.meters).value, timestamp: $0.timestamp) }
+        guard let highest = Self.worst(samples, direction: .above, now: now) else { return nil }
+        let (level, mark) = Self.level(highest.value, marks: marks)
+        let verb = level == .normal ? "below" : "at or above"
+        return WarningAssessment(
+            key: Self.key("level.marks", reading: reading), input: "forecast", family: .level, level: level,
+            title: Self.title("High Water", level: level),
+            body: String(
+                format: "%@: %.2f m expected %@, %@ %@ at %.2f m (%@ forecast).", reading.sensor.name, highest.value,
+                Self.when(highest.timestamp, now: now), verb, Self.markLabel(mark.name), mark.value, provider))
+    }
+
+    /// Where a level stands against a gauge's marks, and the mark that decides it: the critical one when it is reached, else the warning.
+    private static func level(_ value: Double, marks: LevelMarks) -> (WarningLevel, LevelMarks.Mark) {
+        if let critical = marks.critical, value >= critical.value {
+            return (.critical, critical)
+        }
+        return (value >= marks.warning.value ? .warning : .normal, marks.warning)
     }
 
     // MARK: - Hazards

@@ -142,11 +142,11 @@ struct NotificationFamilySettingsView: View {
             case .hazards:
                 return "Official NINA warnings that cover your location or lie nearby, once for each new warning. Needs Warnings on under Sources."
             case .level:
-                return "Every gauge that is loaded, against its own official marks. Needs Water on under Sources."
+                return "Every gauge that is loaded, against its own official marks, and where PEGELONLINE publishes a forecast, its next 24 hours too while Show Forecasts is on. Needs Water on under Sources."
             case .radiation:
                 return "Every radiation station that is loaded. Needs Radiation on under Sources."
             case .particles:
-                return "Every air quality station that is loaded, one notice per pollutant. Needs Particulate Matter on under Sources."
+                return "Every air quality station that is loaded, one notice per pollutant, and UBA's forecast for the next 24 hours while Show Forecasts is on. Needs Particulate Matter on under Sources."
             case .covid:
                 return "The reporting district's incidence. Needs COVID-19 on under Sources."
             case .energy:
