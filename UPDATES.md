@@ -4,6 +4,14 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, translucent current-value badges, 23:43)
+
+- the current value's badge in every chart is half transparent again, without the opaque base; the drag-selected value, forecast and hazard badges stay opaque
+- rationale: the user found the solid green and orange fine for the other badges but wanted the chart to show through under the current value
+- its text still follows the appearance, white in dark mode, so the dark mode readability fix is kept for the text
+- validation: both apps build; installed on the iphone 18 pro
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (ios v6.7.0, location simulation on ios, 23:14)
 
 - ios gets the macos simulation: an icon at the upper right of every screen opens a menu with simulation… and stop simulation, the sheet has the same search, map of germany and start, and an orange sim · place capsule sits next to the title while simulating, a tap offering to stop

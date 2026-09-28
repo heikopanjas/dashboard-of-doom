@@ -82,7 +82,7 @@ struct EnergyChartView: View {
                         }
                         .padding(7)
                         .padding(.horizontal, 7)
-                        .quality(measurement.quality)
+                        .quality(measurement.quality, opaque: false)
                     }
                 }
 
