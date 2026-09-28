@@ -4,6 +4,16 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-29 (macos v6.8.0, ios v6.7.0, chart badges and forecast lines in dark mode, 00:52)
+
+- badge text is black in both appearances, on every chart badge; the drag-selected badges keep their dark base in dark mode
+- uncertain orange on the dark base is stronger (0.75), and the forecast badge's gray too (0.9), so black text reads at 5.9:1 and 5.3:1; the forecast badge lost its outline
+- forecast lines and their legend swatch are drawn at 40 % in dark mode; at full strength and at 60 % they were too bright on the black chart
+- rationale: tried with the user on the iphone and in the simulator, round by round; white text in dark mode was readable, but the user preferred one text color
+- known: black text on the dark good and bad badges stays at about 3:1 and 2.2:1, accepted
+- validation: 223 macos and 267 ios tests pass, both apps build; checked in dark and light screenshots in the ios simulator, and on the iphone by the user
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (macos v6.8.0, ios v6.7.0, translucent current-value badges, 23:43)
 
 - the current value's badge in every chart is half transparent again, without the opaque base; the drag-selected value, forecast and hazard badges stay opaque

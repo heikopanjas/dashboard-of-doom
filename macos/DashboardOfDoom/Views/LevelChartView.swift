@@ -3,6 +3,7 @@ import Charts
 import SwiftUI
 
 struct LevelChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let reading: ProcessReading
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.level.key) private var showForecasts = ForecastFamily.enabledByDefault
@@ -50,7 +51,7 @@ struct LevelChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Level")
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = reading.current[selector] {

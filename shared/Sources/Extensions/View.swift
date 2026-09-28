@@ -2,10 +2,9 @@ import DoomKitProcess
 import SwiftUI
 
 /// The badge behind a chart marker's label, tinted by the value's quality. The tint is half transparent over an opaque base, so the chart
-/// underneath never shows through, and the base and the text follow the appearance: white under black text in light mode, black under
-/// white text in dark mode. Half-transparent over the chart alone, with black text, it was dark green on black in dark mode, with the
-/// area showing through, and at some values the reading could not be read. The current value's badge stays half transparent without the
-/// base (`opaque: false`), as it always was; the user wants the chart to show through there. Its text still follows the appearance.
+/// underneath never shows through; the base follows the appearance, white in light mode and black in dark mode. The current value's badge
+/// draws the tint without the base (`opaque: false`), so the chart shows through. The text is black on every badge in both appearances,
+/// the user's choice. On the dark base the uncertain orange is stronger, since at half strength it was too dark for the black text.
 struct QualityCodeViewModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     var qualityCode: ProcessQuality
@@ -24,23 +23,25 @@ struct QualityCodeViewModifier: ViewModifier {
         }
     }
 
+    var tintOpacity: Double {
+        return self.opaque && self.colorScheme == .dark && self.qualityCode == .uncertain ? 0.75 : 0.5
+    }
+
     func body(content: Content) -> some View {
         content
-            .background(BadgeBackground(tint: self.backgroundColor, opacity: 0.5, colorScheme: self.colorScheme, opaque: self.opaque))
-            .foregroundStyle(BadgeBackground.text(for: self.colorScheme))
+            .background(BadgeBackground(tint: self.backgroundColor, opacity: self.tintOpacity, colorScheme: self.colorScheme, opaque: self.opaque))
+            .foregroundStyle(BadgeBackground.text)
     }
 }
 
 /// A rounded badge: the base for the appearance, the tint over it. Without the base (`opaque: false`) only the tint is drawn.
 struct BadgeBackground: View {
+    static let text = Color.black
+
     let tint: Color
     let opacity: Double
     let colorScheme: ColorScheme
     var opaque: Bool = true
-
-    static func text(for colorScheme: ColorScheme) -> Color {
-        return colorScheme == .dark ? .white : .black
-    }
 
     var body: some View {
         ZStack {

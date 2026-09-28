@@ -97,7 +97,7 @@ struct ParticleChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Particle")
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Particle")
                 }
 
                 if let measurement = self.reading.current[selector] {

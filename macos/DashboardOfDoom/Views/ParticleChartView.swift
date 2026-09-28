@@ -3,6 +3,7 @@ import Charts
 import SwiftUI
 
 struct ParticleChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let reading: ProcessReading
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.particles.key) private var showForecasts = ForecastFamily.enabledByDefault
@@ -101,7 +102,7 @@ struct ParticleChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Particle")
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Particle")
                 }
 
                 if let measurement = reading.current[selector] {

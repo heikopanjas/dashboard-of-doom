@@ -55,7 +55,7 @@ struct EnergyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {

@@ -3,6 +3,7 @@ import Charts
 import SwiftUI
 
 struct RadiationChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let reading: ProcessReading
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.radiation.key) private var showForecasts = ForecastFamily.enabledByDefault
@@ -45,7 +46,7 @@ struct RadiationChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Radiation")
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Radiation")
                 }
 
                 if let measurement = reading.current[selector] {

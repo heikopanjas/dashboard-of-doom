@@ -3,6 +3,7 @@ import Charts
 import SwiftUI
 
 struct EnergyChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(EnergyPresenter.self) private var presenter
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
@@ -50,7 +51,7 @@ struct EnergyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, xLabel: "Date", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
