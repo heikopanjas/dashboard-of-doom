@@ -19,6 +19,17 @@ import Testing
         #expect(ForecastDisplay.label(for: .estimate("trend")) == "Estimate · trend")
         #expect(ForecastDisplay.legend(for: .provider("PEGELONLINE")) == "PEGELONLINE forecast")
         #expect(ForecastDisplay.legend(for: .estimate("usual range")) == "App estimate (usual range)")
+        #expect(ForecastDisplay.shortLegend(for: .provider("UBA")) == "UBA")
+        #expect(ForecastDisplay.shortLegend(for: .estimate("trend")) == "Estimate")
+    }
+
+    @Test func everySourceSaysWhatItsSwitchDoes() {
+        for family in ForecastFamily.allCases {
+            let text = ForecastDisplay.settingsExplanation(for: family)
+            #expect(text.hasSuffix("Off, nothing is downloaded or estimated for it."))
+        }
+        // Only the two with a provider's forecast can warn.
+        #expect(ForecastFamily.allCases.filter { ForecastDisplay.settingsExplanation(for: $0).contains("warns") } == [.level, .particles])
     }
 
     @Test func theDomainGrowsToHoldTheForecastAndItsBand() {

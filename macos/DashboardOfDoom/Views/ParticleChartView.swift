@@ -5,7 +5,7 @@ import SwiftUI
 struct ParticleChartView: View {
     let reading: ProcessReading
     @State private var timestamp: Date?
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
+    @AppStorage(ForecastFamily.particles.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
     enum ParticleSymbol: String, CaseIterable {

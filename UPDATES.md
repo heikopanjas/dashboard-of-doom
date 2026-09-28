@@ -4,6 +4,35 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, one show forecast switch per source, 17:05)
+
+- decision with the user: the global show forecasts switch is replaced by one show forecast switch per source, in that source's own settings: a forecast section on the macos covid-19, level, radiation, particles, energy and polls tabs, and a row in the ios water, radiation, particulate matter, energy and election polls cards
+- ios gets a covid-19 card again, shown while covid is on, since the switch is all there is to set for it
+- each switch has its own footnote saying whose forecast it is, how far it reaches and whether it warns; turning one off hides that source's forecast, stops its requests and estimates, and stops its forecast warnings, and refreshes that source only
+- the global key was added today and never released, so nothing is migrated
+- verified live on ios at hkw with the radiation forecast off by launch argument: radiation ends at now while level keeps its estimate, and the settings show the per-source rows
+- validation: 207 macos and 252 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, poll trends on weekly averages, 16:28)
+
+- decision with the user: poll estimates are fitted on weekly averages of the polls, 13 weeks ahead; on day-averaged polls the pollster-to-pollster noise beat the trend in every backtest, so every party showed only the last value. live, most parties now follow a trend
+- decision with the user: covid keeps its last-value estimate with the wide band, as an honest statement of how little the mostly-zero district numbers say
+- fix: the poll chart title had a spacer of its own that left the forecast legend no room; it now shows as on the other charts
+- validation: 205 macos tests pass, both apps build, the poll tab checked live
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 6, the app's own estimates, 16:19)
+
+- where no provider forecasts, the charts continue with the app's own estimate, labelled as such: radiation its usual range for a day, energy the last price for 30 days, level gauges without a pegelonline forecast their tide or trend, polls a trend for 90 days, covid the weekly pattern or trend for 14 days
+- decision: every estimate is backtested on its own series first and gives way to the last value when it does worse, and a feed that stopped is not continued
+- the polls no longer append an arima forecast that was smoothed into the measured line, and covid's one-day nowcast is gone, so both show what was reported
+- the forecast legend shortens instead of pushing chart titles onto two lines
+- the show forecasts switch refreshes every source
+- seen live at hkw: flat estimates for radiation and the spree-oder-wasserstrasse gauge, the last price for energy; every poll party fell back to the last value, and berlin mitte's covid counts, mostly zeros, get a wide band
+- validation: 203 macos and 248 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
 ### 2026-09-28 (sensor forecasts step 5, the forecasting engine, 15:57)
 
 - a forecasting engine in doomkittools: a forecaster that puts a series on an even grid, transforms, predicts, transforms back and clamps, five models (last value, damped trend, seasonal pattern, tide, usual range) and a rolling-origin backtest

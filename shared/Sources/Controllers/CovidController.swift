@@ -8,9 +8,12 @@ class CovidController: ProcessController {
     private let measurementDistance: TimeInterval
     private let measurementDuration: Double
 
-    init() {
+    private let showForecasts: @Sendable () -> Bool
+
+    init(showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.covid) }) {
         self.measurementDistance = 24 * 60 * 60  // 1 day
         self.measurementDuration = 167.0  // 167 days
+        self.showForecasts = showForecasts
     }
 
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
@@ -51,6 +54,18 @@ class CovidController: ProcessController {
                 measurement.append(contentsOf: self.interpolateMeasurements(measurements: recovered, distance: self.measurementDistance))
                 measurements[.covid(.recovered)] = measurement.sorted(by: { $0.timestamp < $1.timestamp })
             }
+            // Estimated from the reports themselves, not from the gap-filled series.
+            var forecasts: [ProcessSelector: ProcessForecast] = [:]
+            if self.showForecasts() == true {
+                let reports: [(ProcessSelector, [ProcessValue<Dimension>]?)] = [
+                    (.covid(.incidence), incidence), (.covid(.cases), cases), (.covid(.deaths), deaths), (.covid(.recovered), recovered)
+                ]
+                for (selector, values) in reports {
+                    if let values, let estimate = Self.estimate(from: values, selector: selector) {
+                        forecasts[selector] = estimate
+                    }
+                }
+            }
             try Task.checkCancellation()
             if let placemark = await GeocodingService.reverseGeocodeLocation(location: district.location) {
                 try Task.checkCancellation()
@@ -59,7 +74,7 @@ class CovidController: ProcessController {
                 let sensor = ProcessSensor(
                     name: district.name, location: district.location, placemark: placemark,
                     customData: ["icon": "facemask", "polygons": district.polygons], measurements: measurements,
-                    timestamp: Date.now)
+                    timestamp: Date.now, forecasts: forecasts)
                 data.append(sensor)
             }
         }
@@ -233,9 +248,6 @@ class CovidController: ProcessController {
             try Task.checkCancellation()
             if let measurements = try Self.parseData(data: data, district: district, tag: "weekIncidence", unit: UnitIncidence.casesPer100k) {
                 incidence = measurements
-                if let current = Self.nowCast(data: incidence, alpha: 0.33) {
-                    incidence?.append(current)
-                }
             }
         }
         return incidence
@@ -248,9 +260,6 @@ class CovidController: ProcessController {
             try Task.checkCancellation()
             if let measurements = try Self.parseData(data: data, district: district, tag: "cases", unit: UnitPopulation.people) {
                 incidence = measurements
-                if let current = Self.nowCast(data: incidence, alpha: 0.33) {
-                    incidence?.append(current)
-                }
             }
         }
         return incidence
@@ -263,9 +272,6 @@ class CovidController: ProcessController {
             try Task.checkCancellation()
             if let measurements = try Self.parseData(data: data, district: district, tag: "deaths", unit: UnitPopulation.people) {
                 incidence = measurements
-                if let current = Self.nowCast(data: incidence, alpha: 0.33) {
-                    incidence?.append(current)
-                }
             }
         }
         return incidence
@@ -278,9 +284,6 @@ class CovidController: ProcessController {
             try Task.checkCancellation()
             if let measurements = try Self.parseData(data: data, district: district, tag: "recovered", unit: UnitPopulation.people) {
                 incidence = measurements
-                if let current = Self.nowCast(data: incidence, alpha: 0.33) {
-                    incidence?.append(current)
-                }
             }
         }
         return incidence
@@ -322,26 +325,18 @@ class CovidController: ProcessController {
         return incidence
     }
 
-    /// A value for the day after the last report, blended from the last two. Needs two values; a series of one has nothing to blend.
-    static func nowCast(data: [ProcessValue<Dimension>]?, alpha: Double) -> ProcessValue<Dimension>? {
-        guard let data = data, data.count > 1, alpha >= 0.0, alpha <= 1.0 else {
-            return nil
+    /// No one forecasts a district's COVID figures, so these are the app's estimates for the next two weeks, from the last 60 days. Daily
+    /// counts follow the reporting week, few at weekends and the backlog after, so they get the weekly pattern; the incidence is already a
+    /// seven-day sum and gets a damped trend. Both in the logarithm of one more, since counts grow in proportion and can be zero. A district
+    /// that has not reported for two weeks is not continued.
+    static func estimate(from raw: [ProcessValue<Dimension>], selector: ProcessSelector, now: Date = .now) -> ProcessForecast? {
+        guard let last = raw.map(\.timestamp).max() else { return nil }
+        let recent = raw.filter { $0.timestamp > last.addingTimeInterval(-60 * 24 * 3600) }
+        let request = ForecastRequest(step: 24 * 3600, horizon: 14, bounds: 0 ... .greatestFiniteMagnitude, transform: .logarithmPlusOne)
+        if selector == .covid(.incidence) {
+            return SeriesEstimate.make(from: recent, model: DampedTrendModel(), request: request, maximumAge: 14 * 24 * 3600, now: now)
         }
-        let historicalData = [ProcessValue<Dimension>](data.reversed())
-        if let current = historicalData.max(by: { $0.timestamp < $1.timestamp }) {
-            if let timestamp = Calendar.current.date(byAdding: .day, value: 1, to: current.timestamp) {
-                let value = Self.nowCast(data: historicalData[1].value, previous: historicalData[0].value, alpha: alpha)
-                return ProcessValue<Dimension>(value: value, quality: .uncertain, timestamp: timestamp)
-            }
-        }
-        return nil
-    }
-
-    private static func nowCast(
-        data: Measurement<Dimension>, previous: Measurement<Dimension>, alpha: Double
-    ) -> Measurement<Dimension> {
-        let value = alpha * data.value + (1 - alpha) * previous.value
-        return Measurement<Dimension>(value: value, unit: data.unit)
+        return SeriesEstimate.make(from: recent, model: SeasonalModel(period: 7), request: request, maximumAge: 14 * 24 * 3600, now: now)
     }
 
     private func interpolateMeasurements(measurements: [ProcessValue<Dimension>], distance: TimeInterval) -> [ProcessValue<Dimension>] {

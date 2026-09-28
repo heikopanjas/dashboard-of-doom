@@ -172,6 +172,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 radiationPresenter: self.radiationPresenter,
                 particlePresenter: self.particlePresenter,
                 surveyPresenter: self.surveyPresenter,
+                covidPresenter: self.covidPresenter,
+                energyPresenter: self.energyPresenter,
                 fuelPresenter: self.fuelPresenter,
                 pointOfInterestPresenter: self.pointOfInterestPresenter,
                 faceplate: { [unowned self] value in self.faceplate(for: value) }

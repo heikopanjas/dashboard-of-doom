@@ -2,9 +2,9 @@
 
 Planned work that has not started yet, newest first. An entry records what was decided and why, so the work can start from it without repeating the research. Once work starts, the decisions move to AGENTS.md and UPDATES.md and the entry is deleted.
 
-## Sensor forecasts: steps 6 and 7
+## Sensor forecasts: step 7
 
-*Noted 2026-09-28. Steps 1 to 5 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
+*Noted 2026-09-28. Steps 1 to 6 are done (see the Sensor Forecasts section of AGENTS.md); these are the steps left, one at a time.*
 
 - **Which sources publish a forecast** (checked live on 2026-09-28):
   - PEGELONLINE publishes water level forecasts as the timeseries `WV`, at `stations/{id}/WV/measurements.json`, keyless, under DL-DE Zero. They exist on 43 gauges (Elbe, Rhine, Oder, Danube, Saale) and on none in Berlin.
@@ -12,12 +12,6 @@ Planned work that has not started yet, newest first. An entry records what was d
   - Adding `includeForecastTimeseries=true` to the station request the app already makes for the flood marks lists a `WV` entry when there is one, so detection costs no extra request.
   - UBA publishes air quality forecasts about 3 days ahead, hourly, for PM10, PM2.5, NO2 and O3; the app uses them since step 2.
   - BfS, the COVID feeds, DAWUM, EIA/ACER and Tankerkoenig publish none. For oil, EIA's monthly STEO outlook exists only as an Excel file.
-- **Step 6, the app's own estimates**, through `SeriesEstimate`, fitted on the raw parsed series, never the gap-filled one. It has a staleness guard and falls back to the random walk when a model does worse than naive.
-  - 6a radiation: usual range, 24 h.
-  - 6b energy: last price in log space, 30 days.
-  - 6c level without WV: the tide on tidal gauges, else a damped trend on hourly means, 12 h.
-  - 6d polls: a damped trend fitted before smoothing, 0 to 100, 90 days. ARIMA goes, and current and trend read measurements only.
-  - 6e COVID: a weekly pattern on cases, deaths and recovered, a damped trend on the incidence, both with log1p, 14 days. `nowCast` goes.
 - **Step 7:** delete `ARIMAPredictor` and its three type files, trim `ToolsTests`, and update the ARIMA mentions in AGENTS.md.
 - **Risks noted:**
   - A new shared file an included source uses must go into the `PointOfInterestTests` include list.

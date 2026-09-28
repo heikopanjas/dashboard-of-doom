@@ -5,7 +5,7 @@ import SwiftUI
 struct RadiationChartView: View {
     let reading: ProcessReading
     @State private var timestamp: Date?
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
+    @AppStorage(ForecastFamily.radiation.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
     private let labels: [ProcessSelector: String] = [

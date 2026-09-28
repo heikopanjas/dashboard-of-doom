@@ -46,6 +46,12 @@ class SurveyController: ProcessController {
     let officialClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw)]
     let realClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw), .survey(.freie_waehler), .survey(.volt)]
 
+    private let showForecasts: @Sendable () -> Bool
+
+    init(showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.polls) }) {
+        self.showForecasts = showForecasts
+    }
+
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
         var data: [ProcessSensor] = []
 
@@ -121,13 +127,15 @@ class SurveyController: ProcessController {
                     }
 
                     try Task.checkCancellation()
-                    measurements = await self.interpolateMeasurements(measurements: await self.aggregateMeasurements(measurements: measurements))
+                    let aggregated = await self.aggregateMeasurements(measurements: measurements)
+                    measurements = await self.interpolateMeasurements(measurements: aggregated)
+                    let forecasts = self.showForecasts() ? Self.estimates(from: aggregated) : [:]
                     try Task.checkCancellation()
                     if let placemark = await GeocodingService.reverseGeocodeLocation(location: sensorLocation) {
                         try Task.checkCancellation()
                         sensor = ProcessSensor(
                             name: sensorName, location: sensorLocation, placemark: placemark, customData: ["icon": "popcorn"],
-                            measurements: measurements, timestamp: Date.now)
+                            measurements: measurements, timestamp: Date.now, forecasts: forecasts)
                     }
                 }
             }
@@ -229,13 +237,15 @@ class SurveyController: ProcessController {
                     }
 
                     try Task.checkCancellation()
-                    measurements = await self.interpolateMeasurements(measurements: await self.aggregateMeasurements(measurements: measurements))
+                    let aggregated = await self.aggregateMeasurements(measurements: measurements)
+                    measurements = await self.interpolateMeasurements(measurements: aggregated)
+                    let forecasts = self.showForecasts() ? Self.estimates(from: aggregated) : [:]
                     try Task.checkCancellation()
                     if let placemark = await GeocodingService.reverseGeocodeLocation(location: sensorLocation) {
                         try Task.checkCancellation()
                         sensor = ProcessSensor(
                             name: sensorName, location: sensorLocation, placemark: placemark, customData: ["icon": "popcorn"],
-                            measurements: measurements, timestamp: Date.now)
+                            measurements: measurements, timestamp: Date.now, forecasts: forecasts)
                     }
                 }
             }
@@ -448,9 +458,6 @@ class SurveyController: ProcessController {
             }
         }
 
-        if let forecast = self.forecastMeasurements(data: interpolatedMeasurement, duration: 100) {
-            interpolatedMeasurement.append(contentsOf: forecast)
-        }
         let smoothed = gaussianSmoothing(data: interpolatedMeasurement.map { $0.value }, windowSize: 51, sigma: 13)
         return zip(interpolatedMeasurement, smoothed).map { original, measurement in
             return ProcessValue(value: measurement, customData: original.customData, quality: original.quality, timestamp: original.timestamp)
@@ -478,30 +485,32 @@ class SurveyController: ProcessController {
         return ProcessValue<Dimension>(value: Measurement<Dimension>(value: value, unit: unit), quality: quality, timestamp: timestamp)
     }
 
-    private func forecastMeasurements(data: [ProcessValue<Dimension>]?, duration: TimeInterval) -> [ProcessValue<Dimension>]? {
-        var forecast: [ProcessValue<Dimension>]? = nil
-        guard let historicalData = data, historicalData.count > 0 else {
-            return nil
+    /// DAWUM publishes polls, not projections, so each party's share is the app's estimate: a damped trend on weekly averages of the
+    /// polls, 13 weeks ahead. Weekly, because pollsters differ by a point or two from one another, and on the day-averaged polls that
+    /// noise beat the trend in every backtest, so every party fell back to the last value. Fitted before the smoothing, so the estimate
+    /// never runs back into the measured line, and kept between 0 and 100. A parliament whose last poll is older than four months is not
+    /// continued.
+    static func estimates(from polls: [ProcessSelector: [ProcessValue<Dimension>]], now: Date = .now) -> [ProcessSelector: ProcessForecast] {
+        let request = ForecastRequest(step: 7 * 24 * 3600, horizon: 13, bounds: 0 ... 100)
+        var forecasts: [ProcessSelector: ProcessForecast] = [:]
+        for (selector, values) in polls {
+            forecasts[selector] = SeriesEstimate.make(
+                from: Self.weekly(values), model: DampedTrendModel(), request: request, maximumAge: 120 * 24 * 3600, now: now)
         }
-        if let maxTimestamp = historicalData.map(\.timestamp).max() {
-            let delta = Date.diff(from: maxTimestamp, to: Date.now) ?? 0
-            let unit = historicalData[0].value.unit
-            let historicalDataPoints = historicalData.map { incidence in
-                TimeSeriesPoint(timestamp: incidence.timestamp, value: incidence.value.value)
-            }
-            let predictor = ARIMAPredictor(parameters: ARIMAParameters(p: 2, d: 1, q: 1), interval: .daily)
-            do {
-                try predictor.addData(historicalDataPoints)
-                let prediction = try predictor.forecast(duration: (duration + Double(delta)) * 24 * 60 * 60)  // days
-                forecast = prediction.forecasts.map { forecast in
-                    ProcessValue<Dimension>(
-                        value: Measurement(value: forecast.value, unit: unit), quality: .uncertain, timestamp: forecast.timestamp)
-                }
-            }
-            catch {
-                trace.error("Forecasting error: \(error)")
-            }
+        return forecasts
+    }
+
+    /// The average of each week of polls, counted back from the last poll, so the newest week ends with it and the weeks are evenly
+    /// spaced. Each average is stamped at the end of its week.
+    static func weekly(_ values: [ProcessValue<Dimension>]) -> [ProcessValue<Dimension>] {
+        guard let last = values.map(\.timestamp).max(), let unit = values.first?.value.unit else { return [] }
+        let week: TimeInterval = 7 * 24 * 3600
+        let weeks = Dictionary(grouping: values) { Int((last.timeIntervalSince($0.timestamp) / week).rounded(.down)) }
+        return weeks.map { index, polls in
+            let mean = polls.map { $0.value.converted(to: unit).value }.reduce(0, +) / Double(polls.count)
+            return ProcessValue<Dimension>(
+                value: Measurement(value: mean, unit: unit), quality: .uncertain, timestamp: last.addingTimeInterval(-Double(index) * week))
         }
-        return forecast
+        .sorted { $0.timestamp < $1.timestamp }
     }
 }

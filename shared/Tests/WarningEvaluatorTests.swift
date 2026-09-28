@@ -164,19 +164,25 @@ import Testing
         #expect(assessments.contains { $0.input == "forecast" } == false)
     }
 
-    @Test func withForecastsSwitchedOffNoForecastWarns() {
-        let defaults = self.defaults()
-        defaults.set(false, forKey: SourcePreferences.forecastsKey)
+    @Test func eachForecastWarnsOnlyWhileItsOwnSwitchIsOn() {
         let unit = UnitConcentrationMass.microgramsPerCubicMeter
-        let reading = self.reading(
+        let air = self.reading(
             .particle(.pm10), current: Measurement(value: 20, unit: unit), sourceID: "DEBE010",
             forecasts: [.particle(.pm10): self.forecast(.provider("UBA"), [3: 900], unit)])
-        #expect(WarningEvaluator.assessments(readings: [reading], defaults: defaults, now: Self.now).contains { $0.input == "forecast" } == false)
         let marks: [String: Any] = ["icon": "water.waves", "marks": ["M_I": 3.0, "M_II": 3.4]]
         let gauge = self.reading(
             .water(.level), current: Measurement(value: 2, unit: UnitLength.meters), sourceID: "celle", customData: marks, name: "CELLE",
             forecasts: [.water(.level): self.forecast(.provider("PEGELONLINE"), [3: 3.5], UnitLength.meters)])
-        #expect(WarningEvaluator.assessments(readings: [gauge], defaults: defaults, now: Self.now).map { $0.input } == ["current"])
+        func forecastKeys(_ defaults: UserDefaults) -> [String] {
+            return WarningEvaluator.assessments(readings: [air, gauge], defaults: defaults, now: Self.now).filter { $0.input == "forecast" }.map(\.key)
+        }
+        #expect(forecastKeys(self.defaults()) == ["particle.pm10.DEBE010", "level.marks.celle"])
+        let particlesOff = self.defaults()
+        particlesOff.set(false, forKey: ForecastFamily.particles.key)
+        #expect(forecastKeys(particlesOff) == ["level.marks.celle"])
+        let levelOff = self.defaults()
+        levelOff.set(false, forKey: ForecastFamily.level.key)
+        #expect(forecastKeys(levelOff) == ["particle.pm10.DEBE010"])
     }
 
     @Test func aGaugesForecastIsJudgedAgainstItsMarks() {

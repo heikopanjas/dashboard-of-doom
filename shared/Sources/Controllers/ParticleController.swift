@@ -28,7 +28,7 @@ class ParticleController: ProcessController {
     init(
         nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestParticleSensorKey) },
         sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorParticlesKey) },
-        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible() },
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.particles) },
         fetchForecast: @escaping @Sendable (_ code: String, _ from: Date, _ to: Date) async throws -> Data? = { code, from, to in
             return try await ParticleService.fetchForecasts(code: code, from: from, to: to)
         }

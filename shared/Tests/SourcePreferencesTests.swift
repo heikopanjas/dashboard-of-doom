@@ -106,19 +106,28 @@ import Testing
         #expect(SourcePreferences.fuelOpenOnly(defaults: defaults) == false)
     }
 
-    @Test func forecastsAreOnUntilTheUserTurnsThemOff() {
+    @Test func eachSourceHasItsOwnForecastSwitch() {
+        // Stored in the user's defaults and passed as launch arguments, so a rename would silently reset the setting.
+        #expect(ForecastFamily.allCases.map(\.key) == [
+            "forecastLevel", "forecastRadiation", "forecastParticles", "forecastCovid", "forecastEnergy", "forecastPolls"
+        ])
+        // None is a source switch: they remove no tab.
+        #expect(ForecastFamily.allCases.contains { SourcePreferences.switchKeys.contains($0.key) } == false)
+    }
+
+    @Test(arguments: ForecastFamily.allCases)
+    func aForecastIsOnUntilItsOwnSwitchGoesOff(family: ForecastFamily) {
         let defaults = self.defaults()
-        #expect(SourcePreferences.forecastsKey == "showForecasts")
-        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == true)
-        defaults.set(false, forKey: SourcePreferences.forecastsKey)
-        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == false)
-        // A launch argument such as -showForecasts NO arrives as a string.
-        defaults.set("NO", forKey: SourcePreferences.forecastsKey)
-        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == false)
-        defaults.set("YES", forKey: SourcePreferences.forecastsKey)
-        #expect(SourcePreferences.forecastsVisible(defaults: defaults) == true)
-        // It is not a source switch: it removes no tab.
-        #expect(SourcePreferences.switchKeys.contains(SourcePreferences.forecastsKey) == false)
+        #expect(SourcePreferences.forecastsVisible(family, defaults: defaults) == true)
+        defaults.set(false, forKey: family.key)
+        #expect(SourcePreferences.forecastsVisible(family, defaults: defaults) == false)
+        // The others stay on.
+        #expect(ForecastFamily.allCases.filter { $0 != family }.allSatisfy { SourcePreferences.forecastsVisible($0, defaults: defaults) })
+        // A launch argument such as -forecastLevel NO arrives as a string.
+        defaults.set("NO", forKey: family.key)
+        #expect(SourcePreferences.forecastsVisible(family, defaults: defaults) == false)
+        defaults.set("YES", forKey: family.key)
+        #expect(SourcePreferences.forecastsVisible(family, defaults: defaults) == true)
     }
 
     @Test func theSwitchKeysAreThePersistedNames() {

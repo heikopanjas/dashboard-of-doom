@@ -82,6 +82,8 @@ struct SettingsView: View {
     let radiationPresenter: RadiationPresenter
     let particlePresenter: ParticlePresenter
     let surveyPresenter: SurveyPresenter
+    let covidPresenter: CovidPresenter
+    let energyPresenter: EnergyPresenter
     let fuelPresenter: FuelPresenter
     let pointOfInterestPresenter: PointOfInterestPresenter
     /// The current reading of a status bar value, for the Menu Bar section.
@@ -118,7 +120,6 @@ struct SettingsView: View {
 
     // Appearance
     @AppStorage("alwaysUseDarkTheme") private var alwaysUseDarkTheme: Bool = true
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts: Bool = SourcePreferences.forecastsEnabledByDefault
 
     // Refresh intervals (in minutes)
     @AppStorage("weatherRefreshInterval") private var weatherRefreshInterval: Int = 5
@@ -196,11 +197,6 @@ struct SettingsView: View {
         }
         .frame(width: Self.width, height: 400)
         .background(Color(light: .white, dark: Color(hex: "#000000")))
-        // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
-        .onChange(of: showForecasts) { _, _ in
-            AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
-            AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
-        }
         .onChange(of: nearestLevelSensor) { _, _ in
             AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
         }
@@ -241,12 +237,6 @@ struct SettingsView: View {
             Section("Appearance") {
                 Toggle("Always Use Dark Theme", isOn: $alwaysUseDarkTheme)
             }
-            Section("Charts") {
-                Toggle("Show Forecasts", isOn: $showForecasts)
-                Text(ForecastDisplay.settingsExplanation)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
             StatusBarSettingsSection(faceplate: self.faceplate)
         }
         .formStyle(.grouped)
@@ -286,6 +276,9 @@ struct SettingsView: View {
             Section("Data Source") {
                 Toggle("Enable COVID-19 Data", isOn: $showCovid)
             }
+            ForecastSettingsSection(family: .covid) {
+                AppProcess.shared.refreshSubscription(subscriber: self.covidPresenter)
+            }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $covidRefreshInterval)
             }
@@ -313,6 +306,9 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundColor(.gray)
             }
+            ForecastSettingsSection(family: .level) {
+                AppProcess.shared.refreshSubscription(subscriber: self.levelPresenter)
+            }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $levelRefreshInterval)
             }
@@ -329,6 +325,9 @@ struct SettingsView: View {
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
                     .help("Show up to \(SourcePreferences.macOSSensorMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one.")
+            }
+            ForecastSettingsSection(family: .radiation) {
+                AppProcess.shared.refreshSubscription(subscriber: self.radiationPresenter)
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $radiationRefreshInterval)
@@ -348,6 +347,9 @@ struct SettingsView: View {
                     .help("Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting PM10, PM2.5, O3 and NO2 are shown, nearest first, which can mean fewer of them.")
                 Toggle("Multiple Sensors", isOn: $multiSensorParticles)
                     .help("Show up to \(SourcePreferences.macOSSensorMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one.")
+            }
+            ForecastSettingsSection(family: .particles) {
+                AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $particleRefreshInterval)
@@ -400,6 +402,9 @@ struct SettingsView: View {
                     }
                 }
             }
+            ForecastSettingsSection(family: .energy) {
+                AppProcess.shared.refreshSubscription(subscriber: self.energyPresenter)
+            }
             Section("Refresh") {
                 RefreshRatePicker(label: "Price Interval", interval: $energyRefreshInterval)
                 RefreshRatePicker(label: "Fuel Station Interval", interval: $fuelRefreshInterval)
@@ -423,6 +428,9 @@ struct SettingsView: View {
                     Text("State").tag(1)
                 }
                 .pickerStyle(.radioGroup)
+            }
+            ForecastSettingsSection(family: .polls) {
+                AppProcess.shared.refreshSubscription(subscriber: self.surveyPresenter)
             }
             Section("Refresh") {
                 RefreshRatePicker(label: "Update Interval", interval: $surveyRefreshInterval)
@@ -460,6 +468,32 @@ struct SettingsView: View {
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// A source's own Show Forecast switch and what it does. The charts hide or show the forecast they have at once; `refresh` fetches or
+/// estimates one when the switch goes on.
+private struct ForecastSettingsSection: View {
+    let family: ForecastFamily
+    let refresh: () -> Void
+    @AppStorage private var isOn: Bool
+
+    init(family: ForecastFamily, refresh: @escaping () -> Void) {
+        self.family = family
+        self.refresh = refresh
+        self._isOn = AppStorage(wrappedValue: ForecastFamily.enabledByDefault, family.key)
+    }
+
+    var body: some View {
+        Section("Forecast") {
+            Toggle("Show Forecast", isOn: $isOn)
+                .onChange(of: isOn) { _, _ in
+                    self.refresh()
+                }
+            Text(ForecastDisplay.settingsExplanation(for: self.family))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 }

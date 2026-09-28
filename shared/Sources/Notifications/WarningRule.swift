@@ -112,8 +112,8 @@ struct WarningRule: Identifiable {
     let range: ClosedRange<Double>
     /// Decimals shown for a limit.
     let fractionDigits: Int
-    /// Whether the provider's own forecast of the `current` selectors counts as well, its next 24 hours, while Show Forecasts is on. Only
-    /// a provider's: the app's own estimates never warn. Last and defaulted, so the rules without one leave it out.
+    /// Whether the provider's own forecast of the `current` selectors counts as well, its next 24 hours, while its source's forecast is
+    /// on. Only a provider's: the app's own estimates never warn. Last and defaulted, so the rules without one leave it out.
     var providerForecast = false
 
     static let catalogue: [WarningRule] = [

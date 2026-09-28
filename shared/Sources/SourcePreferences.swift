@@ -193,17 +193,39 @@ enum SourcePreferences {
         return Self.enabled(key: Self.energyEnableKey, default: Self.energyEnabledByDefault, defaults: defaults)
     }
 
-    /// Forecasts on the source charts, the provider's where it publishes one and the app's own estimate elsewhere. One switch for every
-    /// source, the same key on both platforms, on by default. It is not a source switch: it removes no tab.
-    static let forecastsKey = "showForecasts"
-    static let forecastsEnabledByDefault = true
-
-    static func forecastsVisible(defaults: UserDefaults = .standard) -> Bool {
-        return Self.enabled(key: Self.forecastsKey, default: Self.forecastsEnabledByDefault, defaults: defaults)
+    /// Whether a source's charts continue past now with a forecast: the provider's where it publishes one, the app's own estimate
+    /// elsewhere. One switch per source, in that source's settings, on by default, the same key on both platforms. It is not a source
+    /// switch: it removes no tab.
+    static func forecastsVisible(_ family: ForecastFamily, defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: family.key, default: ForecastFamily.enabledByDefault, defaults: defaults)
     }
 
     /// The keys of every source switch, so a view can watch them all.
     static let switchKeys = [
         Self.covidEnableKey, Self.waterKey, Self.radiationKey, Self.particlesKey, Self.hazardsKey, Self.energyEnableKey, Self.pollsEnableKey
     ]
+}
+
+/// The sources with a forecast switch of their own. Weather has none: its forecast is WeatherKit's data, not an extension of a chart.
+enum ForecastFamily: String, CaseIterable, Sendable {
+    case level
+    case radiation
+    case particles
+    case covid
+    case energy
+    case polls
+
+    static let enabledByDefault = true
+
+    /// Stored in the user's defaults and passed as launch arguments, such as `-forecastLevel NO`, so a rename would reset the setting.
+    var key: String {
+        switch self {
+            case .level: return "forecastLevel"
+            case .radiation: return "forecastRadiation"
+            case .particles: return "forecastParticles"
+            case .covid: return "forecastCovid"
+            case .energy: return "forecastEnergy"
+            case .polls: return "forecastPolls"
+        }
+    }
 }

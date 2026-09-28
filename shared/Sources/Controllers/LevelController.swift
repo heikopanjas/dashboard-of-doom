@@ -20,7 +20,7 @@ class LevelController: ProcessController {
         otherWaterways: @escaping @Sendable () -> Bool = {
             return UserDefaults.standard.bool(forKey: SourcePreferences.multiSensorLevelOtherWaterwaysKey)
         },
-        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible() }) {
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.level) }) {
         self.networkManager = networkManager
         self.nearestSensor = nearestSensor
         self.sensorLimit = sensorLimit
@@ -52,7 +52,8 @@ class LevelController: ProcessController {
         try Task.checkCancellation()
         let showForecasts = self.showForecasts()
         async let pendingCharacteristics = self.fetchCharacteristics(station: station, includeForecast: showForecasts)
-        if let level = try await self.fetchMeasurements(station: station) {
+        let level = try await self.fetchMeasurements(station: station)
+        if let level {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: level, distance: self.measurementDistance))
         }
@@ -73,6 +74,10 @@ class LevelController: ProcessController {
             {
                 forecasts[.water(.level)] = forecast
             }
+        }
+        // Where PEGELONLINE has no forecast, which is most gauges and every one in Berlin, the app estimates one.
+        if showForecasts == true, forecasts.isEmpty == true, let level, let estimate = Self.estimate(from: level) {
+            forecasts[.water(.level)] = estimate
         }
         try Task.checkCancellation()
         return SensorCandidate(
@@ -258,6 +263,24 @@ class LevelController: ProcessController {
         guard let data = try? await LevelService.fetchCharacteristics(for: station.id, includeForecast: includeForecast, networkManager: self.networkManager)
         else { return (nil, false) }
         return (Self.parseMarks(data: data), Self.hasForecast(data: data))
+    }
+
+    /// The app's own estimate for a gauge without a published forecast. A tidal gauge, one whose last days the tides explain, follows
+    /// its tide for the next day at the quarter hour; any other follows a damped trend on the hour for the next 12 hours, which on a canal
+    /// held by locks is nearly flat. Not continued when the gauge has not reported for six hours.
+    static func estimate(from raw: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
+        let maximumAge: TimeInterval = 6 * 3600
+        let tide = ForecastRequest(step: 900, horizon: 96, maximumGap: 6 * 3600)
+        let periods = HarmonicModel.tidalPeriods.map { $0 * 4 }
+        let points = raw.filter { $0.quality == .good }.map {
+            TimeSeriesPoint(timestamp: $0.timestamp, value: $0.value.converted(to: UnitLength.meters).value)
+        }
+        if let values = try? Forecaster.prepare(points, request: tide).values, HarmonicModel.detect(values, periods: periods) == true {
+            return SeriesEstimate.make(from: raw, model: HarmonicModel(periods: periods), request: tide, maximumAge: maximumAge, now: now)
+        }
+        return SeriesEstimate.make(
+            from: raw, model: DampedTrendModel(), request: ForecastRequest(step: 3600, horizon: 12, maximumGap: 6 * 3600),
+            maximumAge: maximumAge, now: now)
     }
 
     /// Whether the station's time series include the water level forecast, `WV`. Only listed when the request asked for forecasts.

@@ -7,7 +7,7 @@ import SwiftUI
 struct LevelChartView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
+    @AppStorage(ForecastFamily.level.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
     let reading: ProcessReading
 

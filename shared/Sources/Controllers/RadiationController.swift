@@ -7,9 +7,14 @@ import Foundation
 class RadiationController: ProcessController {
     private let measurementDistance: TimeInterval
     private let sensorLimit: @Sendable () -> Int
+    private let showForecasts: @Sendable () -> Bool
 
-    init(sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorRadiationKey) }) {
+    init(
+        sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorRadiationKey) },
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.radiation) }
+    ) {
         self.sensorLimit = sensorLimit
+        self.showForecasts = showForecasts
         self.measurementDistance = 3600  // 1 hour
     }
 
@@ -28,14 +33,26 @@ class RadiationController: ProcessController {
 
     private func candidate(for station: Station) async throws -> SensorCandidate {
         var measurement: [ProcessValue<Dimension>] = []
+        var forecasts: [ProcessSelector: ProcessForecast] = [:]
         try Task.checkCancellation()
         if let radiation = try await Self.fetchMeasurements(station: station) {
             try Task.checkCancellation()
             measurement.append(contentsOf: self.interpolateMeasurements(measurements: radiation, distance: self.measurementDistance))
+            if self.showForecasts() == true, let estimate = Self.estimate(from: radiation) {
+                forecasts[.radiation(.total)] = estimate
+            }
         }
         return SensorCandidate(
             id: station.id, name: station.name, location: station.location, customData: ["icon": "atom"],
-            measurements: [.radiation(.total): measurement.sorted(by: { $0.timestamp < $1.timestamp })])
+            measurements: [.radiation(.total): measurement.sorted(by: { $0.timestamp < $1.timestamp })], forecasts: forecasts)
+    }
+
+    /// BfS publishes no forecast, and the dose rate does not wander: it sits at the station's background and rain washes it up for an
+    /// hour or two. So the estimate is its usual range, the median and the band the last week's values mostly stay in, for the next day.
+    static func estimate(from raw: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
+        return SeriesEstimate.make(
+            from: raw, model: BaselineModel(), request: ForecastRequest(step: 3600, horizon: 24, bounds: 0 ... .greatestFiniteMagnitude),
+            maximumAge: 12 * 3600, now: now)
     }
 
     struct Station: ProcessLocatable {

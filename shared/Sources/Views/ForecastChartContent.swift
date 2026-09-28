@@ -107,24 +107,42 @@ struct ForecastMarker: ChartContent {
     }
 }
 
-/// The legend in a chart's title row: a line swatch and whose forecast the line is.
+/// The legend in a chart's title row: a line swatch and whose forecast the line is. It yields to the title: where the full text does not
+/// fit beside it, it shortens, and in the end shows the swatch alone, rather than push the title onto a second line. The drag marker still
+/// names the method.
 struct ForecastLegend: View {
     let origin: ProcessForecast.Origin
     let color: Color
 
     var body: some View {
+        ViewThatFits(in: .horizontal) {
+            self.label(ForecastDisplay.legend(for: self.origin))
+            self.label(ForecastDisplay.shortLegend(for: self.origin))
+            self.swatch
+        }
+        .layoutPriority(-1)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ForecastDisplay.legend(for: self.origin))
+    }
+
+    private func label(_ text: String) -> some View {
         HStack(spacing: 4) {
-            Path { path in
-                path.move(to: CGPoint(x: 0, y: 4))
-                path.addLine(to: CGPoint(x: 16, y: 4))
-            }
-            .stroke(self.color, style: StrokeStyle(lineWidth: 1.5))
-            .frame(width: 16, height: 8)
-            Text(ForecastDisplay.legend(for: self.origin))
+            self.swatch
+            Text(text)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    private var swatch: some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: 4))
+            path.addLine(to: CGPoint(x: 16, y: 4))
+        }
+        .stroke(self.color, style: StrokeStyle(lineWidth: 1.5))
+        .frame(width: 16, height: 8)
     }
 }
 

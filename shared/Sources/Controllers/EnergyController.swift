@@ -16,9 +16,11 @@ class EnergyController: ProcessController {
     private static let location = Location(latitude: 52.5186, longitude: 13.3763)
 
     private let networkManager: NetworkManager
+    private let showForecasts: @Sendable () -> Bool
 
-    init(networkManager: NetworkManager = .shared) {
+    init(networkManager: NetworkManager = .shared, showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.energy) }) {
         self.networkManager = networkManager
+        self.showForecasts = showForecasts
     }
 
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
@@ -31,17 +33,24 @@ class EnergyController: ProcessController {
         try Task.checkCancellation()
 
         let now = Date.now
-        var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+        var prices: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
         if let brent = brent {
-            measurements[.energy(.brent)] = Self.series(Self.parseOil(brent, unit: UnitOilPrice.usDollarsPerBarrel), until: now)
+            prices[.energy(.brent)] = Self.parseOil(brent, unit: UnitOilPrice.usDollarsPerBarrel)
         }
         if let wti = wti {
-            measurements[.energy(.wti)] = Self.series(Self.parseOil(wti, unit: UnitOilPrice.usDollarsPerBarrel), until: now)
+            prices[.energy(.wti)] = Self.parseOil(wti, unit: UnitOilPrice.usDollarsPerBarrel)
         }
         if let lng = lng {
-            measurements[.energy(.lng)] = Self.series(Self.parseLNG(lng), until: now)
+            prices[.energy(.lng)] = Self.parseLNG(lng)
         }
-        measurements = measurements.filter { $0.value.isEmpty == false }
+        let measurements = prices.mapValues { Self.series($0, until: now) }.filter { $0.value.isEmpty == false }
+        // The estimate is fitted on the trading days themselves, not on the weekends carried forward for the chart.
+        var forecasts: [ProcessSelector: ProcessForecast] = [:]
+        if self.showForecasts() == true {
+            for (selector, values) in prices where measurements[selector] != nil {
+                forecasts[selector] = Self.estimate(from: values.filter { $0.timestamp >= now.addingTimeInterval(-Self.span) }, now: now)
+            }
+        }
         // Nothing at all means nothing is published, so the last prices stay on screen.
         if measurements.isEmpty == true {
             trace.error("No energy prices could be read")
@@ -49,8 +58,18 @@ class EnergyController: ProcessController {
         }
         let sensor = ProcessSensor(
             name: "Energy", location: Self.location, placemark: "EIA · ACER", customData: ["icon": "fuelpump"], measurements: measurements,
-            timestamp: now)
+            timestamp: now, forecasts: forecasts)
         return [sensor]
+    }
+
+    /// Nobody publishes a free forecast of these prices, and a price already holds what the market expects, so the estimate is the last
+    /// price, with a band as wide as a year of daily moves says it should be after so many days. In logarithms, since prices move in
+    /// proportion and cannot go below zero, which makes the band wider above than below. Weekends between trading days are interpolated,
+    /// so the band grows per calendar day. Not continued when the mirror has not updated for ten days.
+    static func estimate(from raw: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
+        return SeriesEstimate.make(
+            from: raw, model: RandomWalkModel(), request: ForecastRequest(step: 24 * 3600, horizon: 30, transform: .logarithm),
+            maximumAge: 10 * 24 * 3600, now: now)
     }
 
     // MARK: - Parsing

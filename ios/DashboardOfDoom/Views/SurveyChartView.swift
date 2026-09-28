@@ -8,7 +8,7 @@ struct SurveyChartView: View {
     @Environment(SurveyPresenter.self) private var presenter
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
+    @AppStorage(ForecastFamily.polls.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
     private let shortLabels: [ProcessSelector: String] = [
@@ -81,11 +81,9 @@ struct SurveyChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
+                // No spacer inside: the row's own spacer pushes the forecast legend right, and a second one here left it no room.
                 VStack(alignment: .leading) {
-                    HStack {
-                        Text("\(self.shortLabels[selector] ?? String(format: "%d <Unknown>", selector.rawValue))")
-                        Spacer()
-                    }
+                    Text("\(self.shortLabels[selector] ?? String(format: "%d <Unknown>", selector.rawValue))")
                     if selector != .survey(.fascists) && selector != .survey(.clowns) && selector != .survey(.sonstige) {
                         #if os(iOS)
                         Text("\(String.truncate(self.fullLabels[selector], maxLength: 53) ?? String(format: "%d <Unknown>", selector.rawValue))")

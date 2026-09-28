@@ -240,6 +240,7 @@ targets:
       - Views/DashboardPopoverSize.swift
       - Views/MapProjection.swift
       - Presenters/ForecastDisplay.swift
+      - Controllers/SeriesEstimate.swift
     settings:
       base:
         PRODUCT_NAME: PointOfInterestTests

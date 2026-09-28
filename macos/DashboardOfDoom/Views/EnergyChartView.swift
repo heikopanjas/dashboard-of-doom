@@ -5,7 +5,7 @@ import SwiftUI
 struct EnergyChartView: View {
     @Environment(EnergyPresenter.self) private var presenter
     @State private var timestamp: Date?
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts = SourcePreferences.forecastsEnabledByDefault
+    @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
     private let labels: [ProcessSelector: String] = [

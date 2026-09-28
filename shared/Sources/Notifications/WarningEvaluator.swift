@@ -46,14 +46,15 @@ enum WarningEvaluator {
     // MARK: - Readings
 
     static func assessments(readings: [ProcessReading], defaults: UserDefaults = .standard, now: Date = .now) -> [WarningAssessment] {
-        // Read here rather than trusted from the readings: a forecast fetched before the switch went off must not warn after it.
-        let forecasts = SourcePreferences.forecastsVisible(defaults: defaults)
+        // Read here rather than trusted from the readings: a forecast fetched before its switch went off must not warn after it.
+        let levelForecasts = SourcePreferences.forecastsVisible(.level, defaults: defaults)
+        let particleForecasts = SourcePreferences.forecastsVisible(.particles, defaults: defaults)
         var assessments: [WarningAssessment] = []
         for reading in readings {
             guard let family = WarningFamily.of(reading) else { continue }
             if family == .level {
                 if let assessment = Self.levelAssessment(reading: reading) { assessments.append(assessment) }
-                if forecasts == true, let assessment = Self.levelForecastAssessment(reading: reading, now: now) {
+                if levelForecasts == true, let assessment = Self.levelForecastAssessment(reading: reading, now: now) {
                     assessments.append(assessment)
                 }
                 continue
@@ -66,7 +67,8 @@ enum WarningEvaluator {
                 if let assessment = Self.forecastAssessment(rule: rule, limits: limits, reading: reading, now: now) {
                     assessments.append(assessment)
                 }
-                if forecasts == true,
+                // Only the particle rules let a provider's forecast count.
+                if family == .particles, particleForecasts == true,
                     let assessment = Self.providerForecastAssessment(rule: rule, limits: limits, reading: reading, now: now)
                 {
                     assessments.append(assessment)

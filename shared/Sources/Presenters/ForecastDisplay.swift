@@ -13,9 +13,25 @@ enum ForecastDisplay {
         }
     }
 
-    /// The footnote under the Show Forecasts switch on both platforms. It says what the switch does to the data as well as to the charts.
-    static let settingsExplanation =
-        "Continues a source's chart past now with a line, where the source publishes a forecast of its own: UBA's for particulate matter, PEGELONLINE's for gauges on the Elbe, Rhine, Oder, Danube and Saale. The weather forecast is not affected. Off, forecasts are neither downloaded nor shown."
+    /// The footnote under a source's Show Forecast switch, on both platforms. It says whose forecast the line is, how far it reaches,
+    /// whether it can warn, and what off does to the data as well as to the chart.
+    static func settingsExplanation(for family: ForecastFamily) -> String {
+        let off = "Off, nothing is downloaded or estimated for it."
+        switch family {
+            case .level:
+                return "Continues each gauge's chart past now: PEGELONLINE's forecast for the gauges on the Elbe, Rhine, Oder, Danube and Saale that have one, which also warns before a flood mark is reached, and elsewhere the app's own estimate, the tide on tidal gauges for a day and the trend for 12 hours. \(off)"
+            case .radiation:
+                return "Continues the dose rate past now with the app's own estimate: the range it usually stays in, for a day. BfS publishes no forecast. \(off)"
+            case .particles:
+                return "Continues each pollutant past now with UBA's forecast, about three days ahead, which also warns before a limit is reached. \(off)"
+            case .covid:
+                return "Continues the district's figures past now with the app's own estimate for two weeks: the weekly reporting pattern for daily counts, the trend for the incidence. No one publishes a forecast. \(off)"
+            case .energy:
+                return "Continues each price past now with the app's own estimate for 30 days: the last price, with the range a year of daily moves allows. No free forecast exists. \(off)"
+            case .polls:
+                return "Continues each party's share past now with the app's own estimate: its trend in weekly averages of the polls, for 13 weeks. DAWUM publishes no projection. \(off)"
+        }
+    }
 
     /// The legend in a chart's title row, next to a line swatch.
     static func legend(for origin: ProcessForecast.Origin) -> String {
@@ -24,6 +40,16 @@ enum ForecastDisplay {
                 return "\(name) forecast"
             case .estimate(let method):
                 return "App estimate (\(method))"
+        }
+    }
+
+    /// The legend where the full one does not fit beside the title.
+    static func shortLegend(for origin: ProcessForecast.Origin) -> String {
+        switch origin {
+            case .provider(let name):
+                return name
+            case .estimate:
+                return "Estimate"
         }
     }
 

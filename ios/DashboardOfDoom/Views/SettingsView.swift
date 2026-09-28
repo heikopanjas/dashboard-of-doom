@@ -20,10 +20,10 @@ struct SettingsView: View {
     @State private var hasFuelKey = false
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
     @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
-    @AppStorage(SourcePreferences.forecastsKey) private var showForecasts: Bool = SourcePreferences.forecastsEnabledByDefault
 
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var covid
+    @Environment(EnergyPresenter.self) private var energy
     @Environment(RadiationPresenter.self) private var radiation
     @AppStorage(SourcePreferences.multiSensorRadiationKey) private var multiSensorRadiation: Bool = false
 
@@ -142,31 +142,6 @@ struct SettingsView: View {
             .cornerRadius(10)
         }
 
-        // One switch for every source's forecast; it is not a source switch and removes no tab.
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Forecasts")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                Toggle("Show Forecasts", isOn: $showForecasts)
-                    .onChange(of: showForecasts) { _, _ in
-                        // Only the sources that fetch a forecast need to refresh; the charts hide or show what they have at once.
-                        AppProcess.shared.refreshSubscription(subscriber: particles)
-                        AppProcess.shared.refreshSubscription(subscriber: level)
-                    }
-                HStack {
-                    Text(ForecastDisplay.settingsExplanation)
-                        .font(.footnote)
-                        .foregroundColor(.gray)
-                    Spacer()
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
-
         VStack(alignment: .leading, spacing: 8) {
             Text("Home")
                 .font(.headline)
@@ -196,6 +171,24 @@ struct SettingsView: View {
         }
 
         LocationSettingsView()
+
+        // Only while the source is on; its switch is in the Sources card. COVID has nothing else to set, so its forecast is all there is.
+        if enableCovid == true {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("COVID-19")
+                .font(.headline)
+                .foregroundColor(.primary)
+                .padding(.bottom, 4)
+            VStack(spacing: 12) {
+                ForecastSettingsRow(family: .covid) {
+                    AppProcess.shared.refreshSubscription(subscriber: covid)
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(10)
+        }
+        }
 
         // Only while the source is on; its switch is in the Sources card.
         if showWater == true {
@@ -236,6 +229,9 @@ struct SettingsView: View {
                         .foregroundColor(.gray)
                     Spacer()
                 }
+                ForecastSettingsRow(family: .level) {
+                    AppProcess.shared.refreshSubscription(subscriber: level)
+                }
             }
             .padding()
             .background(Color(.systemGray6))
@@ -261,6 +257,9 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundColor(.gray)
                     Spacer()
+                }
+                ForecastSettingsRow(family: .radiation) {
+                    AppProcess.shared.refreshSubscription(subscriber: radiation)
                 }
             }
             .padding()
@@ -299,6 +298,9 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundColor(.gray)
                     Spacer()
+                }
+                ForecastSettingsRow(family: .particles) {
+                    AppProcess.shared.refreshSubscription(subscriber: particles)
                 }
             }
             .padding()
@@ -378,6 +380,9 @@ struct SettingsView: View {
                         }
                     }
                 }
+                ForecastSettingsRow(family: .energy) {
+                    AppProcess.shared.refreshSubscription(subscriber: self.energy)
+                }
             }
             .padding()
             .background(Color(.systemGray6))
@@ -413,6 +418,9 @@ struct SettingsView: View {
                         Spacer()
                     }
                 }
+                ForecastSettingsRow(family: .polls) {
+                    AppProcess.shared.refreshSubscription(subscriber: electionPolls)
+                }
             }
             .padding()
             .background(Color(.systemGray6))
@@ -421,5 +429,32 @@ struct SettingsView: View {
         }
 
         AboutSettingsView()
+    }
+}
+
+/// A source's own Show Forecast switch and what it does, as a row of that source's card. The charts hide or show the forecast they have
+/// at once; `refresh` fetches or estimates one when the switch goes on.
+private struct ForecastSettingsRow: View {
+    let family: ForecastFamily
+    let refresh: () -> Void
+    @AppStorage private var isOn: Bool
+
+    init(family: ForecastFamily, refresh: @escaping () -> Void) {
+        self.family = family
+        self.refresh = refresh
+        self._isOn = AppStorage(wrappedValue: ForecastFamily.enabledByDefault, family.key)
+    }
+
+    var body: some View {
+        Toggle("Show Forecast", isOn: $isOn)
+            .onChange(of: isOn) { _, _ in
+                self.refresh()
+            }
+        HStack {
+            Text(ForecastDisplay.settingsExplanation(for: self.family))
+                .font(.footnote)
+                .foregroundColor(.gray)
+            Spacer()
+        }
     }
 }
