@@ -58,10 +58,18 @@ background execution, so scheduled intervals are not background delivery guarant
 macOS retains its kilometer-accuracy foreground policy and first-measurement refresh.
 
 Weather and forecasts continue fetching with their display switch off. Other
-sources stop fetching when disabled and retain their last successful data. iOS
-keeps `showWater`, `enableElectionPolls` (default off), and `showElectionPolls`
-(default on) as separate persisted preferences. Hiding poll labels does not stop
-poll fetching. POIs retain their independent master/category controls. The map
+sources stop fetching when disabled and retain their last successful data. The iOS
+toolbar always has seven buttons: Home, Weather, four customizable source buttons,
+and Settings. The default middle buttons are Level, Radiation, Particles, and
+COVID-19. Long press any middle button to assign Energy, Particles, COVID-19,
+Level, Radiation, or Election Polls. Choosing an existing assignment swaps the two
+positions; assignments survive relaunches. Disabled sources keep a dimmed button
+that can still be customized, but tapping it does not open the screen.
+
+Level and Radiation have separate screens and maps. With their Multiple Sensors
+switch on, each shows up to six sensors; with it off, each shows only the nearest.
+Enabled sources keep updating even when absent from the toolbar. POIs retain their
+independent master/category controls. The map
 can show the fallback location while WeatherKit is unavailable. NINA warnings
 near the user appear in a card at the bottom of the Home screen, with a green
 all-clear when there are none; the Warnings switch turns the card and its

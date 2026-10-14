@@ -7,22 +7,31 @@ final class NavigationTests: XCTestCase {
         let app = XCUIApplication()
         // The multi-sensor switches are off by default, so this launch turns them on to see every sensor. The second launch leaves them off.
         app.launchArguments = [
-            "--ui-fixture", "-enableElectionPolls", "YES", "-showPlaces", "YES", "-enableDarkTheme", "NO",
+            "--ui-fixture", "--reset-toolbar", "-enableElectionPolls", "YES", "-showPlaces", "YES", "-enableDarkTheme", "NO",
             "-multiSensorLevel", "YES", "-multiSensorRadiation", "YES", "-multiSensorParticles", "YES", "-enableCovid", "YES"
         ]
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         self.capture("home-2000")
-        for label in ["Weather", "Energy", "Environment", "Particles", "COVID-19", "Election Polls", "Settings"] {
-            app.buttons[label].tap()
+        for label in ["Weather", "Level", "Radiation", "Particles", "COVID-19", "Energy", "Election Polls", "Settings"] {
+            if label == "Energy" || label == "Election Polls" {
+                app.buttons["toolbar.slot.0"].press(forDuration: 1)
+                let choice = label == "Energy" ? "energy" : "surveys"
+                let menuItem = app.buttons["toolbar.choice.\(choice)"]
+                XCTAssertTrue(menuItem.waitForExistence(timeout: 5))
+                menuItem.tap()
+            }
+            else {
+                app.buttons[label].tap()
+            }
             XCTAssertTrue(app.buttons["Home"].exists)
             self.capture(label)
-            if label == "Environment" || label == "Particles" || label == "Settings" || label == "Energy" {
-                // Up to three sections per source, and a settings card per source, so these tabs are taller than the screen. Scroll back
+            if label == "Level" || label == "Radiation" || label == "Particles" || label == "Settings" || label == "Energy" {
+                // Up to six sections per source, and a settings card per source, so these tabs are taller than the screen. Scroll back
                 // afterwards: the offset would carry over.
                 let steps = label == "Settings" ? ["middle", "lower", "bottom"] : ["middle", "bottom"]
-                // The Environment tab also has a map above its charts, which is about a screen taller.
-                let swipes = label == "Environment" ? 3 : 2
+                // Each sensor tab also has a map above its charts, which is about a screen taller.
+                let swipes = label == "Level" || label == "Radiation" ? 3 : 2
                 for step in steps {
                     for _ in 0 ..< swipes { app.swipeUp() }
                     self.capture("\(label)-\(step)")
@@ -41,14 +50,17 @@ final class NavigationTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.terminate()
         app.launchArguments = [
-            "--ui-fixture", "--poi-10000", "-enableElectionPolls", "YES", "-showPlaces", "YES", "-enableDarkTheme", "YES",
+            "--ui-fixture", "--reset-toolbar", "--poi-10000", "-enableElectionPolls", "YES", "-showPlaces", "YES", "-enableDarkTheme", "YES",
+            "-multiSensorLevel", "NO", "-multiSensorRadiation", "NO", "-multiSensorParticles", "NO",
             "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"
         ]
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         self.capture("home-dark-large-text-10000")
-        app.buttons["Environment"].tap()
-        self.capture("environment-dark-large-text")
+        app.buttons["Level"].tap()
+        self.capture("level-dark-large-text")
+        app.buttons["Radiation"].tap()
+        self.capture("radiation-dark-large-text")
         app.buttons["Home"].tap()
         XCUIDevice.shared.orientation = .landscapeLeft
         self.capture("landscape-dark-10000")

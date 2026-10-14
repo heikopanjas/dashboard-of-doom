@@ -116,7 +116,7 @@ struct SettingsView: View {
             }
         }
 
-        // One switch per source. On, it updates and shows on the map and in its tab; off, it stops updating and its tab and label go.
+        // Source switches stop fetching and hide home-map labels. Assigned toolbar buttons stay visible, dimmed while off.
         VStack(alignment: .leading, spacing: 8) {
             Text("Sources")
                 .font(.headline)
@@ -131,7 +131,7 @@ struct SettingsView: View {
                 Toggle("Energy", isOn: $enableEnergy)
                 Toggle("Election Polls", isOn: $enableElectionPolls)
                 HStack {
-                    Text("A source that is on keeps updating, shows its value on the map and has its tab; warnings show on the Home screen. Turning one off stops it and removes its tab and its label. Weather always updates.")
+                    Text("Enabled sources keep updating and show their values on the home map; warnings appear on Home. Turning a source off stops its updates and hides its map label. Its toolbar button stays dimmed. Long press any of the four middle buttons to choose a screen. Weather always updates.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()
@@ -204,7 +204,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Show up to \(ProcessSensor.maximumPerSource) gauges, nearest first, on the Environment tab. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
+                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey)) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
@@ -252,7 +252,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Show up to \(ProcessSensor.maximumPerSource) measuring stations, nearest first, on the Environment tab. Otherwise only the nearest station is loaded. The map on the home screen shows only the nearest one."
+                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey)) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The map on the home screen shows only the nearest one."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)

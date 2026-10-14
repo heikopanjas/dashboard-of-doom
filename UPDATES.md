@@ -4,6 +4,24 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-14 (ios v6.8.0, physical iphone launch, 20:48)
+
+- the signed debug build 6.8.0 (183) from feature/custom-toolbar was installed and launched on the user-confirmed iphone 17 pro running ios 27.0
+- validation: code signature verification passed; devicectl confirmed installation and launch at 20:27 cest; physical-device toolbar interactions and live data were not tested
+- rationale: the user requested running the completed feature on the paired iphone; device evidence is recorded separately in ios/MIGRATION.md
+- version bump: none; deployment of the same ios 6.8.0 (183) build
+
+### 2026-10-14 (ios v6.8.0, customizable toolbar and separate sensor screens, 20:23)
+
+- ios always shows seven toolbar buttons: home, weather, level, radiation, particles, covid-19 and settings by default; the four middle positions persist locally and offer all six source screens on long press
+- choosing a screen already assigned elsewhere swaps positions; enabled choices open immediately, disabled sources retain dimmed buttons whose taps do nothing but whose long presses still customize
+- home, weather and settings stay fixed; customization never enables or disables a source, and an enabled source keeps refreshing even without a toolbar position
+- level and radiation replace the environment screen with separate maps and sensor sections, each using six distinct colors; their existing multiple sensors switches now allow up to six sensors, retaining saved choices and the single-sensor default
+- rationale: the user wants four personally chosen source shortcuts without changing the toolbar size, and separate maps let level and radiation each show six sensors
+- validation: 272 ios and 222 macos unit tests pass; all six package suites pass in debug and process, tools and services also pass in release; both apps compile; five iphone and four ipad ui tests pass, covering long press, swaps, persistence, disabled sources, six versus one sensor, navigation and chart gestures; light, dark and large-text screenshots inspected; whitespace and new-file swift-format checks pass
+- version bump: ios 6.7.0 (182) to 6.8.0 (183), minor for customizable navigation and separate sensor screens; no physical-device validation in this change
+
+
 ### 2026-09-29 (macos v6.8.0, ios v6.7.0, chart badges and forecast lines in dark mode, 00:52)
 
 - badge text is black in both appearances, on every chart badge; the drag-selected badges keep their dark base in dark mode

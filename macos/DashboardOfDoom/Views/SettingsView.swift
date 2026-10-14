@@ -294,7 +294,7 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorLevel)
-                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
+                    .help("Show up to \(SourcePreferences.sensorTabMaximum) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
                 // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
                 Picker("Waterways", selection: self.levelWaterways) {
                     ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: self.multiSensorLevel), id: \.self) { choice in
@@ -324,7 +324,7 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
-                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one.")
+                    .help("Show up to \(SourcePreferences.sensorTabMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one.")
             }
             ForecastSettingsSection(family: .radiation) {
                 AppProcess.shared.refreshSubscription(subscriber: self.radiationPresenter)
@@ -346,7 +346,7 @@ struct SettingsView: View {
                 Toggle("Any Station", isOn: $nearestParticleSensor)
                     .help("Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting PM10, PM2.5, O3 and NO2 are shown, nearest first, which can mean fewer of them.")
                 Toggle("Multiple Sensors", isOn: $multiSensorParticles)
-                    .help("Show up to \(SourcePreferences.macOSSensorMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one.")
+                    .help("Show up to \(SourcePreferences.sensorTabMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one.")
             }
             ForecastSettingsSection(family: .particles) {
                 AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)

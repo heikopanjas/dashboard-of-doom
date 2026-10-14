@@ -118,43 +118,28 @@ extension Color {
         }
     }
 
-    /// The colors of the level gauges and radiation stations on the Environment tab, nearest first. Together they are the six label colors of
-    /// the home screen, so no sensor has a color of its own. The nearest of each source keeps the color it has on the home map, orange for
-    /// radiation and yellow for level, and the others take the four that are left.
-    static let radiationSensors: [Color] = [Self.radiation, Self.survey, Self.covid]
-    static let waterSensors: [Color] = [Self.water, Self.particle, Self.weather]
-    /// The Particles tab is a tab of its own, so its stations share no color with the Environment tab's and can have all six: the tab
-    /// shows up to six stations, one color each, and the nearest keeps the home particle color. A seventh would have to repeat, and two
-    /// stations in one color would break the only link there is between a label and its chart.
+    /// One distinct color per particle station, with the nearest keeping its home-map color.
     static let particleSensors: [Color] = [Self.particle, Self.survey, Self.weather, Self.radiation, Self.water, Self.covid]
 
     /// The six filling stations on the Energy map, one colour each, which is why the map shows six. All six home label colours, warm
     /// first, so the dearest end of the list reads hot and the cheapest end cool. The colour marks the rank, not the price itself.
     static let fuelStations: [Color] = [Self.radiation, Self.survey, Self.water, Self.particle, Self.weather, Self.covid]
 
-    /// The six level gauges and six radiation stations on their macOS tabs. Each source has a tab and a map of its own there, so each takes
-    /// all six label colors. The first three are the iOS palettes, so the nearest sensor keeps its home color on both platforms.
+    /// The six level gauges and six radiation stations on their separate tabs on both platforms.
+    /// Each uses all six label colors, with the nearest keeping its home-map color.
     static let waterTabSensors: [Color] = [Self.water, Self.particle, Self.weather, Self.radiation, Self.survey, Self.covid]
     static let radiationTabSensors: [Color] = [Self.radiation, Self.survey, Self.covid, Self.water, Self.particle, Self.weather]
 
     /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
-    /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail. macOS gives level and radiation
-    /// six colors each, one tab each; iOS gives them three, since they share one map.
+    /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail. Each source has its own map
+    /// and six distinct colors on both platforms.
     static func sensor(selector: ProcessSelector, index: Int) -> Color {
         let colors: [Color]
         switch selector {
             case .radiation:
-                #if os(macOS)
                 colors = Self.radiationTabSensors
-                #else
-                colors = Self.radiationSensors
-                #endif
             case .water:
-                #if os(macOS)
                 colors = Self.waterTabSensors
-                #else
-                colors = Self.waterSensors
-                #endif
             case .particle:
                 colors = Self.particleSensors
             default:

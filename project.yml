@@ -278,8 +278,8 @@ targets:
         PRODUCT_NAME: Dashboard of Doom
         PRODUCT_MODULE_NAME: DashboardOfDoom
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
-        MARKETING_VERSION: 6.7.0
-        CURRENT_PROJECT_VERSION: '182'
+        MARKETING_VERSION: 6.8.0
+        CURRENT_PROJECT_VERSION: '183'
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development
         DEVELOPMENT_TEAM: 8J2G689FCZ
@@ -321,7 +321,10 @@ targets:
       - BackgroundRefresh.swift
       - Views/ActivityIndicator.swift
       - Views/SensorHeaderView.swift
-      - Views/EnvironmentMapView.swift
+      - IOSScreen.swift
+      - IOSToolbarConfiguration.swift
+      - Views/LevelMapView.swift
+      - Views/RadiationMapView.swift
       - Views/ParticleMapView.swift
     settings:
       base:

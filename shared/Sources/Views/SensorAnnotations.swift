@@ -1,8 +1,8 @@
 import DoomKitProcess
 import SwiftUI
 
-/// The map labels of a source's sensors, one per reading, nearest first. Both platforms build their sensor maps from these: iOS puts
-/// radiation and level on one Environment map, macOS gives each source a tab and a map of its own.
+/// The map labels of a source's sensors, one per reading, nearest first. Both platforms give each source
+/// a tab and a map of its own, built from these annotations.
 enum SensorAnnotations {
     static func water(_ readings: [ProcessReading]) -> [MapAnnotationSnapshot] {
         return Self.snapshots(of: readings, category: "water", selector: { _ in .water(.level) })

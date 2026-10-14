@@ -76,27 +76,13 @@ enum SourcePreferences {
         }
     }
 
-    /// How many stations the Particles tab reports where level and radiation report three. It is a tab of its own, so its stations share
-    /// no colors with the Environment tab and can have all six label colors, one each, and six is exactly what the label placement solver
-    /// was built for. It costs one request per station, so twice as many as before.
-    static let particlesSensorMaximum = 6
+    /// Each sensor source has its own map on both platforms, with one distinct label color per sensor.
+    static let sensorTabMaximum = 6
 
-    /// How many sensors each of level, radiation and particles reports on macOS with its switch on. Each has a tab and a map of its own
-    /// there, so each can use all six label colors, and six is what the label placement solver was built for.
-    static let macOSSensorMaximum = 6
-
-    /// The most sensors a source reports with its switch on. On iOS every source takes the platform cap except particles, which have a tab
-    /// of their own; level and radiation share the Environment map, three each. On macOS the three sources with a switch take six.
     static func sensorMaximum(forKey key: String) -> Int {
-        #if os(iOS)
-        if key == Self.multiSensorParticlesKey {
-            return Self.particlesSensorMaximum
-        }
-        #else
         if [Self.multiSensorLevelKey, Self.multiSensorRadiationKey, Self.multiSensorParticlesKey].contains(key) == true {
-            return Self.macOSSensorMaximum
+            return Self.sensorTabMaximum
         }
-        #endif
         return ProcessSensor.maximumPerSource
     }
 

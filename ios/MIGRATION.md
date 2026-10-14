@@ -4,6 +4,19 @@ Implementation branch: `feature/ios-modernization`.
 Initial validation date: September 6, 2026. Xcode 26.2, Swift 6.2.4,
 iOS 26.3 simulators on Apple Silicon.
 
+## October 14, 2026: custom toolbar physical iPhone launch
+
+The signed Debug build 6.8.0 (183) from `feature/custom-toolbar` passed code
+signature verification and was installed and launched on the user-confirmed
+iPhone 17 Pro running iOS 27.0. The existing bundle identifier
+`com.panjas.dashboard-of-doom` and signing team `8J2G689FCZ` were preserved.
+`devicectl` confirmed installation at 20:27:09 CEST and launch at 20:27:22 CEST.
+This validates deployment and launch; physical-device toolbar interactions and
+live data were not tested.
+
+Build evidence: `.build/custom-toolbar-device-build.log`. Installation and launch
+were confirmed by successful `devicectl` commands in the session.
+
 ## September 7, 2026: physical iPad launch
 
 After the Apple account was reauthenticated, Xcode automatic provisioning signed

@@ -13,13 +13,6 @@ import Testing
         #expect(Color.sensor(selector: .water(.level), index: 0) == Color.faceplate(selector: .water(.level)))
     }
 
-    @Test func thePaletteIsTheSixHomeLabelColorsAndNoTwoAreAlike() {
-        let palette = Color.radiationSensors + Color.waterSensors
-        #expect(palette.count == 6)
-        #expect(Set(palette).count == 6)
-        #expect(Set(palette) == Set(Self.homeLabelColors))
-    }
-
     @Test func theExtrasFollowTheOrderOfTheTab() {
         #expect([0, 1, 2].map { Color.sensor(selector: .radiation(.total), index: $0) } == [Color.radiation, Color.survey, Color.covid])
         #expect([0, 1, 2].map { Color.sensor(selector: .water(.level), index: $0) } == [Color.water, Color.particle, Color.weather])
@@ -47,22 +40,17 @@ import Testing
         }
     }
 
-    @Test func theMacOSTabPalettesExtendTheIOSOnesToAllSixColors() {
-        for (tab, shared) in [(Color.waterTabSensors, Color.waterSensors), (Color.radiationTabSensors, Color.radiationSensors)] {
-            #expect(tab.count == 6)
-            #expect(Set(tab) == Set(Self.homeLabelColors))
-            // The nearest three look the same on both platforms.
-            #expect(Array(tab.prefix(3)) == shared)
+    @Test func eachSensorTabUsesAllSixHomeColors() {
+        for palette in [Color.waterTabSensors, Color.radiationTabSensors] {
+            #expect(palette.count == 6)
+            #expect(Set(palette) == Set(Self.homeLabelColors))
         }
+        #expect((0 ..< 6).map { Color.sensor(selector: .water(.level), index: $0) } == Color.waterTabSensors)
+        #expect((0 ..< 6).map { Color.sensor(selector: .radiation(.total), index: $0) } == Color.radiationTabSensors)
     }
 
     @Test func anIndexPastTheEndWrapsInsteadOfFailing() {
-        // Three colors a source on iOS, where level and radiation share a map; six on macOS, where each has its own tab.
-        #if os(macOS)
         let count = 6
-        #else
-        let count = 3
-        #endif
         #expect(Color.sensor(selector: .radiation(.total), index: count) == Color.sensor(selector: .radiation(.total), index: 0))
         #expect(Color.sensor(selector: .water(.level), index: count + 1) == Color.sensor(selector: .water(.level), index: 1))
         #expect(Color.sensor(selector: .water(.level), index: -1) == Color.sensor(selector: .water(.level), index: count - 1))

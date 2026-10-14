@@ -40,6 +40,9 @@ enum IOSPreviewData {
 
     @MainActor
     static func populate(_ runtime: IOSAppRuntime) {
+        if ProcessInfo.processInfo.arguments.contains("--reset-toolbar") == true {
+            UserDefaults.standard.removeObject(forKey: IOSToolbarConfiguration.storageKey)
+        }
         let entries: [(ProcessPresenter, ProcessSelector, Dimension, Double, String)] = [
             (runtime.weather, .weather(.temperature), UnitTemperature.celsius, 22, "thermometer"),
             (runtime.forecast, .forecast(.temperature), UnitTemperature.celsius, 22, "cloud.sun"),
@@ -65,7 +68,7 @@ enum IOSPreviewData {
             if presenter === runtime.covid {
                 customData["polygons"] = [Self.district(around: location)]
             }
-            // Level alone carries a waterway, which titles its charts, and its sensor is named after a gauge like the two behind it.
+            // Level alone carries a waterway, which titles its charts, and its sensor is named after a gauge like the gauges behind it.
             if presenter === runtime.levels {
                 customData["waterway"] = "Spree"
             }
@@ -96,10 +99,10 @@ enum IOSPreviewData {
         // the waterway their charts are titled with separately.
         Self.populateAdditionalSensors(
             runtime.levels, selector: .water(.level), unit: UnitLength.meters, value: 2.73, date: date,
-            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP"], waterway: "Spree")
+            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP", "BERLIN-SPANDAU OP", "BERLIN-KÖPENICK", "BERLIN-SCHMÖCKWITZ"], waterway: "Spree")
         Self.populateAdditionalSensors(
             runtime.radiation, selector: .radiation(.total), unit: UnitRadiation.microsieverts, value: 0.08, date: date,
-            stations: ["Berlin-Marzahn", "Berlin-Tegel"])
+            stations: ["Berlin-Marzahn", "Berlin-Tegel", "Berlin-Buch", "Berlin-Wannsee", "Berlin-Köpenick"])
         Self.populateAdditionalSensors(
             runtime.particles, selector: .particle(.pm10), unit: UnitConcentrationMass.microgramsPerCubicMeter, value: 18, date: date,
             stations: ["Berlin Neukölln", "Berlin Wedding", "Berlin Mitte", "Berlin Buch", "Berlin Friedrichshagen"])

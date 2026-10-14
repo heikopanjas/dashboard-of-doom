@@ -46,23 +46,15 @@ import Testing
                 == SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey))
     }
 
-    @Test func eachPlatformHasItsOwnCaps() {
+    @Test func everySensorTabHasSixDistinctColorsAndASixSensorCap() {
         #expect(SourcePreferences.sensorMaximum(forKey: "somethingElse") == ProcessSensor.maximumPerSource)
-        #if os(iOS)
-        // Level and radiation share the Environment map, three each; the Particles tab is its own tab with its own six colors.
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey) == 3)
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey) == 3)
-        #expect(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey) == 6)
-        // One color per station, so the palette and the cap must not drift apart.
-        #expect(SourcePreferences.particlesSensorMaximum == Color.particleSensors.count)
-        #else
-        // Each source has a tab and a map of its own on macOS, so each takes all six label colors.
-        for key in [SourcePreferences.multiSensorLevelKey, SourcePreferences.multiSensorRadiationKey, SourcePreferences.multiSensorParticlesKey] {
+        for key in Self.keys {
             #expect(SourcePreferences.sensorMaximum(forKey: key) == 6)
         }
-        #expect(SourcePreferences.macOSSensorMaximum == Color.waterTabSensors.count)
-        #expect(SourcePreferences.macOSSensorMaximum == Color.radiationTabSensors.count)
-        #endif
+        for palette in [Color.waterTabSensors, Color.radiationTabSensors, Color.particleSensors] {
+            #expect(SourcePreferences.sensorTabMaximum == palette.count)
+            #expect(Set(palette).count == 6)
+        }
     }
 
     @Test func aSwitchReadsUnsetAsItsDefaultAndAcceptsLaunchArgumentStrings() {

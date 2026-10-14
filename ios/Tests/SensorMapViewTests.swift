@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 import Testing
 
-/// The map the Environment, Particles and Energy tabs share, and the reader's own marker on it. The three tabs build their sensor
+/// The map the Level, Radiation, Particles and Energy tabs share, and the reader's own marker on it. These tabs build their sensor
 /// annotations themselves and are tested separately; this is what they have in common.
 @MainActor
 @Suite struct SensorMapViewTests {
