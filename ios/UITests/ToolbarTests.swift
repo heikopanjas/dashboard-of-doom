@@ -35,7 +35,7 @@ final class ToolbarTests: XCTestCase {
     func testCustomizationSwapsAndPersistsAcrossLaunches() {
         self.continueAfterFailure = false
         let app = self.launch(sourcesEnabled: true)
-        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
+        self.assertToolbar(app, labels: ["Water Level", "Radiation", "Particles", "COVID-19"])
         self.choose("energy", at: 0, in: app)
         self.assertToolbar(app, labels: ["Energy", "Radiation", "Particles", "COVID-19"])
         XCTAssertTrue(app.buttons["toolbar.slot.0"].isSelected)
@@ -61,7 +61,7 @@ final class ToolbarTests: XCTestCase {
     func testAllSourcesOffKeepSevenCustomizableButtons() {
         self.continueAfterFailure = false
         let app = self.launch(sourcesEnabled: false)
-        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
+        self.assertToolbar(app, labels: ["Water Level", "Radiation", "Particles", "COVID-19"])
         for slot in 0 ..< 4 {
             let button = app.buttons["toolbar.slot.\(slot)"]
             XCTAssertEqual(button.value as? String, "Source off")
@@ -76,14 +76,14 @@ final class ToolbarTests: XCTestCase {
             XCTAssertFalse(app.buttons["toolbar.choice.\(screen)"].exists, "Disabled source offered: \(screen)")
         }
         self.dismissMenu(showing: "none", in: app)
-        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
+        self.assertToolbar(app, labels: ["Water Level", "Radiation", "Particles", "COVID-19"])
         XCTAssertTrue(app.buttons["toolbar.home"].isSelected)
     }
 
     func testMenuListsOnlyEnabledSources() {
         self.continueAfterFailure = false
         let app = self.launch(sourcesEnabled: false, extra: ["-showWater", "YES", "-enableEnergy", "YES"])
-        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
+        self.assertToolbar(app, labels: ["Water Level", "Radiation", "Particles", "COVID-19"])
         self.assertChoices(["level", "energy"], at: 0, in: app)
         self.choose("energy", at: 0, in: app)
         self.assertToolbar(app, labels: ["Energy", "Radiation", "Particles", "COVID-19"])
@@ -91,7 +91,7 @@ final class ToolbarTests: XCTestCase {
         // A slot holding a disabled source offers the same enabled sources, its own excluded.
         self.assertChoices(["level", "energy"], at: 1, in: app)
         self.choose("level", at: 1, in: app)
-        self.assertToolbar(app, labels: ["Energy", "Level", "Particles", "COVID-19"])
+        self.assertToolbar(app, labels: ["Energy", "Water Level", "Particles", "COVID-19"])
         XCTAssertTrue(app.buttons["toolbar.slot.1"].isSelected)
     }
 

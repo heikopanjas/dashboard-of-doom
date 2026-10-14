@@ -142,7 +142,7 @@ struct NotificationFamilySettingsView: View {
             case .hazards:
                 return "Official NINA warnings that cover your location or lie nearby, once for each new warning. Needs Warnings on under Sources."
             case .level:
-                return "Every gauge that is loaded, against its own official marks, and where PEGELONLINE publishes a forecast, its next 24 hours too while the Water forecast is on. Needs Water on under Sources."
+                return "Every gauge that is loaded, against its own official marks, and where PEGELONLINE publishes a forecast, its next 24 hours too while the Water Level forecast is on. Needs Water Level on under Sources."
             case .radiation:
                 return "Every radiation station that is loaded. Needs Radiation on under Sources."
             case .particles:

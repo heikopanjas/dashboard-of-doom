@@ -187,7 +187,7 @@ struct ContentView: View {
                             }
                             .onAppear {
                                 self.navigationVisible = .visible
-                                self.navigationTitle = "Water Levels"
+                                self.navigationTitle = "Water Level"
                             }
                         case .radiation:
                             VStack {

@@ -10,7 +10,7 @@ enum SettingsTab: String, CaseIterable {
     case weather = "Weather"
     case warnings = "Warnings"
     case covid = "COVID-19"
-    case level = "Level"
+    case level = "Water Level"
     case radiation = "Radiation"
     case particles = "Particles"
     case energy = "Energy"
@@ -294,7 +294,7 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorLevel)
-                    .help("Show up to \(SourcePreferences.sensorTabMaximum) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
+                    .help("Show up to \(SourcePreferences.sensorTabMaximum) gauges, nearest first, on the Water Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
                 // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
                 Picker("Waterways", selection: self.levelWaterways) {
                     ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: self.multiSensorLevel), id: \.self) { choice in

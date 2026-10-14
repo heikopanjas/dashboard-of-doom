@@ -124,7 +124,7 @@ struct SettingsView: View {
                 .padding(.bottom, 4)
             VStack(spacing: 12) {
                 Toggle("COVID-19", isOn: $enableCovid)
-                Toggle("Water", isOn: $showWater)
+                Toggle("Water Level", isOn: $showWater)
                 Toggle("Radiation", isOn: $showRadiation)
                 Toggle("Particulate Matter", isOn: $showParticles)
                 Toggle("Warnings", isOn: $showHazards)
@@ -193,7 +193,7 @@ struct SettingsView: View {
         // Only while the source is on; its switch is in the Sources card.
         if showWater == true {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Water")
+            Text("Water Level")
                 .font(.headline)
                 .foregroundColor(.primary)
                 .padding(.bottom, 4)
@@ -204,7 +204,7 @@ struct SettingsView: View {
                     }
                 HStack {
                     Text(
-                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey)) gauges, nearest first, on the Level tab. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
+                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey)) gauges, nearest first, on the Water Level screen. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)

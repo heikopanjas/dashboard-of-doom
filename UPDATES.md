@@ -4,6 +4,16 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-14 (macos v6.8.1, ios v6.8.2, one english term for pegel and wasserstand, 22:20)
+
+- the pegelonline source is called water level everywhere a full name fits: the ios sources toggle and settings card (were water), the ios navigation title and the about entry (were water levels), the ios toolbar label and the macos dashboard and settings tabs (were level); the ios notification footnote and the multiple sensors help texts follow
+- level charts are titled with the waterway alone, the level suffix is gone; the chart axis and the menu bar value keep level as the short form under a heading that already says water level
+- gauge stays the word for the station and high water the notification title for the event; preference keys and enum case names are unchanged, so no setting resets
+- rationale: the user wanted one unified english word for pegel and wasserstand; the app used five, and water level names the quantity the way radiation and energy do, while pegelonline's own english term gauge is kept for the station
+- rationale: water level measures 56 points at 10 pt, so it fits the fixed 64-point macos tab buttons and the tab strips did not change
+- validation: both apps build; 222 macos and 272 ios unit tests pass; the four toolbar and the navigation ui tests pass on the iphone 17 pro simulator with the new labels; the only remaining level string in app code is the menu bar value; swift-format and whitespace clean; release 6.8.2 (185) installed and launched on the iphone 18 pro at 22:13 cest
+- version bump: macos 6.8.0 (155) to 6.8.1 (156) and ios 6.8.1 (184) to 6.8.2 (185), patch on both for user-visible wording only
+
 ### 2026-10-14 (ios v6.8.1, toolbar menu offers only enabled sources, 21:35)
 
 - the long-press menu of the four customizable ios toolbar buttons lists only the sources that are switched on, in the usual order; a disabled source is left out even when it is the slot's current assignment, so that slot shows no checkmark

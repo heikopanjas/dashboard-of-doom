@@ -47,7 +47,7 @@ enum DataSources {
                 licence: "CC BY 3.0 DE, adapted", licenceURL: URL(string: "https://creativecommons.org/licenses/by/3.0/de/"),
                 sourceURL: URL(string: "https://www.statistik-berlin-brandenburg.de"), isRequired: true),
             DataSource(
-                topic: "Water Levels",
+                topic: "Water Level",
                 attribution: "PEGELONLINE, Wasserstraßen- und Schifffahrtsverwaltung des Bundes (WSV).", licence: "DL-DE→Zero-2.0",
                 licenceURL: URL(string: "https://www.govdata.de/dl-de/zero-2-0"), sourceURL: URL(string: "https://www.pegelonline.wsv.de"),
                 isRequired: false),

@@ -11,10 +11,6 @@ struct LevelChartView: View {
     let selector: ProcessSelector
     let reading: ProcessReading
 
-    private let labels: [ProcessSelector: String] = [
-        .water(.level): "Level"
-    ]
-
     /// Every chart in a level stack is titled with its waterway, which is what tells them apart: the header row above each one names the
     /// gauge. The sensor is named after the gauge, like every other source, so the waterway comes out of `customData`.
     static func waterway(of reading: ProcessReading) -> String {
@@ -29,7 +25,7 @@ struct LevelChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text("\(Self.waterway(of: self.reading)) \(self.labels[selector] ?? "<Unknown>")")
+                Text(Self.waterway(of: self.reading))
                 Spacer()
                 if let forecast = self.forecast {
                     ForecastLegend(origin: forecast.origin, color: Color.chart)

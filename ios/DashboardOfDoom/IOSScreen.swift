@@ -21,7 +21,7 @@ enum IOSScreen: String, Codable, CaseIterable {
             case .energy: return "Energy"
             case .particles: return "Particles"
             case .covid: return "COVID-19"
-            case .level: return "Level"
+            case .level: return "Water Level"
             case .radiation: return "Radiation"
             case .surveys: return "Election Polls"
             case .settings: return "Settings"

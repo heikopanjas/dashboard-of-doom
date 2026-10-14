@@ -13,7 +13,7 @@ final class NavigationTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         self.capture("home-2000")
-        for label in ["Weather", "Level", "Radiation", "Particles", "COVID-19", "Energy", "Election Polls", "Settings"] {
+        for label in ["Weather", "Water Level", "Radiation", "Particles", "COVID-19", "Energy", "Election Polls", "Settings"] {
             if label == "Energy" || label == "Election Polls" {
                 app.buttons["toolbar.slot.0"].press(forDuration: 1)
                 let choice = label == "Energy" ? "energy" : "surveys"
@@ -26,12 +26,12 @@ final class NavigationTests: XCTestCase {
             }
             XCTAssertTrue(app.buttons["Home"].exists)
             self.capture(label)
-            if label == "Level" || label == "Radiation" || label == "Particles" || label == "Settings" || label == "Energy" {
+            if label == "Water Level" || label == "Radiation" || label == "Particles" || label == "Settings" || label == "Energy" {
                 // Up to six sections per source, and a settings card per source, so these tabs are taller than the screen. Scroll back
                 // afterwards: the offset would carry over.
                 let steps = label == "Settings" ? ["middle", "lower", "bottom"] : ["middle", "bottom"]
                 // Each sensor tab also has a map above its charts, which is about a screen taller.
-                let swipes = label == "Level" || label == "Radiation" ? 3 : 2
+                let swipes = label == "Water Level" || label == "Radiation" ? 3 : 2
                 for step in steps {
                     for _ in 0 ..< swipes { app.swipeUp() }
                     self.capture("\(label)-\(step)")
@@ -57,7 +57,7 @@ final class NavigationTests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 15))
         self.capture("home-dark-large-text-10000")
-        app.buttons["Level"].tap()
+        app.buttons["Water Level"].tap()
         self.capture("level-dark-large-text")
         app.buttons["Radiation"].tap()
         self.capture("radiation-dark-large-text")

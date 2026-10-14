@@ -4,7 +4,7 @@ enum DashboardTab: String, CaseIterable {
     case home = "Home"
     case weather = "Weather"
     case covid = "COVID-19"
-    case level = "Level"
+    case level = "Water Level"
     case radiation = "Radiation"
     case particles = "Particles"
     case energy = "Energy"

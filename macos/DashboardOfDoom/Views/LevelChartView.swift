@@ -9,10 +9,6 @@ struct LevelChartView: View {
     @AppStorage(ForecastFamily.level.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
-    private let labels: [ProcessSelector: String] = [
-        .water(.level): "Level"
-    ]
-
     /// The chart is titled with the waterway, not the gauge the sensor is named after: the header above names the gauge.
     private var waterway: String {
         return (self.reading.sensor.customData?["waterway"] as? String) ?? self.reading.sensor.name
@@ -26,7 +22,7 @@ struct LevelChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text("\(self.waterway) \(self.labels[selector] ?? "<Unknown>")")
+                Text(self.waterway)
                 Spacer()
                 if let forecast = self.forecast {
                     ForecastLegend(origin: forecast.origin, color: Color.chart)

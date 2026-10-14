@@ -60,14 +60,14 @@ macOS retains its kilometer-accuracy foreground policy and first-measurement ref
 Weather and forecasts continue fetching with their display switch off. Other
 sources stop fetching when disabled and retain their last successful data. The iOS
 toolbar always has seven buttons: Home, Weather, four customizable source buttons,
-and Settings. The default middle buttons are Level, Radiation, Particles, and
+and Settings. The default middle buttons are Water Level, Radiation, Particles, and
 COVID-19. Long press any middle button to assign one of the enabled sources among
-Energy, Particles, COVID-19, Level, Radiation, and Election Polls; disabled
+Energy, Particles, COVID-19, Water Level, Radiation, and Election Polls; disabled
 sources are not offered. Choosing an existing assignment swaps the two positions;
 assignments survive relaunches. Disabled sources keep a dimmed button whose tap
 does not open the screen; its long press offers the enabled sources.
 
-Level and Radiation have separate screens and maps. With their Multiple Sensors
+Water Level and Radiation have separate screens and maps. With their Multiple Sensors
 switch on, each shows up to six sensors; with it off, each shows only the nearest.
 Enabled sources keep updating even when absent from the toolbar. POIs retain their
 independent master/category controls. The map
@@ -166,7 +166,7 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Adaptive Branding**: Text title in light mode, logo image in dark mode
 - **Settings Window**: Comprehensive configuration for preferences and data sources
 - **Dark Mode Optimized**: Native macOS appearance with pure black backgrounds
-- **Dashboard Tabs**: Home (map, next 24 hours, current conditions, nearest places), Weather, Warnings, COVID-19, Level, Radiation, Particles, Energy, and Polls; Level, Radiation and Particles show up to six sensors each on their own map
+- **Dashboard Tabs**: Home (map, next 24 hours, current conditions, nearest places), Weather, Warnings, COVID-19, Water Level, Radiation, Particles, Energy, and Polls; Water Level, Radiation and Particles show up to six sensors each on their own map
 - **Low Resource Usage**: Optimized for background operation with minimal system impact
 
 ### Data Sources & Monitoring
@@ -175,7 +175,7 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Radiation Monitoring**: Federal radiation levels from BfS (Bundesamt für Strahlenschutz)
 - **Air Quality**: PM10, PM2.5, O3, NO2 particle concentrations from UBA
 - **Weather & Forecasting**: Current conditions and ARIMA-based future predictions
-- **Water Levels**: Hydrological data from federal waterway stations
+- **Water Level**: Hydrological data from federal waterway stations
 - **Civil Protection**: NINA warnings that cover or lie near your location
 - **Notifications**: A local notice when a reading reaches its warning or critical limit, with limits per sensor family; water levels use each gauge's official flood marks
 - **Energy Prices**: Brent and WTI crude from the US EIA, and the EU LNG price from ACER
@@ -524,7 +524,7 @@ git push origin feature/your-feature-name
 
 - **Weather Data**: 5-minute intervals
 - **Air Quality**: 30-minute intervals
-- **Water Levels**: 15-minute intervals
+- **Water Level**: 15-minute intervals
 - **COVID-19 Data**: 6-hour intervals
 - **Radiation Monitoring**: Real-time continuous updates
 - **Civil Protection**: Every 15 minutes, notifying on new warnings when notifications are on
