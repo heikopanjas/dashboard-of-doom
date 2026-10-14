@@ -61,10 +61,11 @@ Weather and forecasts continue fetching with their display switch off. Other
 sources stop fetching when disabled and retain their last successful data. The iOS
 toolbar always has seven buttons: Home, Weather, four customizable source buttons,
 and Settings. The default middle buttons are Level, Radiation, Particles, and
-COVID-19. Long press any middle button to assign Energy, Particles, COVID-19,
-Level, Radiation, or Election Polls. Choosing an existing assignment swaps the two
-positions; assignments survive relaunches. Disabled sources keep a dimmed button
-that can still be customized, but tapping it does not open the screen.
+COVID-19. Long press any middle button to assign one of the enabled sources among
+Energy, Particles, COVID-19, Level, Radiation, and Election Polls; disabled
+sources are not offered. Choosing an existing assignment swaps the two positions;
+assignments survive relaunches. Disabled sources keep a dimmed button whose tap
+does not open the screen; its long press offers the enabled sources.
 
 Level and Radiation have separate screens and maps. With their Multiple Sensors
 switch on, each shows up to six sensors; with it off, each shows only the nearest.

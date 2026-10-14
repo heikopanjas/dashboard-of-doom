@@ -22,7 +22,7 @@ struct DashboardToolbar: View {
                     .contextMenu {
                         self.choices(for: slot)
                     }
-                    .accessibilityHint("Long press to choose a screen")
+                    .accessibilityHint("Long press to choose an enabled source")
                     .accessibilityAction(named: "Customize") {
                         self.accessibleSlot = slot
                         self.showsAccessibleChoices = true
@@ -65,9 +65,16 @@ struct DashboardToolbar: View {
         .accessibilityAddTraits(selected == true ? [.isSelected] : [])
     }
 
+    /// Only enabled sources are offered: a disabled one would leave a button that cannot open its screen.
     @ViewBuilder
     private func choices(for slot: Int) -> some View {
-        ForEach(IOSScreen.customizable, id: \.self) { screen in
+        let screens = IOSScreen.customizable.filter { self.available.contains($0) }
+        if screens.isEmpty {
+            Button("Turn on a source in Settings") {}
+                .disabled(true)
+                .accessibilityIdentifier("toolbar.choice.none")
+        }
+        ForEach(screens, id: \.self) { screen in
             Button {
                 self.assign(screen, to: slot)
             } label: {

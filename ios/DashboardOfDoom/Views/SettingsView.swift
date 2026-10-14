@@ -131,7 +131,7 @@ struct SettingsView: View {
                 Toggle("Energy", isOn: $enableEnergy)
                 Toggle("Election Polls", isOn: $enableElectionPolls)
                 HStack {
-                    Text("Enabled sources keep updating and show their values on the home map; warnings appear on Home. Turning a source off stops its updates and hides its map label. Its toolbar button stays dimmed. Long press any of the four middle buttons to choose a screen. Weather always updates.")
+                    Text("Enabled sources keep updating and show their values on the home map; warnings appear on Home. Turning a source off stops its updates and hides its map label. Its toolbar button stays dimmed. Long press any of the four middle buttons to choose among the enabled sources. Weather always updates.")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     Spacer()

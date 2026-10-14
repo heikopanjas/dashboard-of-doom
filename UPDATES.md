@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-14 (ios v6.8.1, toolbar menu offers only enabled sources, 21:35)
+
+- the long-press menu of the four customizable ios toolbar buttons lists only the sources that are switched on, in the usual order; a disabled source is left out even when it is the slot's current assignment, so that slot shows no checkmark
+- with every source off the menu holds one disabled hint row, turn on a source in settings, so the long press still answers and the buttons stay interactive
+- the toolbar configuration model is unchanged, its disabled branch stays for stored assignments whose source was switched off later; readme, the settings footnote and the accessibility hint say the menu offers enabled sources
+- rationale: choosing a disabled source produced a dimmed button whose screen could not open, a dead end the user wanted removed; both options for the current slot and for the all-off case were decided with the user
+- validation: 272 ios unit tests pass; the four toolbar ui tests pass on the iphone 17 pro simulator, the disabled-replacement test replaced by one that checks the menu entries with two sources on, and the all-off test now checking the hint row; swift-format and whitespace clean; the signed release build 6.8.1 (184) was installed and launched on the iphone 18 pro at 21:38 cest
+- version bump: ios 6.8.0 (183) to 6.8.1 (184), patch for a behaviour fix without a new screen; macos unchanged
+
 ### 2026-10-14 (ios v6.8.0, physical iphone launch, 20:48)
 
 - the signed debug build 6.8.0 (183) from feature/custom-toolbar was installed and launched on the user-confirmed iphone 17 pro running ios 27.0

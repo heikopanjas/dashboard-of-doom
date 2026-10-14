@@ -68,25 +68,31 @@ final class ToolbarTests: XCTestCase {
             button.tap()
             XCTAssertTrue(app.buttons["toolbar.home"].isSelected)
         }
-        self.choose("energy", at: 0, in: app)
-        self.assertToolbar(app, labels: ["Energy", "Radiation", "Particles", "COVID-19"])
-        XCTAssertEqual(app.buttons["toolbar.slot.0"].value as? String, "Source off")
+        // With every source off the menu offers nothing but a hint.
+        app.buttons["toolbar.slot.0"].press(forDuration: 1)
+        XCTAssertTrue(app.buttons["toolbar.choice.none"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["toolbar.choice.none"].isEnabled)
+        for screen in ["energy", "particles", "covid", "level", "radiation", "surveys"] {
+            XCTAssertFalse(app.buttons["toolbar.choice.\(screen)"].exists, "Disabled source offered: \(screen)")
+        }
+        self.dismissMenu(showing: "none", in: app)
+        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
         XCTAssertTrue(app.buttons["toolbar.home"].isSelected)
-        self.choose("radiation", at: 0, in: app)
-        self.assertToolbar(app, labels: ["Radiation", "Energy", "Particles", "COVID-19"])
-        app.buttons["toolbar.weather"].tap()
-        self.choose("surveys", at: 3, in: app)
-        XCTAssertTrue(app.buttons["toolbar.weather"].isSelected)
     }
 
-    func testDisabledReplacementOfTheOpenScreenReturnsHome() {
+    func testMenuListsOnlyEnabledSources() {
         self.continueAfterFailure = false
-        let app = self.launch(sourcesEnabled: false, extra: ["-showWater", "YES"])
-        app.buttons["toolbar.slot.0"].tap()
-        XCTAssertTrue(app.buttons["toolbar.slot.0"].isSelected)
+        let app = self.launch(sourcesEnabled: false, extra: ["-showWater", "YES", "-enableEnergy", "YES"])
+        self.assertToolbar(app, labels: ["Level", "Radiation", "Particles", "COVID-19"])
+        self.assertChoices(["level", "energy"], at: 0, in: app)
         self.choose("energy", at: 0, in: app)
-        XCTAssertTrue(app.buttons["toolbar.home"].isSelected)
         self.assertToolbar(app, labels: ["Energy", "Radiation", "Particles", "COVID-19"])
+        XCTAssertTrue(app.buttons["toolbar.slot.0"].isSelected)
+        // A slot holding a disabled source offers the same enabled sources, its own excluded.
+        self.assertChoices(["level", "energy"], at: 1, in: app)
+        self.choose("level", at: 1, in: app)
+        self.assertToolbar(app, labels: ["Energy", "Level", "Particles", "COVID-19"])
+        XCTAssertTrue(app.buttons["toolbar.slot.1"].isSelected)
     }
 
     private func launch(sourcesEnabled: Bool, extra: [String] = []) -> XCUIApplication {
@@ -114,6 +120,22 @@ final class ToolbarTests: XCTestCase {
         }
         choice.tap()
         XCTAssertTrue(choice.waitForNonExistence(timeout: 5))
+    }
+
+    /// Open the menu of one slot and check it offers exactly these sources, then close it.
+    private func assertChoices(_ screens: [String], at slot: Int, in app: XCUIApplication) -> Void {
+        app.buttons["toolbar.slot.\(slot)"].press(forDuration: 1)
+        XCTAssertTrue(app.buttons["toolbar.choice.\(screens[0])"].waitForExistence(timeout: 5))
+        for screen in ["energy", "particles", "covid", "level", "radiation", "surveys"] {
+            XCTAssertEqual(app.buttons["toolbar.choice.\(screen)"].exists, screens.contains(screen), "Choice: \(screen)")
+        }
+        XCTAssertFalse(app.buttons["toolbar.choice.none"].exists)
+        self.dismissMenu(showing: screens[0], in: app)
+    }
+
+    private func dismissMenu(showing choice: String, in app: XCUIApplication) -> Void {
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
+        XCTAssertTrue(app.buttons["toolbar.choice.\(choice)"].waitForNonExistence(timeout: 5))
     }
 
     private func assertToolbar(_ app: XCUIApplication, labels: [String]) -> Void {
