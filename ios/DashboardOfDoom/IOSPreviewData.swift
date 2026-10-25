@@ -109,6 +109,21 @@ enum IOSPreviewData {
         Self.populateForecastStrip(runtime.forecast, date: date)
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
+        let energyDate = Date.round(from: date, strategy: .lastDayChange) ?? date
+        let energySeries = Dictionary(uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
+            let unit: Dimension = [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
+            let values = (0..<60).map { day in
+                return ProcessValue<Dimension>(value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
+                    timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
+            }
+            return (ProcessSelector.energy(selector), values)
+        })
+        let energySensor = ProcessSensor(name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
+            placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"], measurements: energySeries, timestamp: date)
+        if let readings = try? ProcessReading.render(sensors: [energySensor], transformer: { EnergyTransformer() }) {
+            runtime.energy.replace(readings: readings)
+        }
+
         runtime.fuel.publish(stations: Self.stations(), timestamp: date)
     }
 

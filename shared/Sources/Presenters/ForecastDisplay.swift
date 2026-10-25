@@ -27,7 +27,7 @@ enum ForecastDisplay {
             case .covid:
                 return "Continues the district's figures past now with the app's own estimate for two weeks: the weekly reporting pattern for daily counts, the trend for the incidence. No one publishes a forecast. \(off)"
             case .energy:
-                return "Continues each price past now with the app's own estimate for 30 days: the last price, with the range a year of daily moves allows. No free forecast exists. \(off)"
+                return "Continues each price past now with the app's own estimate for 30 days: the last price, with the range the available daily price moves allow. No free forecast exists. \(off)"
             case .polls:
                 return "Continues each party's share past now with the app's own estimate: its trend in weekly averages of the polls, for 13 weeks. DAWUM publishes no projection. \(off)"
         }

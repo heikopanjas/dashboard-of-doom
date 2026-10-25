@@ -14,7 +14,7 @@ import SwiftUI
         self.fetch = fetch ?? { location in return try await EnergyController().refreshData(for: location) }
         super.init()
         let id = self.id
-        // The prices change once a day, so six hours is plenty.
+        // EuroOilWatch refreshes daily and ACER publishes weekday assessments; keep the six-hour fallback.
         self.subscription = ConditionalSubscription(
             defaults: defaults, enableKey: SourcePreferences.energyEnableKey, intervalKey: "energyRefreshInterval", fallback: 360,
             defaultEnabled: SourcePreferences.energyEnabledByDefault,

@@ -68,9 +68,9 @@ enum DataSources {
                 isRequired: true),
             DataSource(
                 topic: "Crude Oil",
-                attribution: "Source: U.S. Energy Information Administration (EIA), Brent and WTI spot prices, via datasets/oil-prices.",
-                licence: "Public domain, ODC-PDDL", licenceURL: URL(string: "https://opendatacommons.org/licenses/pddl/1-0/"),
-                sourceURL: URL(string: "https://www.eia.gov"), isRequired: false),
+                attribution: "EuroOilWatch, Brent spot prices from EIA; Brent and Dutch TTF futures from Yahoo Finance.",
+                licence: "Free API, attribution requested; underlying source terms apply", licenceURL: URL(string: "https://eurooilwatch.com/api"),
+                sourceURL: URL(string: "https://eurooilwatch.com"), isRequired: true),
             DataSource(
                 topic: "LNG",
                 attribution: "Source: European Union Agency for the Cooperation of Energy Regulators (ACER), LNG price assessments, aegis.acer.europa.eu.",

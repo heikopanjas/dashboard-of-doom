@@ -3,22 +3,29 @@ import DoomKitNetwork
 import DoomKitTools
 import Foundation
 
-/// Global energy prices, as CSV files that need no key.
+/// European energy prices from public endpoints that need no key.
 ///
-/// Crude oil comes from the `datasets/oil-prices` project, which republishes the US Energy Information Administration's daily Brent and
-/// WTI spot prices under a public domain licence; the EIA's own API would need a key. Liquefied natural gas comes from ACER, the EU energy
-/// regulator, which has published a daily LNG price for Europe since 2023.
+/// EuroOilWatch supplies Brent spot history (EIA), Brent futures and TTF futures (Yahoo Finance) as JSON. Liquefied natural gas comes
+/// from ACER, the EU energy regulator, which has published a daily LNG price for Europe since 2023 as CSV.
 public class EnergyService {
-    static let brentURL = "https://raw.githubusercontent.com/datasets/oil-prices/main/data/brent-daily.csv"
-    static let wtiURL = "https://raw.githubusercontent.com/datasets/oil-prices/main/data/wti-daily.csv"
+    static let brentURL = "https://eurooilwatch.com/api/v1/brent"
+    static let brentHistoryURL = "https://eurooilwatch.com/api/v1/brent-history"
     static let lngURL = "https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"
 
     public static func fetchBrent(networkManager: NetworkManager = .shared) async throws -> Data? {
         return await Self.fetch(name: "Brent crude prices", urlString: Self.brentURL, networkManager: networkManager)
     }
 
-    public static func fetchWTI(networkManager: NetworkManager = .shared) async throws -> Data? {
-        return await Self.fetch(name: "WTI crude prices", urlString: Self.wtiURL, networkManager: networkManager)
+    public static func fetchBrentHistory(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "Brent futures history", urlString: Self.brentHistoryURL, networkManager: networkManager)
+    }
+
+    public static func fetchBrentSpot(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "Brent spot prices", urlString: "https://eurooilwatch.com/api/v1/brent-eia-daily", networkManager: networkManager)
+    }
+
+    public static func fetchGas(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "TTF futures", urlString: "https://eurooilwatch.com/api/v1/gas", networkManager: networkManager)
     }
 
     public static func fetchLNG(networkManager: NetworkManager = .shared) async throws -> Data? {

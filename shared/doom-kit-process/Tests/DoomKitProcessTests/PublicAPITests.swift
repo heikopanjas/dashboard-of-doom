@@ -146,6 +146,7 @@ struct PublicAPITests {
         #expect(ProcessSelector.survey(from: -10) == nil)
         #expect(ProcessSelector.energy(from: -10) == nil)
         #expect(ProcessSelector.energy(.lng).rawValue == 2)
+        #expect(ProcessSelector.energy(from: 1) == nil)
     }
 
     @Test func geography() {

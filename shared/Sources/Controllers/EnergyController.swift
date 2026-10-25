@@ -5,7 +5,7 @@ import DoomKitServices
 import DoomKitTools
 import Foundation
 
-/// Global energy prices: Brent and WTI crude oil, and the EU's LNG price. Prices have no place, so the sensor's location is nominal and
+/// European energy prices: Brent spot and futures, TTF futures and ACER LNG spot. Prices have no place, so the sensor's location is nominal and
 /// never shown, and the source is not on the map.
 class EnergyController: ProcessController {
     /// A year of prices: enough to show a trend and the winter and summer swing of gas, and still one point per two or three pixels on
@@ -18,28 +18,30 @@ class EnergyController: ProcessController {
     private let networkManager: NetworkManager
     private let showForecasts: @Sendable () -> Bool
 
-    init(networkManager: NetworkManager = .shared, showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.energy) }) {
+    init(
+        networkManager: NetworkManager = .shared,
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.energy) }
+    ) {
         self.networkManager = networkManager
         self.showForecasts = showForecasts
     }
 
     func refreshData(for location: Location) async throws -> [ProcessSensor] {
         try Task.checkCancellation()
-        // The three files are independent, so a failed one drops only its series.
+        // The quote, history and LNG are independent: a failed endpoint does not cost the others their data.
         async let brentData = EnergyService.fetchBrent(networkManager: self.networkManager)
-        async let wtiData = EnergyService.fetchWTI(networkManager: self.networkManager)
+        async let brentHistoryData = EnergyService.fetchBrentHistory(networkManager: self.networkManager)
+        async let spotData = EnergyService.fetchBrentSpot(networkManager: self.networkManager)
+        async let gasData = EnergyService.fetchGas(networkManager: self.networkManager)
         async let lngData = EnergyService.fetchLNG(networkManager: self.networkManager)
-        let (brent, wti, lng) = try await (brentData, wtiData, lngData)
+        let (brent, brentHistory, spot, gas, lng) = try await (brentData, brentHistoryData, spotData, gasData, lngData)
         try Task.checkCancellation()
 
         let now = Date.now
         var prices: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
-        if let brent = brent {
-            prices[.energy(.brent)] = Self.parseOil(brent, unit: UnitOilPrice.usDollarsPerBarrel)
-        }
-        if let wti = wti {
-            prices[.energy(.wti)] = Self.parseOil(wti, unit: UnitOilPrice.usDollarsPerBarrel)
-        }
+        prices[.energy(.brent)] = Self.parseBrent(history: brentHistory, quote: brent, now: now)
+        if let spot { prices[.energy(.brentSpot)] = Self.parseBrentSpot(spot, now: now) }
+        if let gas { prices[.energy(.ttf)] = Self.parseTTF(gas, now: now) }
         if let lng = lng {
             prices[.energy(.lng)] = Self.parseLNG(lng)
         }
@@ -57,7 +59,8 @@ class EnergyController: ProcessController {
             return []
         }
         let sensor = ProcessSensor(
-            name: "Energy", location: Self.location, placemark: "EIA · ACER", customData: ["icon": "fuelpump"], measurements: measurements,
+            name: "Energy", location: Self.location, placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"],
+            measurements: measurements,
             timestamp: now, forecasts: forecasts)
         return [sensor]
     }
@@ -65,7 +68,7 @@ class EnergyController: ProcessController {
     /// Nobody publishes a free forecast of these prices, and a price already holds what the market expects, so the estimate is the last
     /// price, with a band as wide as a year of daily moves says it should be after so many days. In logarithms, since prices move in
     /// proportion and cannot go below zero, which makes the band wider above than below. Weekends between trading days are interpolated,
-    /// so the band grows per calendar day. Not continued when the mirror has not updated for ten days.
+    /// so the band grows per calendar day. Not continued when the source has not updated for ten days.
     static func estimate(from raw: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
         return SeriesEstimate.make(
             from: raw, model: RandomWalkModel(), request: ForecastRequest(step: 24 * 3600, horizon: 30, transform: .logarithm),
@@ -74,16 +77,78 @@ class EnergyController: ProcessController {
 
     // MARK: - Parsing
 
-    /// A `Date,Price` file, one row per trading day, as the oil-prices project writes it. Rows that do not parse are skipped, and the
-    /// order of the file does not matter.
-    static func parseOil(_ data: Data, unit: Dimension) -> [ProcessValue<Dimension>] {
-        var values: [ProcessValue<Dimension>] = []
-        for fields in Self.rows(of: data) where fields.count >= 2 {
-            if let date = Self.date(from: fields[0]), let price = Double(fields[1]) {
-                values.append(ProcessValue<Dimension>(value: Measurement(value: price, unit: unit), quality: .good, timestamp: date))
+    /// EuroOilWatch's futures history plus its latest quote. A quote replaces that session's close or extends the history, never an older
+    /// session. Either endpoint can stand alone. Session dates stay at midnight UTC for daily chart markers; download timestamps never
+    /// become observation dates, so a previous close cannot masquerade as today's price. Source details travel with the value.
+    static func parseBrent(history: Data?, quote: Data?, now: Date = .now) -> [ProcessValue<Dimension>] {
+        var values: [Date: ProcessValue<Dimension>] = [:]
+        if let history = history,
+            let object = try? JSONSerialization.jsonObject(with: history) as? [String: Any],
+            let entries = object["entries"] as? [[String: Any]]
+        {
+            for entry in entries {
+                if let value = Self.brentValue(from: entry, dateKey: "date", now: now) {
+                    values[value.timestamp] = value
+                }
             }
         }
-        return values.sorted(by: { $0.timestamp < $1.timestamp })
+        if let quote = quote,
+            let object = try? JSONSerialization.jsonObject(with: quote) as? [String: Any],
+            let value = Self.brentValue(from: object, dateKey: "sessionDate", now: now)
+        {
+            if value.timestamp >= (values.keys.max() ?? .distantPast) {
+                values[value.timestamp] = value
+            }
+        }
+        return values.values.sorted(by: { $0.timestamp < $1.timestamp })
+    }
+
+    /// EIA's dated spot observations are independent of the futures series and retain their publication lag.
+    static func parseBrentSpot(_ data: Data, now: Date = .now) -> [ProcessValue<Dimension>] {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let entries = object["entries"] as? [[String: Any]]
+        else { return [] }
+        var values: [Date: ProcessValue<Dimension>] = [:]
+        for entry in entries {
+            if let value = Self.brentValue(from: entry, dateKey: "date", now: now) {
+                values[value.timestamp] = ProcessValue(
+                    value: value.value, customData: ["source": "EIA via EuroOilWatch"], quality: .good, timestamp: value.timestamp)
+            }
+        }
+        return values.values.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    /// The gas endpoint has no dated current TTF quote. Use its dated history only, never the feed's download time.
+    static func parseTTF(_ data: Data, now: Date = .now) -> [ProcessValue<Dimension>] {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let entries = object["history"] as? [[String: Any]]
+        else { return [] }
+        var values: [Date: ProcessValue<Dimension>] = [:]
+        for entry in entries {
+            if let text = entry["date"] as? String, let date = Self.date(from: text), date <= now,
+                let price = entry["ttfEurMwh"] as? Double, price.isFinite == true, price > 0
+            {
+                values[date] = ProcessValue(
+                    value: Measurement(value: price, unit: UnitGasPrice.eurosPerMegawattHour),
+                    customData: ["source": "Yahoo Finance via EuroOilWatch", "instrument": "TTF front-month futures"], quality: .good,
+                    timestamp: date)
+            }
+        }
+        return values.values.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    private static func brentValue(from row: [String: Any], dateKey: String, now: Date) -> ProcessValue<Dimension>? {
+        guard let text = row[dateKey] as? String, let date = Self.date(from: text), date <= now,
+            let price = row["priceUsd"] as? Double, price.isFinite == true, price > 0
+        else { return nil }
+        var details: [String: Any] = ["source": "EuroOilWatch", "sessionDate": text]
+        for key in ["contract", "contractLabel", "observedAt", "quoteType", "quoteStatus", "staleReason"] {
+            if let value = row[key] as? String {
+                details[key] = value
+            }
+        }
+        return ProcessValue<Dimension>(
+            value: Measurement(value: price, unit: UnitOilPrice.usDollarsPerBarrel), customData: details, quality: .good, timestamp: date)
     }
 
     /// ACER's export: quoted fields, newest first, `DATE, NORTH-WEST EUROPE, SOUTH EUROPE, EU, LNG BENCHMARK` in EUR/MWh. The EU price is
@@ -93,7 +158,8 @@ class EnergyController: ProcessController {
         for fields in Self.rows(of: data) where fields.count >= 4 {
             if let date = Self.date(from: fields[0]), let price = Double(fields[3]) {
                 values.append(
-                    ProcessValue<Dimension>(value: Measurement(value: price, unit: UnitGasPrice.eurosPerMegawattHour), quality: .good, timestamp: date))
+                    ProcessValue<Dimension>(
+                        value: Measurement(value: price, unit: UnitGasPrice.eurosPerMegawattHour), quality: .good, timestamp: date))
             }
         }
         return values.sorted(by: { $0.timestamp < $1.timestamp })
@@ -101,7 +167,9 @@ class EnergyController: ProcessController {
 
     /// The prices of the last `span`, one per day: markets are closed at weekends and on holidays, so those days carry the last price
     /// forward as uncertain, which keeps a dragged chart marker landing on a value. The series ends on the last day with a price.
-    static func series(_ values: [ProcessValue<Dimension>], until now: Date, span: TimeInterval = EnergyController.span) -> [ProcessValue<Dimension>] {
+    static func series(
+        _ values: [ProcessValue<Dimension>], until now: Date, span: TimeInterval = EnergyController.span
+    ) -> [ProcessValue<Dimension>] {
         let start = now.addingTimeInterval(-span)
         let recent = values.filter { $0.timestamp >= start }
         guard let first = recent.first, let last = recent.last else { return [] }
@@ -123,8 +191,7 @@ class EnergyController: ProcessController {
 
     // MARK: - CSV
 
-    /// The rows of a CSV as their fields, without quotes and without the header. ACER writes ISO 8859-1, the oil files UTF-8; both are
-    /// ASCII where it matters, and Latin-1 decodes any byte, so it is the fallback.
+    /// ACER's CSV fields, without quotes and without the header. Its export uses ISO 8859-1; UTF-8 is accepted as well.
     static func rows(of data: Data) -> [[String]] {
         guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else { return [] }
         let lines = text.components(separatedBy: .newlines).filter { $0.isEmpty == false }
@@ -137,7 +204,8 @@ class EnergyController: ProcessController {
 
     /// `yyyy-MM-dd` as midnight UTC, which is where the chart's drag rounding lands, so a dragged marker finds the day's value.
     static func date(from text: String) -> Date? {
-        return Self.formatter.date(from: text)
+        guard let date = Self.formatter.date(from: text), Self.formatter.string(from: date) == text else { return nil }
+        return date
     }
 
     private static let formatter: DateFormatter = {

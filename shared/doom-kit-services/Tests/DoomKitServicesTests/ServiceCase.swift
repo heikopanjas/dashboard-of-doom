@@ -154,11 +154,15 @@ struct ServiceCase: Sendable {
             name: "SurveyService.fetchPolls", url: #"https://api.dawum.de"#,
             fetch: { manager in return try await SurveyService.fetchPolls(networkManager: manager) }),
         Self(
-            name: "EnergyService.fetchBrent", url: #"https://raw.githubusercontent.com/datasets/oil-prices/main/data/brent-daily.csv"#,
+            name: "EnergyService.fetchBrent", url: #"https://eurooilwatch.com/api/v1/brent"#,
             fetch: { manager in return try await EnergyService.fetchBrent(networkManager: manager) }),
         Self(
-            name: "EnergyService.fetchWTI", url: #"https://raw.githubusercontent.com/datasets/oil-prices/main/data/wti-daily.csv"#,
-            fetch: { manager in return try await EnergyService.fetchWTI(networkManager: manager) }),
+            name: "EnergyService.fetchBrentHistory", url: #"https://eurooilwatch.com/api/v1/brent-history"#,
+            fetch: { manager in return try await EnergyService.fetchBrentHistory(networkManager: manager) }),
+        Self(name: "EnergyService.fetchBrentSpot", url: "https://eurooilwatch.com/api/v1/brent-eia-daily",
+            fetch: { manager in return try await EnergyService.fetchBrentSpot(networkManager: manager) }),
+        Self(name: "EnergyService.fetchGas", url: "https://eurooilwatch.com/api/v1/gas",
+            fetch: { manager in return try await EnergyService.fetchGas(networkManager: manager) }),
         Self(
             name: "EnergyService.fetchLNG", url: #"https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"#,
             fetch: { manager in return try await EnergyService.fetchLNG(networkManager: manager) }),

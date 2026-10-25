@@ -51,6 +51,13 @@ import Testing
         #expect(StatusBarPreferences.selection(defaults: defaults) == [.pm25, .brent])
     }
 
+    @Test func retiredWTISelectionsDoNotHideTheRemainingValues() {
+        let defaults = self.defaults()
+        defaults.set(["wti", "brent", "lng"], forKey: StatusBarPreferences.valuesKey)
+        #expect(StatusBarPreferences.selection(defaults: defaults) == [.brent, .lng])
+        #expect(StatusBarValue.values(of: .energy) == [.brentSpot, .brent, .ttf, .lng])
+    }
+
     @Test func everyValueBelongsToOneSourceAndReadsItsSeries() {
         for value in StatusBarValue.allCases {
             #expect(StatusBarValue.values(of: value.source).contains(value))

@@ -18,8 +18,9 @@ enum StatusBarValue: String, CaseIterable, Sendable {
     case pm25
     case no2
     case o3
+    case brentSpot
     case brent
-    case wti
+    case ttf
     case lng
 
     /// The source a value belongs to, which groups the choices in Settings and decides whether the value can be shown.
@@ -69,7 +70,7 @@ enum StatusBarValue: String, CaseIterable, Sendable {
             case .waterLevel: return .water
             case .radiation: return .radiation
             case .pm10, .pm25, .no2, .o3: return .particles
-            case .brent, .wti, .lng: return .energy
+            case .brentSpot, .brent, .ttf, .lng: return .energy
         }
     }
 
@@ -88,9 +89,10 @@ enum StatusBarValue: String, CaseIterable, Sendable {
             case .pm25: return "PM2.5"
             case .no2: return "NO2"
             case .o3: return "Ozone"
-            case .brent: return "Brent"
-            case .wti: return "WTI"
-            case .lng: return "EU LNG"
+            case .brentSpot: return "Brent Spot"
+            case .ttf: return "TTF Futures"
+            case .brent: return "Brent Futures"
+            case .lng: return "LNG Spot"
         }
     }
 
@@ -110,8 +112,9 @@ enum StatusBarValue: String, CaseIterable, Sendable {
             case .pm25: return .particle(.pm25)
             case .no2: return .particle(.no2)
             case .o3: return .particle(.o3)
+            case .brentSpot: return .energy(.brentSpot)
+            case .ttf: return .energy(.ttf)
             case .brent: return .energy(.brent)
-            case .wti: return .energy(.wti)
             case .lng: return .energy(.lng)
         }
     }

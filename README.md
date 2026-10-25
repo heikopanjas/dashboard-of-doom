@@ -10,7 +10,7 @@
 
 > **Platforms**: macOS 15+ and iOS 26+. Both apps use the five local DoomKit packages and the app code in `shared/Sources/`. The original iOS history is retained under `ios/`; see [migration and validation](ios/MIGRATION.md).
 
-Current versions: **macOS 6.5.4 (152)** and **iOS 6.5.0 (180)**.
+Current versions: **macOS 7.1.2 (159)** and **iOS 7.1.2 (187)**.
 
 ## iOS development
 
@@ -178,7 +178,7 @@ iOS uses the same collision solver and POI rendering, with its existing 101 × 6
 - **Water Level**: Hydrological data from federal waterway stations
 - **Civil Protection**: NINA warnings that cover or lie near your location
 - **Notifications**: A local notice when a reading reaches its warning or critical limit, with limits per sensor family; water levels use each gauge's official flood marks
-- **Energy Prices**: Brent and WTI crude from the US EIA, and the EU LNG price from ACER
+- **Energy Prices**: Brent Spot (EIA), Brent Futures and Dutch TTF Futures (Yahoo Finance) through [EuroOilWatch](https://eurooilwatch.com/api), without an API key, alongside ACER LNG Spot. Each chart retains its own units and observation dates; the undated live TTF field is not used. Spot observations have a publication delay, and the TTF feed currently provides about one month of daily history.
 - **Fuel Stations**: The dearest or cheapest filling stations nearby from tankerkoenig.de (CC BY 4.0, data from MTS-K), with a free API key
 - **Political Surveys**: Election polling data and trend analysis
 - **Points of Interest**: Nearby hospitals, pharmacies, and essential services

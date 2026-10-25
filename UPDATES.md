@@ -4,6 +4,47 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.2, remove advisory cards, 00:07)
+
+- removed marad and centcom cards, settings switches, presenter subscriptions, fetching, parsing, preview data and source credits on both platforms
+- kept brent spot, brent futures, ttf futures and acer lng spot; the energy ui check now verifies the four charts without advisory cards
+- rationale: the user no longer wants the advisory cards; removing their unused subscriptions also avoids background requests
+- validation: signed macos debug build passes and the rebuilt app is running; ios compiles and the energy ui regression passes with four benchmarks and no advisory cards; services tests pass in debug and release; whitespace check passes
+- version bump: both apps 7.1.1 to 7.1.2 (patch: discard the unreleased advisory integration); macos build 158 to 159 and ios build 186 to 187
+
+
+### 2026-10-25 (v7.1.1, maritime card on energy, 23:59)
+
+- moved the middle east maritime card from home to below the energy price charts on both platforms; it remains available while price data is loading
+- updated settings text and the simulator regression to check that home has no maritime card and energy shows it after all four benchmarks
+- rationale: the user wants maritime supply context on the energy screen
+- validation: both apps compile unsigned; the simulator ui test confirms no maritime card on home and both maritime sections below all four energy benchmarks; whitespace check passes
+- version bump: both apps 7.1.0 to 7.1.1 (patch: correct the new card's placement); macos build 157 to 158 and ios build 185 to 186
+
+
+### 2026-10-25 (v7.1.0, european energy and middle east maritime, 23:48)
+
+- energy shows brent spot, brent futures, ttf futures and acer lng spot; the first three use eurooilwatch without a key and retain dated observations and distinct units; undated ttf live prices are ignored
+- home gains a separate maritime card and settings switches on both platforms: active marad advisories verified against official status and expiry, plus optional regional centcom public affairs news from the verified dvids unit feed
+- centcom requires named middle east sea routes, dated news within 14 days and original-source links; unrelated regions, podcasts, photos, videos and duplicates are excluded; no invented severity or maritime notifications
+- sources fail independently, keep their last verified values, remove expired entries and report update failures; global polling is bounded across location changes and cancelled generations cannot publish
+- known limitation: official marad access returns http 403 in this environment; the app reports verification failure rather than showing unverified advisories as active; centcom rss and eurooilwatch feeds are reachable
+- rationale: the user wants distinct european oil/gas benchmarks and middle east shipping context alongside local home warnings
+- validation: both apps compile unsigned; full suites pass with 233 macos and 283 ios tests, followed by 24 focused tests on each platform for the final changes; all six packages pass in debug and process/tools/services in release; simulator ui checks pass for the home card and four charts; formatting and whitespace checks pass; live centcom rss and eurooilwatch feeds verified, marad live status blocked by http 403
+- version bump: both apps 7.0.0 to 7.1.0 (minor: additional benchmarks and maritime source); macos build 156 to 157 and ios build 184 to 185
+
+
+### 2026-10-25 (v7.0.0, ukoilwatch brent futures and wti removal)
+
+- brent uses ukoilwatch's keyless latest-quote and history json endpoints, sourced from yahoo finance; charts, menu-bar labels and notification settings identify it as futures
+- market session dates determine chart timestamps; the latest quote replaces or extends matching futures history, while an older quote cannot overwrite newer history and download dates never make an old close look current
+- either brent endpoint can fail independently; lng remains on acer, and source contract, observation and quote-status details travel with the reading in customData
+- removed wti requests, selector, charts, explainer, notification rule and menu-bar choice; retained lng's selector id and safely ignore persisted wti choices
+- replaced the eia/public-domain oil attribution with ukoilwatch and yahoo finance attribution and the provider's access terms
+- rationale: the user wants fresher brent prices without api keys and no wti for the german market
+- validation: both apps compile unsigned; 226 macos and 276 ios unit tests pass, including quote/history merging, market dates, invalid data, independent failures and saved wti selections; all six packages pass in debug and process, tools and services also pass in release; live ukoilwatch quote/history downloads, formatting and whitespace checks pass
+- version bump: both apps 6.8.0 to 7.0.0 (major: removal of the wti feature); macos build 155 to 156 and ios build 183 to 184
+
 ### 2026-10-14 (macos v6.8.1, ios v6.8.2, one english term for pegel and wasserstand, 22:20)
 
 - the pegelonline source is called water level everywhere a full name fits: the ios sources toggle and settings card (were water), the ios navigation title and the about entry (were water levels), the ios toolbar label and the macos dashboard and settings tabs (were level); the ios notification footnote and the multiple sensors help texts follow

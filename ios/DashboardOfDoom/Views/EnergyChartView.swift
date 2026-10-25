@@ -12,9 +12,10 @@ struct EnergyChartView: View {
     let selector: ProcessSelector
 
     private let labels: [ProcessSelector: String] = [
-        .energy(.brent): "Brent Crude",
-        .energy(.wti): "WTI Crude",
-        .energy(.lng): "EU LNG"
+        .energy(.brentSpot): "Brent Spot",
+        .energy(.ttf): "TTF Futures",
+        .energy(.brent): "Brent Futures",
+        .energy(.lng): "LNG Spot"
     ]
 
     /// The forecast after the last measurement, while forecasts are switched on.

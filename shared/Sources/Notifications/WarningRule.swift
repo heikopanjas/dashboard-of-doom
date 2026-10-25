@@ -166,15 +166,19 @@ struct WarningRule: Identifiable {
             unit: UnitIncidence.casesPer100k, symbol: "per 100k", defaultWarning: 100, defaultCritical: 200,
             basis: "New cases per 100,000 people in seven days, for the reporting district.", range: 0 ... 100_000, fractionDigits: 0),
         WarningRule(
-            id: "energy.brent", family: .energy, label: "Brent Crude", current: [.energy(.brent)], forecast: nil, direction: .above,
+            id: "energy.brentSpot", family: .energy, label: "Brent Spot", current: [.energy(.brentSpot)], forecast: nil, direction: .above,
             unit: UnitOilPrice.usDollarsPerBarrel, symbol: "$/bbl", defaultWarning: 100, defaultCritical: 130,
-            basis: "The daily spot price.", range: 0 ... 1000, fractionDigits: 0),
+            basis: "User-set price limits for EIA's delayed Brent spot observations, via EuroOilWatch.", range: 0 ... 1000, fractionDigits: 0),
         WarningRule(
-            id: "energy.wti", family: .energy, label: "WTI Crude", current: [.energy(.wti)], forecast: nil, direction: .above,
-            unit: UnitOilPrice.usDollarsPerBarrel, symbol: "$/bbl", defaultWarning: 95, defaultCritical: 125,
-            basis: "The daily spot price.", range: 0 ... 1000, fractionDigits: 0),
+            id: "energy.ttf", family: .energy, label: "TTF Futures", current: [.energy(.ttf)], forecast: nil, direction: .above,
+            unit: UnitGasPrice.eurosPerMegawattHour, symbol: "€/MWh", defaultWarning: 60, defaultCritical: 100,
+            basis: "User-set price limits for Dutch TTF front-month futures, via EuroOilWatch.", range: 0 ... 1000, fractionDigits: 0),
         WarningRule(
-            id: "energy.lng", family: .energy, label: "EU LNG", current: [.energy(.lng)], forecast: nil, direction: .above,
+            id: "energy.brent", family: .energy, label: "Brent Futures", current: [.energy(.brent)], forecast: nil, direction: .above,
+            unit: UnitOilPrice.usDollarsPerBarrel, symbol: "$/bbl", defaultWarning: 100, defaultCritical: 130,
+            basis: "The latest available Brent front-month futures quote from EuroOilWatch.", range: 0 ... 1000, fractionDigits: 0),
+        WarningRule(
+            id: "energy.lng", family: .energy, label: "LNG Spot", current: [.energy(.lng)], forecast: nil, direction: .above,
             unit: UnitGasPrice.eurosPerMegawattHour, symbol: "€/MWh", defaultWarning: 60, defaultCritical: 100,
             basis: "ACER's daily assessment.", range: 0 ... 1000, fractionDigits: 0),
         WarningRule(

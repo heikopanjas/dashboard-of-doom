@@ -157,8 +157,10 @@ public enum ProcessSelector: Hashable {
 
     /// Global energy prices: crude oil in US dollars per barrel and liquefied natural gas in euros per megawatt hour.
     public enum Energy: Int, CaseIterable {
+        case brentSpot = 3
         case brent = 0
-        case wti = 1
+        case ttf = 4
+        // Keep LNG's existing identifier; 1 belonged to the retired WTI series.
         case lng = 2
     }
 
