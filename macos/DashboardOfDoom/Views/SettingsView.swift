@@ -371,7 +371,9 @@ struct SettingsView: View {
         Form {
             Section("Data Source") {
                 Toggle("Enable Energy Prices", isOn: $enableEnergy)
-                    .help("Brent spot and futures and TTF futures from EuroOilWatch, plus ACER LNG spot. Also governs the fuel station map")
+                    .help(
+                        "Brent spot and futures, TTF futures and German fuel stocks from EuroOilWatch, plus ACER LNG spot. Also governs the fuel station map"
+                    )
             }
             if self.enableEnergy == true {
                 Section("Fuel Stations") {

@@ -168,6 +168,12 @@ struct ServiceCase: Sendable {
         Self(
             name: "EnergyService.fetchLNG", url: #"https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"#,
             fetch: { manager in return try await EnergyService.fetchLNG(networkManager: manager) }),
+        Self(
+            name: "EnergyService.fetchStocks", url: "https://eurooilwatch.com/api/v1/stocks",
+            fetch: { manager in return try await EnergyService.fetchStocks(networkManager: manager) }),
+        Self(
+            name: "EnergyService.fetchStockHistory", url: "https://eurooilwatch.com/api/v1/history",
+            fetch: { manager in return try await EnergyService.fetchStockHistory(networkManager: manager) }),
         // A fixture key, never a real one: the secret belongs in the keychain, not in a test.
         Self(
             name: "FuelService.fetchStations",

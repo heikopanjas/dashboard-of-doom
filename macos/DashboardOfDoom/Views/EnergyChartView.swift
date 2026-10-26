@@ -9,13 +9,6 @@ struct EnergyChartView: View {
     @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
     let selector: ProcessSelector
 
-    private let labels: [ProcessSelector: String] = [
-        .energy(.brentSpot): "Brent Spot",
-        .energy(.ttf): "TTF Futures",
-        .energy(.brent): "Brent Futures",
-        .energy(.lng): "LNG Spot"
-    ]
-
     /// The forecast after the last measurement, while forecasts are switched on.
     private var forecast: ProcessForecast? {
         return self.showForecasts ? presenter.forecasts[self.selector] : nil
@@ -24,7 +17,10 @@ struct EnergyChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text(self.labels[selector] ?? "<Unknown>")
+                Text(EnergyDisplay.title(for: self.selector))
+                if let status = EnergyDisplay.status(in: presenter.measurements[selector] ?? []) {
+                    StockStatusBadge(status: status, period: EnergyDisplay.statusPeriod(in: presenter.measurements[selector] ?? []))
+                }
                 Spacer()
                 if let forecast = self.forecast {
                     ForecastLegend(origin: forecast.origin, color: Color.chart)
@@ -56,6 +52,18 @@ struct EnergyChartView: View {
                         xLabel: "Date", yLabel: "Value")
                 }
 
+                // The level EuroOilWatch holds a stock against; the chart's range always holds it.
+                if let minimum = EnergyDisplay.minimumDays(in: presenter.measurements[selector] ?? []) {
+                    RuleMark(y: .value("Minimum", minimum))
+                        .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(Color.stockMinimum)
+                        .annotation(position: .bottom, alignment: .leading, spacing: 1) {
+                            Text(String(format: "Minimum %.0f days", minimum))
+                                .font(.caption2)
+                                .foregroundStyle(Color.stockMinimum)
+                        }
+                }
+
                 if let measurement = presenter.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
@@ -66,10 +74,10 @@ struct EnergyChartView: View {
                     .symbolSize(CGSize(width: 7, height: 7))
                     .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
-                            Text(measurement.timestamp.dateString())
+                            Text(EnergyDisplay.dateText(measurement.timestamp, for: self.selector))
                                 .font(.footnote)
                             HStack {
-                                Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
+                                Text(EnergyDisplay.valueText(measurement, for: self.selector))
                                 if let icon = presenter.trend[selector] {
                                     Image(systemName: icon)
                                 }
@@ -83,20 +91,20 @@ struct EnergyChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
-                        RuleMark(x: .value("Date", timestamp))
+                    if let measurement = EnergyDisplay.measurement(at: timestamp, in: presenter.measurements[selector] ?? []) {
+                        RuleMark(x: .value("Date", measurement.timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                         PointMark(
-                            x: .value("Date", timestamp),
+                            x: .value("Date", measurement.timestamp),
                             y: .value("Value", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
                         .annotation(position: .bottomLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
-                                Text(timestamp.dateString())
+                                Text(EnergyDisplay.dateText(measurement.timestamp, for: self.selector))
                                     .font(.footnote)
                                 HStack {
-                                    Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
+                                    Text(EnergyDisplay.valueText(measurement, for: self.selector))
                                         .font(.headline)
                                 }
                             }
@@ -107,7 +115,8 @@ struct EnergyChartView: View {
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
                         ForecastMarker(
-                            point: point, origin: forecast.origin, format: "%.2f %@", color: Color.accentColor, xLabel: "Date", yLabel: "Value")
+                            point: point, origin: forecast.origin, format: EnergyDisplay.format(for: self.selector), color: Color.accentColor,
+                            xLabel: "Date", yLabel: "Value")
                     }
                 }
             }

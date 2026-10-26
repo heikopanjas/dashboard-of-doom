@@ -5,12 +5,15 @@ import DoomKitServices
 import DoomKitTools
 import Foundation
 
-/// European energy prices: Brent spot and futures, TTF futures and ACER LNG spot. Prices have no place, so the sensor's location is nominal and
-/// never shown, and the source is not on the map.
+/// European energy prices: Brent spot and futures, TTF futures and ACER LNG spot, and Germany's fuel stocks. Prices have no place, so the
+/// sensor's location is nominal and never shown, and the source is not on the map.
 class EnergyController: ProcessController {
     /// A year of prices: enough to show a trend and the winter and summer swing of gas, and still one point per two or three pixels on
     /// a phone.
     static let span: TimeInterval = 365 * 24 * 60 * 60
+
+    /// The country whose fuel stocks are shown. Germany, whatever the reader's location, like the rest of the app's data.
+    static let stockCountry = "DE"
 
     /// Nominal, never shown: prices have no place. Berlin, since that is where the app looks by default.
     private static let location = Location(latitude: 52.5186, longitude: 13.3763)
@@ -34,7 +37,10 @@ class EnergyController: ProcessController {
         async let spotData = EnergyService.fetchBrentSpot(networkManager: self.networkManager)
         async let gasData = EnergyService.fetchGas(networkManager: self.networkManager)
         async let lngData = EnergyService.fetchLNG(networkManager: self.networkManager)
+        async let stocksData = EnergyService.fetchStocks(networkManager: self.networkManager)
+        async let stockHistoryData = EnergyService.fetchStockHistory(networkManager: self.networkManager)
         let (brent, brentHistory, spot, gas, lng) = try await (brentData, brentHistoryData, spotData, gasData, lngData)
+        let (stocks, stockHistory) = try await (stocksData, stockHistoryData)
         try Task.checkCancellation()
 
         let now = Date.now
@@ -45,13 +51,22 @@ class EnergyController: ProcessController {
         if let lng = lng {
             prices[.energy(.lng)] = Self.parseLNG(lng)
         }
-        let measurements = prices.mapValues { Self.series($0, until: now) }.filter { $0.value.isEmpty == false }
+        var measurements = prices.mapValues { Self.series($0, until: now) }.filter { $0.value.isEmpty == false }
+        // Monthly levels, not filled day by day like the prices; their estimate only bridges the months not reported yet.
+        let stockSeries = Self.stockSeries(
+            history: stockHistory.map { Self.parseStockHistory($0) } ?? [:], latest: stocks.map { Self.parseLatestStocks($0) } ?? [:])
+        for (energy, values) in stockSeries where values.isEmpty == false {
+            measurements[.energy(energy)] = values
+        }
         // The estimate is fitted on the trading days themselves, not on the weekends carried forward for the chart.
         var forecasts: [ProcessSelector: ProcessForecast] = [:]
         if self.showForecasts() == true {
             for (selector, values) in prices where measurements[selector] != nil {
                 forecasts[selector] = Self.estimate(
                     from: values.filter { $0.timestamp >= now.addingTimeInterval(-Self.span) }, horizon: Self.horizon(for: selector), now: now)
+            }
+            for (energy, values) in stockSeries {
+                forecasts[.energy(energy)] = Self.stockEstimate(from: values, now: now)
             }
         }
         // Nothing at all means nothing is published, so the last prices stay on screen.
@@ -195,6 +210,161 @@ class EnergyController: ProcessController {
         }
         return series
     }
+
+    // MARK: - Fuel stocks
+
+    /// EuroOilWatch's history: per country, a row per month with `petrolDays`, `dieselDays` and `jetDays`, the days the stock would last
+    /// at that month's consumption, from Eurostat. A month is dated at its last day, since the stock is the one held at its end; a month
+    /// without a figure is skipped, which the latest row often is.
+    static func parseStockHistory(
+        _ data: Data, country: String = EnergyController.stockCountry
+    ) -> [ProcessSelector.Energy: [ProcessValue<Dimension>]] {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let countries = object["countries"] as? [[String: Any]],
+            let rows = countries.first(where: { $0["countryCode"] as? String == country })?["data"] as? [[String: Any]]
+        else { return [:] }
+        let keys: [(ProcessSelector.Energy, String)] = [(.petrolStock, "petrolDays"), (.dieselStock, "dieselDays"), (.jetFuelStock, "jetDays")]
+        var series: [ProcessSelector.Energy: [ProcessValue<Dimension>]] = [:]
+        for row in rows {
+            guard let period = row["period"] as? String, let date = Self.monthEnd(from: period) else { continue }
+            for (energy, key) in keys {
+                if let days = row[key] as? Double, days.isFinite == true, days >= 0 {
+                    series[energy, default: []].append(Self.stockValue(days: days, period: period, date: date))
+                }
+            }
+        }
+        return series.mapValues { values in
+            return values.sorted { $0.timestamp < $1.timestamp }
+        }
+    }
+
+    /// The latest month from EuroOilWatch's stocks endpoint. It says how each figure was obtained: one carried forward from an earlier
+    /// month, estimated or capped is uncertain. It also has the tonnes behind the days, EuroOilWatch's status and the minimum it holds
+    /// the stock against, which travel in `customData`.
+    static func parseLatestStocks(
+        _ data: Data, country: String = EnergyController.stockCountry
+    ) -> [ProcessSelector.Energy: ProcessValue<Dimension>] {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let countries = object["countries"] as? [[String: Any]],
+            let fuels = countries.first(where: { $0["countryCode"] as? String == country })?["fuels"] as? [[String: Any]]
+        else { return [:] }
+        let types: [String: ProcessSelector.Energy] = ["petrol": .petrolStock, "diesel": .dieselStock, "jet_fuel": .jetFuelStock]
+        var latest: [ProcessSelector.Energy: ProcessValue<Dimension>] = [:]
+        for fuel in fuels {
+            guard let type = fuel["fuelType"] as? String, let energy = types[type], let days = fuel["daysOfSupply"] as? Double,
+                days.isFinite == true, days >= 0
+            else { continue }
+            let provenance = fuel["provenance"] as? [String: Any] ?? [:]
+            guard let period = provenance["stockPeriod"] as? String, let date = Self.monthEnd(from: period) else { continue }
+            let observed =
+                provenance["observation"] as? String == "observed" && provenance["carriedForward"] as? Bool != true
+                && provenance["capped"] as? Bool != true
+            var details: [String: Any] = ["observation": provenance["observation"] as? String ?? "unknown"]
+            // EuroOilWatch's own assessment, from critical to safe, and the level it measures against, shown on the chart.
+            if let status = fuel["status"] as? String {
+                details["status"] = status
+            }
+            if let minimum = fuel["mandatoryMinimumDays"] as? Double {
+                details["mandatoryMinimumDays"] = minimum
+            }
+            if let stock = fuel["stockKilotonnes"] as? Double {
+                details["stockKilotonnes"] = stock
+            }
+            if let consumption = fuel["consumptionKilotonnes"] as? Double {
+                details["consumptionKilotonnes"] = consumption
+            }
+            latest[energy] = Self.stockValue(
+                days: days, period: period, date: date, quality: observed == true ? .good : .uncertain, details: details)
+        }
+        return latest
+    }
+
+    /// The months a stock series has not reported yet, up to today. Eurostat's figures arrive two to three months late, so the chart would
+    /// otherwise stop well short of now. A damped trend in days of supply on a monthly grid, never below zero, which falls back to the
+    /// last value where that did better on the series' own past; a month at a time from the last report, with the last point today. Not
+    /// continued when the last report is more than half a year old.
+    static func stockEstimate(from values: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
+        guard let last = values.last, now > last.timestamp else { return nil }
+        let month = 365.25 / 12 * 24 * 3600
+        let horizon = Int((now.timeIntervalSince(last.timestamp) / month).rounded(.up))
+        guard
+            let forecast = SeriesEstimate.make(
+                from: values, model: DampedTrendModel(),
+                request: ForecastRequest(step: month, horizon: horizon, bounds: 0 ... 10_000, maximumGap: 3 * month),
+                maximumAge: 183 * 24 * 3600, now: now)
+        else { return nil }
+        return Self.ending(forecast, at: now, from: last)
+    }
+
+    /// The forecast cut at `date`: the points before it, then one at `date` between its neighbours, the last measurement standing in for
+    /// the first point's predecessor. Nothing when no point reaches `date`.
+    static func ending(_ forecast: ProcessForecast, at date: Date, from last: ProcessValue<Dimension>) -> ProcessForecast? {
+        guard let next = forecast.points.first(where: { $0.timestamp >= date }) else { return nil }
+        let before = forecast.points.filter { $0.timestamp < date }
+        let unit = next.value.unit
+        let previous =
+            before.last
+            ?? ProcessForecast.Point(timestamp: last.timestamp, value: last.value.converted(to: unit), lower: nil, upper: nil)
+        let span = next.timestamp.timeIntervalSince(previous.timestamp)
+        let share = span > 0 ? date.timeIntervalSince(previous.timestamp) / span : 1
+        let between = { (from: Double, to: Double) in return from + (to - from) * share }
+        let value = between(previous.value.value, next.value.value)
+        var lower: Double?
+        var upper: Double?
+        if let nextLower = next.lower, let nextUpper = next.upper {
+            lower = between(previous.lower ?? previous.value.value, nextLower)
+            upper = between(previous.upper ?? previous.value.value, nextUpper)
+        }
+        let end = ProcessForecast.Point(timestamp: date, value: Measurement(value: value, unit: unit), lower: lower, upper: upper)
+        return ProcessForecast(origin: forecast.origin, issued: forecast.issued, points: before + [end], customData: forecast.customData)
+    }
+
+    /// The history with the latest month laid over it: the latest figure replaces the history's for the same month, since it says how it
+    /// was obtained, and is added when the history does not have that month yet. The two endpoints do not always end in the same month.
+    static func stockSeries(
+        history: [ProcessSelector.Energy: [ProcessValue<Dimension>]], latest: [ProcessSelector.Energy: ProcessValue<Dimension>]
+    ) -> [ProcessSelector.Energy: [ProcessValue<Dimension>]] {
+        var series = history
+        for (energy, value) in latest {
+            var values = series[energy, default: []].filter { $0.timestamp != value.timestamp }
+            values.append(value)
+            series[energy] = values.sorted { $0.timestamp < $1.timestamp }
+        }
+        return series
+    }
+
+    private static func stockValue(
+        days: Double, period: String, date: Date, quality: ProcessQuality = .good, details: [String: Any] = [:]
+    ) -> ProcessValue<Dimension> {
+        var customData = details
+        customData["source"] = "Eurostat via EuroOilWatch"
+        customData["period"] = period
+        return ProcessValue<Dimension>(
+            value: Measurement(value: days, unit: UnitSupplyDays.days), customData: customData, quality: quality, timestamp: date)
+    }
+
+    /// `yyyy-MM` as midnight UTC on the last day of that month.
+    static func monthEnd(from text: String) -> Date? {
+        guard let start = Self.monthFormatter.date(from: text), Self.monthFormatter.string(from: start) == text,
+            let next = Self.utcCalendar.date(byAdding: .month, value: 1, to: start)
+        else { return nil }
+        return Self.utcCalendar.date(byAdding: .day, value: -1, to: next)
+    }
+
+    private static let utcCalendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        return calendar
+    }()
+
+    private static let monthFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM"
+        return formatter
+    }()
 
     // MARK: - CSV
 

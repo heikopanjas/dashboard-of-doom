@@ -70,7 +70,8 @@ enum DataSources {
                 isRequired: true),
             DataSource(
                 topic: "Crude Oil",
-                attribution: "EuroOilWatch, Brent spot prices from EIA; Brent and Dutch TTF futures from Yahoo Finance.",
+                attribution:
+                    "EuroOilWatch, Brent spot prices from EIA; Brent and Dutch TTF futures from Yahoo Finance; fuel stocks from Eurostat.",
                 licence: "Free API, attribution requested; underlying source terms apply", licenceURL: URL(string: "https://eurooilwatch.com/api"),
                 sourceURL: URL(string: "https://eurooilwatch.com"), isRequired: true),
             DataSource(
@@ -79,6 +80,14 @@ enum DataSources {
                     "Source: European Union Agency for the Cooperation of Energy Regulators (ACER), LNG price assessments, aegis.acer.europa.eu.",
                 licence: "Reproduction with acknowledgement", licenceURL: URL(string: "https://www.acer.europa.eu/legal-notice"),
                 sourceURL: URL(string: "https://aegis.acer.europa.eu"), isRequired: true),
+            // Eurostat allows reuse with the source named; the days of supply are EuroOilWatch's calculation from Eurostat's tonnes, and a
+            // change to the data has to be stated, with a note that Eurostat is not responsible for it.
+            DataSource(
+                topic: "Fuel Stocks",
+                attribution:
+                    "Source: Eurostat (nrg_stk_oilm), © European Union. Days of supply calculated by EuroOilWatch; Eurostat is not responsible for this calculation.",
+                licence: "Reuse with acknowledgement", licenceURL: URL(string: "https://ec.europa.eu/eurostat/help/copyright-notice"),
+                sourceURL: URL(string: "https://ec.europa.eu/eurostat"), isRequired: true),
             DataSource(
                 topic: "Fuel Prices",
                 attribution: "tankerkoenig.de, data from the Markttransparenzstelle für Kraftstoffe (MTS-K).", licence: "CC BY 4.0",

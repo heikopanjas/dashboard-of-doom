@@ -218,6 +218,7 @@ targets:
       - Controllers/SurveyController.swift
       - Presenters/EnergyPresenter.swift
       - Transformers/EnergyTransformer.swift
+      - Views/EnergyDisplay.swift
       - Controllers/EnergyController.swift
       - Models/FuelStation.swift
       - Controllers/FuelController.swift

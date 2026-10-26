@@ -155,13 +155,37 @@ public enum ProcessSelector: Hashable {
         return .survey(survey)
     }
 
-    /// Global energy prices: crude oil in US dollars per barrel and liquefied natural gas in euros per megawatt hour.
+    /// Global energy prices, crude oil in US dollars per barrel and gas in euros per megawatt hour, and Germany's monthly fuel stocks in
+    /// days of supply.
     public enum Energy: Int, CaseIterable {
         case brentSpot = 3
         case brent = 0
         case ttf = 4
         // Keep LNG's existing identifier; 1 belonged to the retired WTI series.
         case lng = 2
+        case petrolStock = 5
+        case dieselStock = 6
+        case jetFuelStock = 7
+
+        /// A stock is a monthly level, not a daily price, so it is charted, rounded and estimated differently.
+        public var isStock: Bool {
+            switch self {
+                case .petrolStock:
+                    return true
+                case .dieselStock:
+                    return true
+                case .jetFuelStock:
+                    return true
+                case .brentSpot:
+                    return false
+                case .brent:
+                    return false
+                case .ttf:
+                    return false
+                case .lng:
+                    return false
+            }
+        }
     }
 
     public static func energy(from rawValue: Int) -> ProcessSelector? {

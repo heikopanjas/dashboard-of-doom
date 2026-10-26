@@ -4,6 +4,27 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, stock estimate, minimum line and status, 17:23)
+
+- the fuel stock charts get an app estimate from the last reported month up to today, which replaces the "no estimate" of 17:11: a damped trend on a monthly grid, falling back to the last value where that did better, cut at now with its last point interpolated, behind the energy show forecast switch
+- a red line at eurooilwatch's `mandatoryMinimumDays` (90) with its label, and the stock range widened to always hold it
+- eurooilwatch's `status` of the latest month (critical, warning, watch, safe, unassessed) as a badge in the chart's title row, in the quality badges' style
+- rationale: the user asked for the estimate up to the current date, the minimum line and the status
+- validation: 239 pointofinteresttests pass (estimate ends today, the cut interpolates value and band, status and minimum parse, the range holds the minimum), both apps build, strict lint passes; not yet checked on screen
+- version: part of the unreleased feature work; the next release is 7.2.0
+
+
+### 2026-10-26 (v7.1.3, german fuel stocks on the energy tab, 17:11)
+
+- feat: both energy screens show germany's petrol, diesel and jet fuel stocks in days of supply, monthly, in a "fuel stocks in germany" section under the prices
+- source: eurooilwatch's `history` (month by month) and `stocks` (latest month with provenance) endpoints, from eurostat's monthly oil statistics, about two to three months behind; the latest month is marked uncertain when eurooilwatch did not observe it
+- three new `ProcessSelector.Energy` cases and a new unit, `UnitSupplyDays`; stocks are dated at the last day of their month, are not filled per day and get no estimate
+- the chart titles, value and date formats and the dragged marker's lookup moved into the shared `EnergyDisplay`; the marker now takes the nearest measurement within half the series' step, which daily prices meet on their own day as before
+- credit: a "fuel stocks" entry for eurostat in `DataSources`, stating that the days of supply are eurooilwatch's calculation, as eurostat's reuse terms ask for changed data
+- validation: 236 pointofinteresttests (new stock parsing and marker tests included) and the process and services package tests pass, both apps build, strict lint passes; not yet checked on screen
+- version: a feature, so the next release is 7.2.0 (minor) rather than 7.1.4; not bumped yet
+
+
 ### 2026-10-26 (v7.1.3, dark theme on every map, 14:32)
 
 - fix: on macOS the covid, water level, radiation, particles and energy maps stayed light with the app set to the dark theme; only the home map followed it

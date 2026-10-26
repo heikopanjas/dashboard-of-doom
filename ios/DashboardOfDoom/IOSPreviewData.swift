@@ -114,14 +114,7 @@ enum IOSPreviewData {
         let energyDate = Date.round(from: date, strategy: .lastDayChange) ?? date
         let energySeries = Dictionary(
             uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
-                let unit: Dimension =
-                    [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
-                let values = (0 ..< 60).map { day in
-                    return ProcessValue<Dimension>(
-                        value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
-                        timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
-                }
-                return (ProcessSelector.energy(selector), values)
+                return (ProcessSelector.energy(selector), Self.energyValues(selector, until: energyDate))
             })
         let energySensor = ProcessSensor(
             name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
@@ -135,6 +128,27 @@ enum IOSPreviewData {
 
     /// Per-hour condition symbols and a rain chance series, the two things the
     /// forecast strip shows beyond the temperature the loop above provides.
+    /// Sixty days of a price, or for a stock a year and a half of month ends in days of supply; the latest month of a stock carries
+    /// EuroOilWatch's minimum and status, so the line and the badge show.
+    private static func energyValues(_ selector: ProcessSelector.Energy, until date: Date) -> [ProcessValue<Dimension>] {
+        if selector.isStock == true {
+            let latest: [String: Any] = ["mandatoryMinimumDays": 90.0, "status": "critical", "period": "2026-08"]
+            return (0 ..< 18).map { month in
+                let days = 60 + 15 * sin(Double(month) / 3)
+                let timestamp = date.addingTimeInterval(Double(month - 17) * 30 * 86400)
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: days, unit: UnitSupplyDays.days), customData: month == 17 ? latest : nil, quality: .good,
+                    timestamp: timestamp)
+            }
+        }
+        let unit: Dimension = [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
+        return (0 ..< 60).map { day in
+            let price = 80 + 5 * sin(Double(day) / 4)
+            let timestamp = date.addingTimeInterval(Double(day - 59) * 86400)
+            return ProcessValue<Dimension>(value: Measurement(value: price, unit: unit), quality: .good, timestamp: timestamp)
+        }
+    }
+
     @MainActor
     private static func populateForecastStrip(_ presenter: ProcessPresenter, date: Date) {
         let icons = ["sun.max", "cloud.sun", "cloud", "cloud.rain"]

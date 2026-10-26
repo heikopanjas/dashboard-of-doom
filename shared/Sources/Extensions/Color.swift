@@ -84,6 +84,8 @@ extension Color {
 
     static let fascists = Color(red: 0.4, green: 0.2, blue: 0.1)
     static let clowns = Color(red: 0.8, green: 0.6, blue: 0.0)
+    /// The minimum a fuel stock is measured against, on the stock charts.
+    static let stockMinimum = Color(red: 0.55, green: 0.0, blue: 0.0)
 
     static let weather = Color.blue
     static let covid = Color.purple
