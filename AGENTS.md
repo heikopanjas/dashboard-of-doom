@@ -1,6 +1,6 @@
 # Agent Instructions for Dashboard of Doom (macOS and iOS)
 
-*Last updated: October 26, 2026, 13:25 CET (Apple silicon only)*
+*Last updated: October 26, 2026, 14:32 CET (dark theme on every map)*
 
 ## Project Overview
 
@@ -333,6 +333,7 @@ Forecasts are being built in seven steps; the ones still open are in ROADMAP.md.
 
 - `MapView` creates one snapshot ordered weather, COVID, particles, water, radiation, surveys; category IDs survive measurement refreshes.
 - `CollisionMapView` keeps native dots at geographic coordinates and projects labels, connectors and POI symbols itself with `MapProjection`: the visible `MKMapRect` from `onMapCameraChange` fills the view exactly, since the maps cannot rotate or pitch, so a coordinate's view point is plain arithmetic. It re-projects on camera changes and when the annotations or the size change, never during body rendering. `MapReader`'s `convert(_:to: .local)` is not used any more: inside the macOS dashboard popup it returned points about 23 points above where MapKit drew the dots, which put every label and connector above its dot (`MapProjectionTests`).
+- On macOS the `MKMapView` behind a SwiftUI `Map` does not take on the app's dark theme by itself, so `CollisionMapView`, which draws every map, sets it through `MapAppearanceView` (`shared/Sources/Views/MapAppearanceView.swift`) from the color scheme. Until 2026-10-26 only the home map had it, and the COVID, Water Level, Radiation, Particles and Energy maps stayed light. A new map built on `CollisionMapView` needs nothing more
 - Labels and category-colored connectors use `MapAnnotationOverlay`; connector drawing clips around every native dot and is hidden from accessibility.
 - Environmental label backgrounds use full opacity while pins will be drawn, meaning the POI master switch is on and at least one category is selected (`PointOfInterestPresenter.showsAnyPlaces`); otherwise they use 0.5 opacity. Read it from the switches, never from the loaded `points`, so loading and empty results do not flicker.
 - The master switch is labelled "Show on map" on both platforms and only clears the map, since every category keeps loading for the nearest places row (`PointOfInterestSettingsView.masterLabel` and `explainer`, no longer split by platform).

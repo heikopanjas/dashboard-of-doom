@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, dark theme on every map, 14:32)
+
+- fix: on macOS the covid, water level, radiation, particles and energy maps stayed light with the app set to the dark theme; only the home map followed it
+- cause: the mapkit view behind a swiftui map does not take on the app appearance on macOS, and only `MapView` applied it, through a private `MapAppearanceView`
+- decision: `MapAppearanceView` has its own file and `CollisionMapView`, which draws every map, applies it, so the source maps and any later map get it; `MapView` no longer does it itself
+- validation: both apps build and strict lint passes; checked on screen by the user: every map follows the dark theme
+- version: 7.1.3 is released, so this goes into the next patch release; no bump yet
+
+
 ### 2026-10-26 (v7.1.3, apple silicon only, 13:25)
 
 - the macos app builds for arm64 only (`ARCHS: arm64` on the app target in `project.yml`), locally and in ci; the workflows now expect an arm64 executable
