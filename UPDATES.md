@@ -4,6 +4,15 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, apple silicon only, 13:25)
+
+- the macos app builds for arm64 only (`ARCHS: arm64` on the app target in `project.yml`), locally and in ci; the workflows now expect an arm64 executable
+- rationale: the user dropped the x86_64 builds; senor particle does the same
+- consequence: intel macs can no longer run release 7.1.3 or later
+- validation: the local release build is arm64 only; actionlint passes
+- version: no bump, ships in the still unreleased 7.1.3
+
+
 ### 2026-10-26 (v7.1.3, ci builds and notarized releases, 13:10)
 
 - added `.github/workflows/build.yml` and `.github/workflows/release.yml` for the macos app, modelled on senor particle and token torch

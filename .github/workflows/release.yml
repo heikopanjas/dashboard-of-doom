@@ -32,7 +32,7 @@ env:
   PROFILE_NAME: Dashboard of Doom macOS
   DESTINATION: generic/platform=macOS
   TEST_DESTINATION: platform=macOS,arch=arm64
-  EXPECTED_ARCHITECTURES: arm64 x86_64
+  EXPECTED_ARCHITECTURES: arm64
 
 jobs:
   lint:
