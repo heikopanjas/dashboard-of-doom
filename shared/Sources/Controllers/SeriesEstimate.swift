@@ -36,4 +36,44 @@ enum SeriesEstimate {
         guard let result = Backtest.evaluate(values, model: model, horizon: horizon, origins: 3, coverage: request.coverage) else { return true }
         return result.mase <= 1
     }
+
+    /// The months a monthly series has not reported yet, up to today, for sources that arrive months late (fuel stocks, oil production),
+    /// whose charts would otherwise stop well short of now. A damped trend on a monthly grid, kept within `bounds`, which falls back to the
+    /// last value where that did better on the series' own past; a month at a time from the last report, with the last point today. Not
+    /// continued when the last report is more than half a year old.
+    static func monthly(from values: [ProcessValue<Dimension>], bounds: ClosedRange<Double>, now: Date = .now) -> ProcessForecast? {
+        guard let last = values.last, now > last.timestamp else { return nil }
+        let month = 365.25 / 12 * 24 * 3600
+        let horizon = Int((now.timeIntervalSince(last.timestamp) / month).rounded(.up))
+        guard
+            let forecast = Self.make(
+                from: values, model: DampedTrendModel(),
+                request: ForecastRequest(step: month, horizon: horizon, bounds: bounds, maximumGap: 3 * month),
+                maximumAge: 183 * 24 * 3600, now: now)
+        else { return nil }
+        return Self.ending(forecast, at: now, from: last)
+    }
+
+    /// The forecast cut at `date`: the points before it, then one at `date` between its neighbours, the last measurement standing in for
+    /// the first point's predecessor. Nothing when no point reaches `date`.
+    static func ending(_ forecast: ProcessForecast, at date: Date, from last: ProcessValue<Dimension>) -> ProcessForecast? {
+        guard let next = forecast.points.first(where: { $0.timestamp >= date }) else { return nil }
+        let before = forecast.points.filter { $0.timestamp < date }
+        let unit = next.value.unit
+        let previous =
+            before.last
+            ?? ProcessForecast.Point(timestamp: last.timestamp, value: last.value.converted(to: unit), lower: nil, upper: nil)
+        let span = next.timestamp.timeIntervalSince(previous.timestamp)
+        let share = span > 0 ? date.timeIntervalSince(previous.timestamp) / span : 1
+        let between = { (from: Double, to: Double) in return from + (to - from) * share }
+        let value = between(previous.value.value, next.value.value)
+        var lower: Double?
+        var upper: Double?
+        if let nextLower = next.lower, let nextUpper = next.upper {
+            lower = between(previous.lower ?? previous.value.value, nextLower)
+            upper = between(previous.upper ?? previous.value.value, nextUpper)
+        }
+        let end = ProcessForecast.Point(timestamp: date, value: Measurement(value: value, unit: unit), lower: lower, upper: upper)
+        return ProcessForecast(origin: forecast.origin, issued: forecast.issued, points: before + [end], customData: forecast.customData)
+    }
 }

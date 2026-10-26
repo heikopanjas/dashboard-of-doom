@@ -3,6 +3,7 @@ import DoomKitProcess
 import DoomKitTools
 import SwiftUI
 
+/// The market prices, Brent spot and futures, TTF and LNG, on the Energy Markets screen. The Energy Markets switch governs them.
 @Observable class EnergyPresenter: ProcessPresenter, ProcessRefreshable {
     @ObservationIgnored private var subscription: ConditionalSubscription?
     @ObservationIgnored private let fetch: @MainActor (Location) async throws -> [ProcessSensor]
@@ -18,8 +19,8 @@ import SwiftUI
         let id = self.id
         // EuroOilWatch refreshes daily and ACER publishes weekday assessments; keep the six-hour fallback.
         self.subscription = ConditionalSubscription(
-            defaults: defaults, enableKey: SourcePreferences.energyEnableKey, intervalKey: "energyRefreshInterval", fallback: 360,
-            defaultEnabled: SourcePreferences.energyEnabledByDefault,
+            defaults: defaults, enableKey: SourcePreferences.marketsEnableKey, intervalKey: "energyRefreshInterval", fallback: 360,
+            defaultEnabled: SourcePreferences.marketsEnabledByDefault,
             register: { [weak self] interval in
                 guard let self else { return }
                 if let register {

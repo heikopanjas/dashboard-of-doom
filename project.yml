@@ -220,6 +220,11 @@ targets:
       - Transformers/EnergyTransformer.swift
       - Views/EnergyDisplay.swift
       - Controllers/EnergyController.swift
+      - Controllers/FuelStockController.swift
+      - Models/NationalFuelPrices.swift
+      - Presenters/FuelStockPresenter.swift
+      - Controllers/ProducerController.swift
+      - Presenters/ProducerPresenter.swift
       - Models/FuelStation.swift
       - Controllers/FuelController.swift
       - Presenters/FuelPresenter.swift

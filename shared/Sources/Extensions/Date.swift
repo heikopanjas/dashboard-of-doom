@@ -217,3 +217,28 @@ extension Date {
         return dateFormatter.date(from: string)
     }
 }
+
+extension Date {
+    /// `yyyy-MM`, a monthly report's period, as midnight UTC on the last day of that month.
+    static func monthEnd(from text: String) -> Date? {
+        guard let start = Self.monthPeriodFormatter.date(from: text), Self.monthPeriodFormatter.string(from: start) == text,
+            let next = Self.utcGregorian.date(byAdding: .month, value: 1, to: start)
+        else { return nil }
+        return Self.utcGregorian.date(byAdding: .day, value: -1, to: next)
+    }
+
+    private static let utcGregorian: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        return calendar
+    }()
+
+    private static let monthPeriodFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM"
+        return formatter
+    }()
+}

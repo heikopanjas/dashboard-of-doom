@@ -20,10 +20,12 @@ enum EnergyDisplay {
                 return "Diesel"
             case .jetFuelStock:
                 return "Jet Fuel"
+            case .production:
+                return "Production"
         }
     }
 
-    /// Days of supply to one decimal, prices to the cent.
+    /// Days of supply to one decimal; prices to the cent, and production to ten thousand barrels a day.
     static func format(for selector: ProcessSelector) -> String {
         return Self.isStock(selector) == true ? "%.1f %@" : "%.2f %@"
     }
@@ -48,9 +50,9 @@ enum EnergyDisplay {
         return values.last(where: { $0.customData?["status"] != nil })?.customData?["period"] as? String
     }
 
-    /// A stock is a monthly level, so it is labelled with its month; a price with its day.
+    /// A monthly series, a stock or production, is labelled with its month; a price with its day.
     static func dateText(_ date: Date, for selector: ProcessSelector) -> String {
-        if Self.isStock(selector) == true {
+        if Self.isMonthly(selector) == true {
             return date.formatted(.dateTime.month(.abbreviated).year())
         }
         return date.dateString()
@@ -78,5 +80,10 @@ enum EnergyDisplay {
     private static func isStock(_ selector: ProcessSelector) -> Bool {
         guard case .energy(let energy) = selector else { return false }
         return energy.isStock
+    }
+
+    private static func isMonthly(_ selector: ProcessSelector) -> Bool {
+        guard case .energy(let energy) = selector else { return false }
+        return energy.isMonthly
     }
 }

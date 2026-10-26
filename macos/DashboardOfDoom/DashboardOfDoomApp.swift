@@ -35,6 +35,8 @@ struct DashboardRootView: View {
             .environment(self.appDelegate.surveyPresenter)
             .environment(self.appDelegate.hazardPresenter)
             .environment(self.appDelegate.energyPresenter)
+            .environment(self.appDelegate.producerPresenter)
+            .environment(self.appDelegate.fuelStockPresenter)
             .environment(self.appDelegate.fuelPresenter)
             .environment(self.appDelegate.colorPresenter)
             .environment(self.appDelegate)
@@ -47,6 +49,9 @@ struct DashboardRootView: View {
 
 @MainActor @Observable
 class AppDelegate: NSObject, NSApplicationDelegate {
+    /// First, since stored properties start in order: the Energy Markets switches must have their values before the presenters below
+    /// read them.
+    private let marketsMigrated: Void = SourcePreferences.migrateMarkets()
     let weatherPresenter = WeatherPresenter()
     let forecastPresenter = ForecastPresenter()
     let covidPresenter = CovidPresenter()
@@ -56,7 +61,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let surveyPresenter = SurveyPresenter()
     let hazardPresenter = HazardPresenter()
     let energyPresenter = EnergyPresenter()
+    let producerPresenter = ProducerPresenter()
     let fuelPresenter = FuelPresenter()
+    let fuelStockPresenter = FuelStockPresenter()
     let colorPresenter = ColorPresenter()
     // Every category keeps loading whatever the map shows, for the nearest places row on the Home tab, as on iOS.
     let pointOfInterestPresenter = PointOfInterestPresenter(
@@ -205,7 +212,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 surveyPresenter: self.surveyPresenter,
                 covidPresenter: self.covidPresenter,
                 energyPresenter: self.energyPresenter,
+                producerPresenter: self.producerPresenter,
                 fuelPresenter: self.fuelPresenter,
+                fuelStockPresenter: self.fuelStockPresenter,
                 pointOfInterestPresenter: self.pointOfInterestPresenter,
                 faceplate: { [unowned self] value in self.faceplate(for: value) }
             )

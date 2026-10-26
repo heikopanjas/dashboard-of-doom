@@ -15,6 +15,12 @@ struct SensorMapView: View {
     /// How much room to leave around what the map shows, as a factor on the bounding box. The default doubles it, which is the room six
     /// labels need; a map showing one district needs far less, or the shape would sit in the middle of an empty frame.
     var padding: Double = 2
+    /// Whether the reader's own position is shown and fitted. Off for a map of places the reader's position has nothing to do with, such
+    /// as oil producers, where it would only stretch the camera to Germany.
+    var showsUser: Bool = true
+    /// Whether a divider closes the map off from what follows. The fuel map leaves it out, since its station list belongs to it, and draws
+    /// its own after the list.
+    var showsDivider: Bool = true
 
     /// Where the reader is, so the distance under each chart has something to point at. The home map shows this as its weather annotation
     /// flagged `user`; here it is a marker of its own, because these tabs have no weather label to hang it on.
@@ -36,25 +42,28 @@ struct SensorMapView: View {
     var body: some View {
         // Nothing until a sensor has loaded, so the spinners below are the only sign of loading and the map appears with the data. The gate
         // is the sensors alone: the user marker must never be enough to make an empty map appear.
+        let user = self.showsUser == true ? [self.userLocation] : []
         if self.annotations.isEmpty == false,
-            let rect = Self.rect(
-                for: self.polygons.flatMap { $0 } + self.annotations.map { $0.location } + [self.userLocation], padding: self.padding)
+            let rect = Self.rect(for: self.polygons.flatMap { $0 } + self.annotations.map { $0.location } + user, padding: self.padding)
         {
             VStack {
                 CollisionMapView(
                     position: Binding(get: { MapCameraPosition.rect(rect) }, set: { _ in }),
-                    annotations: self.annotations + [Self.userAnnotation(at: self.userLocation)],
+                    annotations: self.annotations + user.map { Self.userAnnotation(at: $0) },
                     polygons: self.polygons
                 )
                 .frame(height: Self.height)
                 .padding(5)
                 .padding(.trailing, 5)
-                Divider()
-                    .padding(.horizontal, 5)
-                    .padding(.trailing, 5)
+                if self.showsDivider == true {
+                    Divider()
+                        .padding(.horizontal, 5)
+                        .padding(.trailing, 5)
+                }
             }
             .task {
                 // Observes only; never starts tracking. Same footprint as MapView.
+                guard self.showsUser == true else { return }
                 for await state in AppLocation.shared.updates() {
                     guard Task.isCancelled == false else { return }
                     self.userLocation = state.location

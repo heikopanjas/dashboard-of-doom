@@ -28,6 +28,7 @@ struct ContentView: View {
     @AppStorage(SourcePreferences.pollsEnableKey) private var enableElectionPolls: Bool = SourcePreferences.pollsEnabledByDefault
     @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
+    @AppStorage(SourcePreferences.marketsEnableKey) private var enableMarkets: Bool = SourcePreferences.marketsEnabledByDefault
     @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
     @AppStorage(SourcePreferences.waterKey) private var showWater: Bool = true
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
@@ -57,6 +58,7 @@ struct ContentView: View {
         switch screen {
             case .covid: return self.enableCovid
             case .energy: return self.enableEnergy
+            case .markets: return self.enableMarkets
             case .level: return self.showWater
             case .radiation: return self.showRadiation
             case .particles: return self.showParticles
@@ -67,7 +69,10 @@ struct ContentView: View {
 
     /// Every source switch, so one handler notices any of them.
     private var switches: [Bool] {
-        return [self.enableCovid, self.enableEnergy, self.showWater, self.showRadiation, self.showParticles, self.enableElectionPolls]
+        return [
+            self.enableCovid, self.enableEnergy, self.enableMarkets, self.showWater, self.showRadiation, self.showParticles,
+            self.enableElectionPolls
+        ]
     }
 
     var body: some View {
@@ -175,7 +180,21 @@ struct ContentView: View {
                                 }
                                 .onAppear {
                                     navigationVisible = .visible
-                                    navigationTitle = "Energy Prices"
+                                    navigationTitle = "Energy"
+                                }
+                            }
+                        case .markets:
+                            if enableMarkets == true {
+                                VStack {
+                                    // Renders nothing until the producers have loaded, like the other source maps.
+                                    ProducerMapView()
+                                    EnergyMarketsView()
+                                        .padding(5)
+                                        .padding(.trailing, 3)
+                                }
+                                .onAppear {
+                                    navigationVisible = .visible
+                                    navigationTitle = "Energy Markets"
                                 }
                             }
                         case .level:

@@ -12,7 +12,10 @@ struct SettingsView: View {
     @AppStorage("showWeather") private var showWeather: Bool = true
     @AppStorage(SourcePreferences.covidEnableKey) private var enableCovid: Bool = SourcePreferences.covidEnabledByDefault
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
+    @AppStorage(SourcePreferences.marketsEnableKey) private var enableMarkets: Bool = SourcePreferences.marketsEnabledByDefault
     @Environment(FuelPresenter.self) private var fuel
+    @Environment(FuelStockPresenter.self) private var fuelStocks
+    @Environment(ProducerPresenter.self) private var producers
     @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
     @AppStorage(SourcePreferences.fuelOrderKey) private var fuelOrder: Int = FuelMapView.Order.dearest.rawValue
     @AppStorage(SourcePreferences.fuelRadiusKey) private var fuelRadius: Int = SourcePreferences.fuelRadiusDefault
@@ -129,6 +132,7 @@ struct SettingsView: View {
                 Toggle("Particulate Matter", isOn: $showParticles)
                 Toggle("Warnings", isOn: $showHazards)
                 Toggle("Energy", isOn: $enableEnergy)
+                Toggle("Energy Markets", isOn: $enableMarkets)
                 Toggle("Election Polls", isOn: $enableElectionPolls)
                 HStack {
                     Text(
@@ -330,7 +334,7 @@ struct SettingsView: View {
                                 })
                             HStack {
                                 Text(
-                                    "Puts a map of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
+                                    "Puts a map and a list of the dearest filling stations near you at the top of the Energy screen. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.gray)
@@ -385,7 +389,7 @@ struct SettingsView: View {
                         }
                     }
                     ForecastSettingsRow(family: .energy) {
-                        AppProcess.shared.refreshSubscription(subscriber: self.energy)
+                        AppProcess.shared.refreshSubscription(subscriber: self.fuelStocks)
                     }
                 }
                 .padding()
@@ -394,6 +398,25 @@ struct SettingsView: View {
                 .onAppear {
                     self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
                 }
+            }
+        }
+
+        // Only while the source is on; its switch is in the Sources card.
+        if enableMarkets == true {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Energy Markets")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    ForecastSettingsRow(family: .markets) {
+                        AppProcess.shared.refreshSubscription(subscriber: self.energy)
+                        AppProcess.shared.refreshSubscription(subscriber: self.producers)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
             }
         }
 

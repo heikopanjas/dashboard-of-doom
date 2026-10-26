@@ -72,7 +72,7 @@ final class ToolbarTests: XCTestCase {
         app.buttons["toolbar.slot.0"].press(forDuration: 1)
         XCTAssertTrue(app.buttons["toolbar.choice.none"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["toolbar.choice.none"].isEnabled)
-        for screen in ["energy", "particles", "covid", "level", "radiation", "surveys"] {
+        for screen in ["energy", "markets", "particles", "covid", "level", "radiation", "surveys"] {
             XCTAssertFalse(app.buttons["toolbar.choice.\(screen)"].exists, "Disabled source offered: \(screen)")
         }
         self.dismissMenu(showing: "none", in: app)
@@ -98,7 +98,7 @@ final class ToolbarTests: XCTestCase {
     private func launch(sourcesEnabled: Bool, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-fixture", "--reset-toolbar", "-enableDarkTheme", "NO"]
-        for key in ["showWater", "showRadiation", "showParticles", "enableCovid", "enableEnergy", "enableElectionPolls"]
+        for key in ["showWater", "showRadiation", "showParticles", "enableCovid", "enableEnergy", "enableMarkets", "enableElectionPolls"]
         where extra.contains("-\(key)") == false {
             app.launchArguments += ["-\(key)", sourcesEnabled == true ? "YES" : "NO"]
         }
@@ -126,7 +126,7 @@ final class ToolbarTests: XCTestCase {
     private func assertChoices(_ screens: [String], at slot: Int, in app: XCUIApplication) -> Void {
         app.buttons["toolbar.slot.\(slot)"].press(forDuration: 1)
         XCTAssertTrue(app.buttons["toolbar.choice.\(screens[0])"].waitForExistence(timeout: 5))
-        for screen in ["energy", "particles", "covid", "level", "radiation", "surveys"] {
+        for screen in ["energy", "markets", "particles", "covid", "level", "radiation", "surveys"] {
             XCTAssertEqual(app.buttons["toolbar.choice.\(screen)"].exists, screens.contains(screen), "Choice: \(screen)")
         }
         XCTAssertFalse(app.buttons["toolbar.choice.none"].exists)

@@ -155,9 +155,9 @@ public enum ProcessSelector: Hashable {
         return .survey(survey)
     }
 
-    /// Global energy prices, crude oil in US dollars per barrel and gas in euros per megawatt hour, and Germany's monthly fuel stocks in
-    /// days of supply.
-    public enum Energy: Int, CaseIterable {
+    /// Global energy prices, crude oil in US dollars per barrel and gas in euros per megawatt hour, Germany's monthly fuel stocks in days
+    /// of supply, and the oil production of a country in million barrels a day.
+    public enum Energy: Int, CaseIterable, Sendable {
         case brentSpot = 3
         case brent = 0
         case ttf = 4
@@ -166,15 +166,30 @@ public enum ProcessSelector: Hashable {
         case petrolStock = 5
         case dieselStock = 6
         case jetFuelStock = 7
+        case production = 8
 
-        /// A stock is a monthly level, not a daily price, so it is charted, rounded and estimated differently.
+        /// The market prices, in the order the Energy Markets screen shows them, two to a row on macOS: the futures, then the spot prices,
+        /// oil before gas.
+        public static let prices: [Energy] = [.brent, .ttf, .brentSpot, .lng]
+
+        /// Germany's fuel stocks, in the order the Energy screen shows them.
+        public static let stocks: [Energy] = [.petrolStock, .dieselStock, .jetFuelStock]
+
+        /// A stock is a level held at a month's end, with a minimum it is measured against.
         public var isStock: Bool {
+            return Self.stocks.contains(self)
+        }
+
+        /// A monthly series rather than a daily price, so it is labelled by month and its estimate bridges the months not reported yet.
+        public var isMonthly: Bool {
             switch self {
                 case .petrolStock:
                     return true
                 case .dieselStock:
                     return true
                 case .jetFuelStock:
+                    return true
+                case .production:
                     return true
                 case .brentSpot:
                     return false

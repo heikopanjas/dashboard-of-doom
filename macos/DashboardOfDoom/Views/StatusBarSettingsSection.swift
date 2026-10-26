@@ -13,7 +13,7 @@ struct StatusBarSettingsSection: View {
     @AppStorage(SourcePreferences.waterKey) private var water: Bool = true
     @AppStorage(SourcePreferences.radiationKey) private var radiation: Bool = true
     @AppStorage(SourcePreferences.particlesKey) private var particles: Bool = true
-    @AppStorage(SourcePreferences.energyEnableKey) private var energy: Bool = SourcePreferences.energyEnabledByDefault
+    @AppStorage(SourcePreferences.marketsEnableKey) private var energy: Bool = SourcePreferences.marketsEnabledByDefault
 
     var body: some View {
         let _ = [self.covid, self.water, self.radiation, self.particles, self.energy]

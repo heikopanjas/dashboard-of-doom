@@ -19,7 +19,11 @@ enum EnergyExplainers {
         .energy(.dieselStock):
             "How many days the diesel held in Germany at the end of a month would last at that month's consumption. " + Self.stockSource,
         .energy(.jetFuelStock):
-            "How many days the jet fuel held in Germany at the end of a month would last at that month's consumption. " + Self.stockSource
+            "How many days the jet fuel held in Germany at the end of a month would last at that month's consumption. " + Self.stockSource,
+        .energy(.production):
+            "How much oil each country produces a day: crude with condensate and natural gas liquids, in million barrels, from the U.S. "
+            + "Energy Information Administration's international data via AmericasOilWatch. Monthly, published three to four months after "
+            + "the month it describes; the app's estimate bridges the months since. Each country is placed at its capital."
     ]
 
     private static let stockSource =

@@ -36,6 +36,9 @@ struct SensorCardGrid<Charts: View>: View {
     let readings: [ProcessReading]
     /// Picks the color list; the position of a reading picks the color, as on the map.
     let colorSelector: ProcessSelector
+    /// Every card titled with its placemark, as the nearest is: for places that are all named there, such as countries, rather than
+    /// stations with only the nearest geocoded.
+    var titlesFromPlacemark = false
     @ViewBuilder let charts: (ProcessReading) -> Charts
 
     var body: some View {
@@ -43,7 +46,8 @@ struct SensorCardGrid<Charts: View>: View {
             ForEach(Array(self.readings.enumerated()), id: \.element.id) { index, reading in
                 VStack(alignment: .leading, spacing: 8) {
                     SensorHeaderView(
-                        reading: reading, isNearest: index == 0, color: Color.sensor(selector: self.colorSelector, index: index))
+                        reading: reading, isNearest: self.titlesFromPlacemark == true || index == 0,
+                        color: Color.sensor(selector: self.colorSelector, index: index))
                     self.charts(reading)
                 }
             }

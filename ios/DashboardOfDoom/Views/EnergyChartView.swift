@@ -4,24 +4,26 @@ import DoomKitProcess
 import DoomKitTools
 import SwiftUI
 
+/// One energy series as a chart: a price, a fuel stock or a country's production, read from its reading.
 struct EnergyChartView: View {
-    @Environment(EnergyPresenter.self) private var presenter
     @Environment(\.colorScheme) private var colorScheme
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
+    /// The series' reading: the prices' or the stocks' one sensor, or one producing country.
+    let reading: ProcessReading
     let selector: ProcessSelector
 
     /// The forecast after the last measurement, while forecasts are switched on.
     private var forecast: ProcessForecast? {
-        return self.showForecasts ? presenter.forecasts[self.selector] : nil
+        return self.showForecasts ? self.reading.forecasts[self.selector] : nil
     }
 
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
                 Text(EnergyDisplay.title(for: self.selector))
-                if let status = EnergyDisplay.status(in: presenter.measurements[selector] ?? []) {
-                    StockStatusBadge(status: status, period: EnergyDisplay.statusPeriod(in: presenter.measurements[selector] ?? []))
+                if let status = EnergyDisplay.status(in: self.reading.measurements[selector] ?? []) {
+                    StockStatusBadge(status: status, period: EnergyDisplay.statusPeriod(in: self.reading.measurements[selector] ?? []))
                 }
                 Spacer()
                 if let forecast = self.forecast {
@@ -31,7 +33,7 @@ struct EnergyChartView: View {
             .font(.headline)
             .accentLabel()
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { measurement in
+                ForEach(self.reading.measurements[selector] ?? []) { measurement in
                     LineMark(
                         x: .value("Date", measurement.timestamp),
                         y: .value("Value", measurement.value.value)
@@ -43,7 +45,7 @@ struct EnergyChartView: View {
                     // painted far below the plot, behind whatever comes after the chart.
                     AreaMark(
                         x: .value("Date", measurement.timestamp),
-                        yStart: .value("Floor", ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast).lowerBound),
+                        yStart: .value("Floor", ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast).lowerBound),
                         yEnd: .value("Value", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom)
@@ -52,12 +54,12 @@ struct EnergyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
                         xLabel: "Date", yLabel: "Value")
                 }
 
                 // The level EuroOilWatch holds a stock against; the chart's range always holds it.
-                if let minimum = EnergyDisplay.minimumDays(in: presenter.measurements[selector] ?? []) {
+                if let minimum = EnergyDisplay.minimumDays(in: self.reading.measurements[selector] ?? []) {
                     RuleMark(y: .value("Minimum", minimum))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                         .foregroundStyle(Color.stockMinimum)
@@ -68,7 +70,7 @@ struct EnergyChartView: View {
                         }
                 }
 
-                if let measurement = presenter.current[selector] {
+                if let measurement = self.reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                         .foregroundStyle(self.colorScheme.markerColor)
@@ -84,7 +86,7 @@ struct EnergyChartView: View {
                                 .font(.footnote)
                             HStack {
                                 Text(EnergyDisplay.valueText(measurement, for: self.selector))
-                                if let icon = presenter.trend[selector] {
+                                if let icon = self.reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -97,7 +99,7 @@ struct EnergyChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = EnergyDisplay.measurement(at: timestamp, in: presenter.measurements[selector] ?? []) {
+                    if let measurement = EnergyDisplay.measurement(at: timestamp, in: self.reading.measurements[selector] ?? []) {
                         RuleMark(x: .value("Date", measurement.timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                             .foregroundStyle(self.colorScheme.markerColor)
@@ -129,7 +131,7 @@ struct EnergyChartView: View {
                     }
                 }
             }
-            .chartYScale(domain: ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast))
+            .chartYScale(domain: ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast))
             .chartInteractiveOverlay(timestamp: $timestamp, roundingStrategy: .lastDayChange)
         }
     }

@@ -70,6 +70,24 @@ import Testing
         #expect(SourcePreferences.enabled(key: "switch", default: true, defaults: defaults) == false)
     }
 
+    @Test func theMarketsSwitchesStartWithTheEnergySwitchesOnce() {
+        // Energy off, its forecast on: Energy Markets starts off, its forecast on.
+        let old = self.defaults()
+        old.set(false, forKey: SourcePreferences.energyEnableKey)
+        SourcePreferences.migrateMarkets(defaults: old)
+        #expect(SourcePreferences.marketsVisible(defaults: old) == false)
+        #expect(SourcePreferences.forecastsVisible(.markets, defaults: old) == true)
+        // Once set, the markets switch is its own: a later Energy change does not move it, and migrating again changes nothing.
+        old.set(true, forKey: SourcePreferences.energyEnableKey)
+        SourcePreferences.migrateMarkets(defaults: old)
+        #expect(SourcePreferences.marketsVisible(defaults: old) == false)
+        // A fresh install has both on.
+        let fresh = self.defaults()
+        SourcePreferences.migrateMarkets(defaults: fresh)
+        #expect(SourcePreferences.marketsVisible(defaults: fresh) == true)
+        #expect(SourcePreferences.energyVisible(defaults: fresh) == true)
+    }
+
     @Test func everySourceIsVisibleExactlyWhileItsOneSwitchIsOn() {
         let defaults = self.defaults()
         let sources: [(String, (UserDefaults) -> Bool)] = [
@@ -79,6 +97,7 @@ import Testing
             (SourcePreferences.particlesKey, { SourcePreferences.particlesVisible(defaults: $0) }),
             (SourcePreferences.hazardsKey, { SourcePreferences.hazardsVisible(defaults: $0) }),
             (SourcePreferences.energyEnableKey, { SourcePreferences.energyVisible(defaults: $0) }),
+            (SourcePreferences.marketsEnableKey, { SourcePreferences.marketsVisible(defaults: $0) }),
             (SourcePreferences.pollsEnableKey, { SourcePreferences.pollsVisible(defaults: $0) })
         ]
         #expect(Set(sources.map { $0.0 }) == Set(SourcePreferences.switchKeys))
@@ -102,7 +121,7 @@ import Testing
         // Stored in the user's defaults and passed as launch arguments, so a rename would silently reset the setting.
         #expect(
             ForecastFamily.allCases.map(\.key) == [
-                "forecastLevel", "forecastRadiation", "forecastParticles", "forecastCovid", "forecastEnergy", "forecastPolls"
+                "forecastLevel", "forecastRadiation", "forecastParticles", "forecastCovid", "forecastEnergy", "forecastMarkets", "forecastPolls"
             ])
         // None is a source switch: they remove no tab.
         #expect(ForecastFamily.allCases.contains { SourcePreferences.switchKeys.contains($0.key) } == false)

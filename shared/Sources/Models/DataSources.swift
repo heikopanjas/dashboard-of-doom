@@ -74,6 +74,13 @@ enum DataSources {
                     "EuroOilWatch, Brent spot prices from EIA; Brent and Dutch TTF futures from Yahoo Finance; fuel stocks from Eurostat.",
                 licence: "Free API, attribution requested; underlying source terms apply", licenceURL: URL(string: "https://eurooilwatch.com/api"),
                 sourceURL: URL(string: "https://eurooilwatch.com"), isRequired: true),
+            // AmericasOilWatch asks to be cited; the figures are the EIA's international data, which are public domain.
+            DataSource(
+                topic: "Oil Production",
+                attribution:
+                    "AmericasOilWatch — americasoilwatch.com; production from the U.S. Energy Information Administration (EIA), international data.",
+                licence: "Free API, attribution requested; EIA data public domain", licenceURL: URL(string: "https://americasoilwatch.com/api"),
+                sourceURL: URL(string: "https://americasoilwatch.com"), isRequired: true),
             DataSource(
                 topic: "LNG",
                 attribution:
@@ -88,6 +95,13 @@ enum DataSources {
                     "Source: Eurostat (nrg_stk_oilm), © European Union. Days of supply calculated by EuroOilWatch; Eurostat is not responsible for this calculation.",
                 licence: "Reuse with acknowledgement", licenceURL: URL(string: "https://ec.europa.eu/eurostat/help/copyright-notice"),
                 sourceURL: URL(string: "https://ec.europa.eu/eurostat"), isRequired: true),
+            // The bulletin says: "Reproduction is authorised provided the source is acknowledged."
+            DataSource(
+                topic: "Fuel Prices in Europe",
+                attribution: "Weekly Oil Bulletin, © European Union, European Commission (DG Energy), via EuroOilWatch.",
+                licence: "Reproduction with acknowledgement",
+                licenceURL: URL(string: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en"),
+                sourceURL: URL(string: "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en"), isRequired: true),
             DataSource(
                 topic: "Fuel Prices",
                 attribution: "tankerkoenig.de, data from the Markttransparenzstelle für Kraftstoffe (MTS-K).", licence: "CC BY 4.0",

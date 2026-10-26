@@ -14,6 +14,7 @@ public class EnergyService {
     static let lngURL = "https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"
     static let stocksURL = "https://eurooilwatch.com/api/v1/stocks"
     static let stockHistoryURL = "https://eurooilwatch.com/api/v1/history"
+    static let fuelPricesURL = "https://eurooilwatch.com/api/v1/prices"
 
     public static func fetchBrent(networkManager: NetworkManager = .shared) async throws -> Data? {
         return await Self.fetch(name: "Brent crude prices", urlString: Self.brentURL, networkManager: networkManager)
@@ -39,6 +40,11 @@ public class EnergyService {
     /// The latest month of every EU country's fuel stocks, with tonnes and how each figure was obtained.
     public static func fetchStocks(networkManager: NetworkManager = .shared) async throws -> Data? {
         return await Self.fetch(name: "fuel stocks", urlString: Self.stocksURL, networkManager: networkManager)
+    }
+
+    /// The latest Weekly Oil Bulletin: every EU country's average pump prices for petrol and diesel, and the EU average.
+    public static func fetchFuelPrices(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "weekly fuel prices", urlString: Self.fuelPricesURL, networkManager: networkManager)
     }
 
     /// Every EU country's fuel stocks month by month, in days of supply.

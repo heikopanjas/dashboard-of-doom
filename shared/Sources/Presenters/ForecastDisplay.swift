@@ -32,7 +32,10 @@ enum ForecastDisplay {
                     "Continues the district's figures past now with the app's own estimate for two weeks: the weekly reporting pattern for daily counts, the trend for the incidence. No one publishes a forecast. \(off)"
             case .energy:
                 return
-                    "Continues each price past now with the app's own estimate for 30 days: the last price, with the range the available daily price moves allow. No free forecast exists. \(off)"
+                    "Continues each fuel stock from the last month Eurostat reported up to today with the app's own estimate: the trend in days of supply, or the last value where that did better. \(off)"
+            case .markets:
+                return
+                    "Continues each price past now with the app's own estimate for 30 days, four for TTF: the last price, with the range the available daily price moves allow. Each country's production is continued from its last reported month up to today. No free forecast exists. \(off)"
             case .polls:
                 return
                     "Continues each party's share past now with the app's own estimate: its trend in weekly averages of the polls, for 13 weeks. DAWUM publishes no projection. \(off)"
