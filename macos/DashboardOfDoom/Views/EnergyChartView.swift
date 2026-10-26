@@ -2,36 +2,36 @@ import Charts
 import DoomKitProcess
 import SwiftUI
 
+/// One energy series as a chart: a price, a fuel stock or a country's production, read from its reading.
 struct EnergyChartView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(EnergyPresenter.self) private var presenter
     @State private var timestamp: Date?
     @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
+    /// The series' reading: the prices' or the stocks' one sensor, or one producing country.
+    let reading: ProcessReading
     let selector: ProcessSelector
-
-    private let labels: [ProcessSelector: String] = [
-        .energy(.brentSpot): "Brent Spot",
-        .energy(.ttf): "TTF Futures",
-        .energy(.brent): "Brent Futures",
-        .energy(.lng): "LNG Spot"
-    ]
 
     /// The forecast after the last measurement, while forecasts are switched on.
     private var forecast: ProcessForecast? {
-        return self.showForecasts ? presenter.forecasts[self.selector] : nil
+        return self.showForecasts ? self.reading.forecasts[self.selector] : nil
     }
 
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text(self.labels[selector] ?? "<Unknown>")
+                if EnergyDisplay.title(for: self.selector).isEmpty == false {
+                    Text(EnergyDisplay.title(for: self.selector))
+                }
+                if let status = EnergyDisplay.status(in: self.reading.measurements[selector] ?? []) {
+                    StockStatusBadge(status: status, period: EnergyDisplay.statusPeriod(in: self.reading.measurements[selector] ?? []))
+                }
                 Spacer()
                 if let forecast = self.forecast {
                     ForecastLegend(origin: forecast.origin, color: Color.chart)
                 }
             }
             Chart {
-                ForEach(presenter.measurements[selector] ?? []) { measurement in
+                ForEach(self.reading.measurements[selector] ?? []) { measurement in
                     LineMark(
                         x: .value("Date", measurement.timestamp),
                         y: .value("Value", measurement.value.value)
@@ -43,7 +43,7 @@ struct EnergyChartView: View {
                     // painted far below the plot, behind whatever comes after the chart.
                     AreaMark(
                         x: .value("Date", measurement.timestamp),
-                        yStart: .value("Floor", ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast).lowerBound),
+                        yStart: .value("Floor", ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast).lowerBound),
                         yEnd: .value("Value", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom)
@@ -52,11 +52,23 @@ struct EnergyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
                         xLabel: "Date", yLabel: "Value")
                 }
 
-                if let measurement = presenter.current[selector] {
+                // The level EuroOilWatch holds a stock against; the chart's range always holds it.
+                if let minimum = EnergyDisplay.minimumDays(in: self.reading.measurements[selector] ?? []) {
+                    RuleMark(y: .value("Minimum", minimum))
+                        .lineStyle(StrokeStyle(lineWidth: 1))
+                        .foregroundStyle(Color.stockMinimum)
+                        .annotation(position: .bottom, alignment: .leading, spacing: 1) {
+                            Text(String(format: "Minimum %.0f days", minimum))
+                                .font(.caption2)
+                                .foregroundStyle(Color.stockMinimum)
+                        }
+                }
+
+                if let measurement = self.reading.current[selector] {
                     RuleMark(x: .value("Date", measurement.timestamp))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                     PointMark(
@@ -66,11 +78,11 @@ struct EnergyChartView: View {
                     .symbolSize(CGSize(width: 7, height: 7))
                     .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                         VStack {
-                            Text(measurement.timestamp.dateString())
+                            Text(EnergyDisplay.dateText(measurement.timestamp, for: self.selector))
                                 .font(.footnote)
                             HStack {
-                                Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
-                                if let icon = presenter.trend[selector] {
+                                Text(EnergyDisplay.valueText(measurement, for: self.selector))
+                                if let icon = self.reading.trend[selector] {
                                     Image(systemName: icon)
                                 }
                             }
@@ -83,20 +95,20 @@ struct EnergyChartView: View {
                 }
 
                 if let timestamp = self.timestamp {
-                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
-                        RuleMark(x: .value("Date", timestamp))
+                    if let measurement = EnergyDisplay.measurement(at: timestamp, in: self.reading.measurements[selector] ?? []) {
+                        RuleMark(x: .value("Date", measurement.timestamp))
                             .lineStyle(StrokeStyle(lineWidth: 1))
                         PointMark(
-                            x: .value("Date", timestamp),
+                            x: .value("Date", measurement.timestamp),
                             y: .value("Value", measurement.value.value)
                         )
                         .symbolSize(CGSize(width: 7, height: 7))
                         .annotation(position: .bottomLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
                             VStack {
-                                Text(timestamp.dateString())
+                                Text(EnergyDisplay.dateText(measurement.timestamp, for: self.selector))
                                     .font(.footnote)
                                 HStack {
-                                    Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
+                                    Text(EnergyDisplay.valueText(measurement, for: self.selector))
                                         .font(.headline)
                                 }
                             }
@@ -107,11 +119,12 @@ struct EnergyChartView: View {
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
                         ForecastMarker(
-                            point: point, origin: forecast.origin, format: "%.2f %@", color: Color.accentColor, xLabel: "Date", yLabel: "Value")
+                            point: point, origin: forecast.origin, format: EnergyDisplay.format(for: self.selector), color: Color.accentColor,
+                            xLabel: "Date", yLabel: "Value")
                     }
                 }
             }
-            .chartYScale(domain: ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast))
+            .chartYScale(domain: ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast))
             .chartOverlay { geometryProxy in
                 GeometryReader { geometryReader in
                     Rectangle()

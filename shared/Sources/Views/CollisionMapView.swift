@@ -15,6 +15,7 @@ struct CollisionMapView: View {
     /// this view.
     var polygonColor: Color = .covid
     @State private var poiProjection = PointOfInterestProjection(symbols: [], projectedCount: 0)
+    @Environment(\.colorScheme) private var colorScheme
 
     private struct POITrigger: Equatable {
         let inputs: [PointOfInterestProjection.Input]
@@ -99,6 +100,10 @@ struct CollisionMapView: View {
                 .onChange(of: poiTrigger) { _, newValue in
                     self.projectPOIs(newValue)
                 }
+                #if os(macOS)
+                // Every map is drawn here, so every map follows the dark theme, not only the home map.
+                .background(MapAppearanceView(colorScheme: self.colorScheme))
+                #endif
                 .allowsHitTesting(false)
             }
         }

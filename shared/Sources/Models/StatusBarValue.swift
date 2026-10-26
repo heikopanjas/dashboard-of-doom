@@ -34,7 +34,7 @@ enum StatusBarValue: String, CaseIterable, Sendable {
                 case .water: return "Water Level"
                 case .radiation: return "Radiation"
                 case .particles: return "Particulate Matter"
-                case .energy: return "Energy"
+                case .energy: return "Energy Markets"
             }
         }
 
@@ -46,7 +46,7 @@ enum StatusBarValue: String, CaseIterable, Sendable {
                 case .water: return "water.waves"
                 case .radiation: return "atom"
                 case .particles: return "aqi.medium"
-                case .energy: return "fuelpump"
+                case .energy: return "chart.line.uptrend.xyaxis"
             }
         }
 
@@ -58,7 +58,7 @@ enum StatusBarValue: String, CaseIterable, Sendable {
                 case .water: return SourcePreferences.waterVisible(defaults: defaults)
                 case .radiation: return SourcePreferences.radiationVisible(defaults: defaults)
                 case .particles: return SourcePreferences.particlesVisible(defaults: defaults)
-                case .energy: return SourcePreferences.energyVisible(defaults: defaults)
+                case .energy: return SourcePreferences.marketsVisible(defaults: defaults)
             }
         }
     }

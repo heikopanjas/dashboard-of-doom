@@ -2,6 +2,9 @@ import SwiftUI
 
 @MainActor
 final class IOSAppRuntime {
+    /// First, since stored properties start in order: the Energy Markets switches must have their values before the presenters below
+    /// read them.
+    private let marketsMigrated: Void = SourcePreferences.migrateMarkets()
     let weather = WeatherPresenter()
     let forecast = ForecastPresenter()
     let covid = CovidPresenter()
@@ -11,7 +14,9 @@ final class IOSAppRuntime {
     let particles = ParticlePresenter()
     let surveys = SurveyPresenter()
     let energy = EnergyPresenter()
+    let producers = ProducerPresenter()
     let fuel = FuelPresenter()
+    let fuelStocks = FuelStockPresenter()
     let colors = ColorPresenter()
     let simulation = SimulationPresenter()
     let pointsOfInterest = PointOfInterestPresenter(

@@ -59,7 +59,11 @@ import Testing
         #expect(ttfValues.last?.timestamp == Self.utcMidnight("2026-10-23"))
         #expect(ttfValues.last?.value.unit == UnitGasPrice.eurosPerMegawattHour)
         #expect(EnergyController.parseTTF(Data(#"{"ttf":{"priceEurMwh":999}}"#.utf8)).isEmpty == true)
-        #expect(ProcessSelector.Energy.allCases == [.brentSpot, .brent, .ttf, .lng])
+        // The screens' order: the prices on Energy Markets, the stocks on Energy; production has its own section.
+        #expect(ProcessSelector.Energy.prices == [.brent, .ttf, .brentSpot, .lng])
+        #expect(ProcessSelector.Energy.stocks == [.petrolStock, .dieselStock, .jetFuelStock])
+        #expect(ProcessSelector.Energy.allCases.filter { $0.isStock == true } == ProcessSelector.Energy.stocks)
+        #expect(ProcessSelector.Energy.allCases.filter { $0.isMonthly == true } == ProcessSelector.Energy.stocks + [.production])
     }
 
     @Test func brentUsesFuturesHistoryAndReplacesTheLatestSessionWithTheQuote() throws {
@@ -125,7 +129,7 @@ import Testing
     }
 
     @Test(arguments: ["none", "brent", "brent-history", "spot", "gas", "lng", "all"])
-    func refreshKeepsIndependentSourcesAndRequestsOnlyBrentAndLNG(failure: String) async throws {
+    func refreshKeepsIndependentSourcesAndRequestsEachEndpoint(failure: String) async throws {
         let requests = Mutex<[String]>([])
         // Dates are relative to now so this fixture stays inside the controller's one-year chart span.
         let formatter = DateFormatter()
@@ -144,6 +148,12 @@ import Testing
                     case "brent-history": text = "{\"entries\":[{\"date\":\"\(day)\",\"priceUsd\":116.72}]}"
                     case "brent-eia-daily": text = "{\"entries\":[{\"date\":\"\(day)\",\"priceUsd\":115.22}]}"
                     case "gas": text = "{\"history\":[{\"date\":\"\(day)\",\"ttfEurMwh\":93.85}]}"
+                    case "stocks":
+                        text =
+                            "{\"countries\":[{\"countryCode\":\"DE\",\"fuels\":[{\"fuelType\":\"diesel\",\"daysOfSupply\":102.5,"
+                            + "\"provenance\":{\"stockPeriod\":\"2026-07\",\"observation\":\"observed\"}}]}]}"
+                    case "history":
+                        text = "{\"countries\":[{\"countryCode\":\"DE\",\"data\":[{\"period\":\"2026-06\",\"petrolDays\":43.2}]}]}"
                     default:
                         if failure == "lng" { throw URLError(.cancelled) }
                         text = "DATE,NW,S,EU\n\(day),78,78,78.223"

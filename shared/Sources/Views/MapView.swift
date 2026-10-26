@@ -3,56 +3,11 @@ import DoomKitProcess
 import MapKit
 import SwiftUI
 
-#if os(macOS)
-private struct MapAppearanceView: NSViewRepresentable {
-    let colorScheme: ColorScheme
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        applyAppearance(from: view)
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        applyAppearance(from: nsView)
-    }
-
-    private func applyAppearance(from view: NSView) {
-        DispatchQueue.main.async {
-            var ancestor = view.superview
-            while let currentView = ancestor {
-                if let mapView = findMapView(in: currentView) {
-                    mapView.appearance = NSAppearance(
-                        named: colorScheme == .dark ? .darkAqua : .aqua
-                    )
-                    mapView.needsDisplay = true
-                    return
-                }
-                ancestor = currentView.superview
-            }
-        }
-    }
-
-    private func findMapView(in view: NSView) -> MKMapView? {
-        if let mapView = view as? MKMapView {
-            return mapView
-        }
-        for subview in view.subviews {
-            if let mapView = findMapView(in: subview) {
-                return mapView
-            }
-        }
-        return nil
-    }
-}
-#endif
-
 struct MapView: View {
     #if os(iOS)
     @State private var userLocation = AppLocation.shared.state.location
     #endif
     @Environment(PointOfInterestPresenter.self) private var pointOfInterestPresenter
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(WeatherPresenter.self) private var weather
     @Environment(CovidPresenter.self) private var incidence
     @Environment(LevelPresenter.self) private var water
@@ -119,9 +74,6 @@ struct MapView: View {
                         showsPointsOfInterest: self.pointOfInterestPresenter.showsAnyPlaces,
                         pointsOfInterest: self.pointOfInterestPresenter.points
                     )
-                    #if os(macOS)
-                    .background(MapAppearanceView(colorScheme: self.colorScheme))
-                    #endif
                 }
             }
         }

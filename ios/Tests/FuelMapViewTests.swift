@@ -107,4 +107,19 @@ import Testing
         #expect(cheapest.map { $0.id } == ["fuel-s1", "fuel-s2", "fuel-s3", "fuel-s4", "fuel-s5", "fuel-s6"])
         #expect(FuelMapView.annotations(stations: [], fuel: .e5).isEmpty == true)
     }
+
+    @Test func theListHasThePinsStationsInThePinsOrder() {
+        let stations = (0 ..< 9).map { self.station("s\($0)", e5: 2.0 + Double($0) / 100, diesel: 1.9) }
+        let pins = FuelMapView.annotations(stations: stations, fuel: .e5, order: .cheapest)
+        let listed = FuelMapView.ranked(stations: stations, fuel: .e5, order: .cheapest)
+        #expect(pins.map { $0.id } == listed.map { "fuel-\($0.id)" })
+        #expect(FuelStationList.price(stations[0], .e10) == "\u{2013}")
+        // One line: street and number, then postcode and town; the name when the station gave neither.
+        let full = FuelStation(
+            id: "a", name: "Aral", brand: nil, street: "Storkower Str.", houseNumber: "140", location: Location(latitude: 52.5, longitude: 13.4),
+            distance: 1, isOpen: true, prices: [.e5: 2.0], postCode: "10407", place: "Berlin")
+        #expect(FuelStationList.addressLine(full) == "Storkower Str. 140, 10407 Berlin")
+        #expect(FuelStationList.addressLine(stations[0]) == "Station")
+        #expect(FuelStationList.price(stations[0], .diesel) == FuelMapView.priceString(1.9))
+    }
 }

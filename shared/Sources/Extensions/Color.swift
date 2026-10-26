@@ -84,6 +84,8 @@ extension Color {
 
     static let fascists = Color(red: 0.4, green: 0.2, blue: 0.1)
     static let clowns = Color(red: 0.8, green: 0.6, blue: 0.0)
+    /// The minimum a fuel stock is measured against, on the stock charts.
+    static let stockMinimum = Color(red: 0.55, green: 0.0, blue: 0.0)
 
     static let weather = Color.blue
     static let covid = Color.purple
@@ -130,6 +132,9 @@ extension Color {
     static let waterTabSensors: [Color] = [Self.water, Self.particle, Self.weather, Self.radiation, Self.survey, Self.covid]
     static let radiationTabSensors: [Color] = [Self.radiation, Self.survey, Self.covid, Self.water, Self.particle, Self.weather]
 
+    /// The six oil producers on the Energy Markets map and their chart headers, one label colour each.
+    static let producerCountries: [Color] = [Self.particle, Self.radiation, Self.weather, Self.survey, Self.covid, Self.water]
+
     /// The color of the sensor at `index` in its source's list, nearest first. A selector that has no such list keeps its category color,
     /// and an index past the end of a list wraps, so a longer list would repeat colors rather than fail. Each source has its own map
     /// and six distinct colors on both platforms.
@@ -142,6 +147,8 @@ extension Color {
                 colors = Self.waterTabSensors
             case .particle:
                 colors = Self.particleSensors
+            case .energy(.production):
+                colors = Self.producerCountries
             default:
                 return Self.faceplate(selector: selector)
         }

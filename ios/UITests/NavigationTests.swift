@@ -5,14 +5,14 @@ final class NavigationTests: XCTestCase {
     func testEuropeanEnergyBenchmarks() {
         self.continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-fixture", "--reset-toolbar", "-enableEnergy", "YES"]
+        app.launchArguments = ["--ui-fixture", "--reset-toolbar", "-enableMarkets", "YES"]
         app.launch()
         XCTAssertTrue(app.buttons["toolbar.slot.0"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Maritime · Middle East"].exists)
         app.buttons["toolbar.slot.0"].press(forDuration: 1)
-        app.buttons["toolbar.choice.energy"].tap()
+        app.buttons["toolbar.choice.markets"].tap()
         for _ in 0 ..< 6 { app.swipeDown() }
-        for title in ["Brent Spot", "Brent Futures", "TTF Futures", "LNG Spot"] {
+        for title in ["Brent Spot", "Brent Futures", "TTF Futures", "LNG Spot", "OPEC+ Production in the Gulf", "Saudi Arabia"] {
             for _ in 0 ..< 8 {
                 if app.staticTexts[title].isHittable { break }
                 app.swipeUp()

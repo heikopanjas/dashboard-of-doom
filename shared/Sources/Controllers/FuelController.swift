@@ -84,6 +84,18 @@ struct FuelController {
         return FuelStation(
             id: id, name: name, brand: entry["brand"] as? String, street: entry["street"] as? String,
             houseNumber: entry["houseNumber"] as? String, location: Location(latitude: latitude, longitude: longitude),
-            distance: entry["dist"] as? Double ?? 0, isOpen: entry["isOpen"] as? Bool ?? false, prices: prices)
+            distance: entry["dist"] as? Double ?? 0, isOpen: entry["isOpen"] as? Bool ?? false, prices: prices,
+            postCode: Self.postCode(entry["postCode"]), place: entry["place"] as? String)
+    }
+
+    /// The API sends the postcode as a number, which loses the leading zero of the eastern German ones; some entries send it as text.
+    static func postCode(_ value: Any?) -> String? {
+        if let number = value as? Int, number > 0 {
+            return String(format: "%05d", number)
+        }
+        if let text = value as? String, text.trimmingCharacters(in: .whitespaces).isEmpty == false {
+            return text.trimmingCharacters(in: .whitespaces)
+        }
+        return nil
     }
 }

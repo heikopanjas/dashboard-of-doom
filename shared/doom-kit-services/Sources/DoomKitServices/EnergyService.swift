@@ -5,12 +5,16 @@ import Foundation
 
 /// European energy prices from public endpoints that need no key.
 ///
-/// EuroOilWatch supplies Brent spot history (EIA), Brent futures and TTF futures (Yahoo Finance) as JSON. Liquefied natural gas comes
-/// from ACER, the EU energy regulator, which has published a daily LNG price for Europe since 2023 as CSV.
+/// EuroOilWatch supplies Brent spot history (EIA), Brent futures and TTF futures (Yahoo Finance) as JSON, and the EU countries' monthly
+/// fuel stocks from Eurostat. Liquefied natural gas comes from ACER, the EU energy regulator, which has published a daily LNG price for
+/// Europe since 2023 as CSV.
 public class EnergyService {
     static let brentURL = "https://eurooilwatch.com/api/v1/brent"
     static let brentHistoryURL = "https://eurooilwatch.com/api/v1/brent-history"
     static let lngURL = "https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"
+    static let stocksURL = "https://eurooilwatch.com/api/v1/stocks"
+    static let stockHistoryURL = "https://eurooilwatch.com/api/v1/history"
+    static let fuelPricesURL = "https://eurooilwatch.com/api/v1/prices"
 
     public static func fetchBrent(networkManager: NetworkManager = .shared) async throws -> Data? {
         return await Self.fetch(name: "Brent crude prices", urlString: Self.brentURL, networkManager: networkManager)
@@ -31,6 +35,21 @@ public class EnergyService {
 
     public static func fetchLNG(networkManager: NetworkManager = .shared) async throws -> Data? {
         return await Self.fetch(name: "EU LNG prices", urlString: Self.lngURL, networkManager: networkManager)
+    }
+
+    /// The latest month of every EU country's fuel stocks, with tonnes and how each figure was obtained.
+    public static func fetchStocks(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "fuel stocks", urlString: Self.stocksURL, networkManager: networkManager)
+    }
+
+    /// The latest Weekly Oil Bulletin: every EU country's average pump prices for petrol and diesel, and the EU average.
+    public static func fetchFuelPrices(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "weekly fuel prices", urlString: Self.fuelPricesURL, networkManager: networkManager)
+    }
+
+    /// Every EU country's fuel stocks month by month, in days of supply.
+    public static func fetchStockHistory(networkManager: NetworkManager = .shared) async throws -> Data? {
+        return await Self.fetch(name: "fuel stock history", urlString: Self.stockHistoryURL, networkManager: networkManager)
     }
 
     private static func fetch(name: String, urlString: String, networkManager: NetworkManager) async -> Data? {

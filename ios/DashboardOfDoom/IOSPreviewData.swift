@@ -112,25 +112,78 @@ enum IOSPreviewData {
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
         let energyDate = Date.round(from: date, strategy: .lastDayChange) ?? date
-        let energySeries = Dictionary(
-            uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
-                let unit: Dimension =
-                    [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
-                let values = (0 ..< 60).map { day in
-                    return ProcessValue<Dimension>(
-                        value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
-                        timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
-                }
-                return (ProcessSelector.energy(selector), values)
+        let berlin = Location(latitude: 52.51889, longitude: 13.36528)
+        let prices = Dictionary(
+            uniqueKeysWithValues: ProcessSelector.Energy.prices.map { selector in
+                return (ProcessSelector.energy(selector), Self.energyValues(selector, until: energyDate))
             })
-        let energySensor = ProcessSensor(
-            name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
-            placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"], measurements: energySeries, timestamp: date)
-        if let readings = try? ProcessReading.render(sensors: [energySensor], transformer: { EnergyTransformer() }) {
-            runtime.energy.replace(readings: readings)
-        }
+        let stocks = Dictionary(
+            uniqueKeysWithValues: ProcessSelector.Energy.stocks.map { selector in
+                return (ProcessSelector.energy(selector), Self.energyValues(selector, until: energyDate))
+            })
+        Self.replace(
+            runtime.energy,
+            sensors: [
+                ProcessSensor(
+                    name: "Energy", location: berlin, placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"], measurements: prices,
+                    timestamp: date)
+            ])
+        Self.replace(
+            runtime.fuelStocks,
+            sensors: [
+                ProcessSensor(
+                    name: "Fuel Stocks", location: berlin, placemark: "EuroOilWatch · Eurostat", customData: ["icon": "shippingbox"],
+                    measurements: stocks, timestamp: date)
+            ])
+        Self.replace(runtime.producers, sensors: Self.producers(until: energyDate, timestamp: date))
 
         runtime.fuel.publish(stations: Self.stations(), timestamp: date)
+    }
+
+    /// Renders the sensors as the energy presenters do and puts them in place without notifying, as fixtures must.
+    @MainActor
+    private static func replace(_ presenter: ProcessPresenter, sensors: [ProcessSensor]) -> Void {
+        if let readings = try? ProcessReading.render(sensors: sensors, transformer: { EnergyTransformer() }) {
+            presenter.replace(readings: readings)
+        }
+    }
+
+    /// The Gulf six with three years of month ends each, around a level of their own, so the map and the six charts have something to show.
+    private static func producers(until date: Date, timestamp: Date) -> [ProcessSensor] {
+        let levels = [9.0, 3.4, 3.3, 4.2, 2.5, 1.0]
+        return ProducerController.producers.enumerated().map { index, producer in
+            let values = (0 ..< 36).map { month in
+                let production = levels[index] * (1 + 0.05 * sin(Double(month + index) / 4))
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: production, unit: UnitOilProduction.millionBarrelsPerDay), quality: .good,
+                    timestamp: date.addingTimeInterval(Double(month - 35) * 30 * 86400))
+            }
+            return ProcessSensor(
+                name: producer.name, location: producer.location, placemark: producer.name, customData: ["icon": "drop.fill"],
+                measurements: [.energy(.production): values.filter { $0.timestamp >= ProducerController.chartStart }], timestamp: timestamp,
+                sourceID: producer.code)
+        }
+    }
+
+    /// Sixty days of a price, or for a stock a year and a half of month ends in days of supply; the latest month of a stock carries
+    /// EuroOilWatch's minimum and status, so the line and the badge show.
+    private static func energyValues(_ selector: ProcessSelector.Energy, until date: Date) -> [ProcessValue<Dimension>] {
+        if selector.isStock == true {
+            let latest: [String: Any] = ["mandatoryMinimumDays": 90.0, "status": "critical", "period": "2026-08"]
+            return (0 ..< 18).map { month in
+                let days = 60 + 15 * sin(Double(month) / 3)
+                let timestamp = date.addingTimeInterval(Double(month - 17) * 30 * 86400)
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: days, unit: UnitSupplyDays.days), customData: month == 17 ? latest : nil, quality: .good,
+                    timestamp: timestamp)
+            }
+        }
+        let unit: Dimension = [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
+        return (0 ..< 60).map { day in
+            let price = 80 + 5 * sin(Double(day) / 4)
+            let timestamp = date.addingTimeInterval(Double(day - 59) * 86400)
+            return ProcessValue<Dimension>(value: Measurement(value: price, unit: unit), quality: .good, timestamp: timestamp)
+        }
     }
 
     /// Per-hour condition symbols and a rain chance series, the two things the
@@ -256,7 +309,8 @@ enum IOSPreviewData {
                 latitude: 52.51889 + cos(angle) * 0.022, longitude: 13.36528 + sin(angle) * 0.034)
             return FuelStation(
                 id: "fixture-\(index)", name: name, brand: nil, street: "Fixturestr.", houseNumber: "\(index + 1)", location: location,
-                distance: 1.2 + Double(index) * 0.9, isOpen: index != 3, prices: [.e5: e5, .e10: e5 - 0.06, .diesel: e5 + 0.08])
+                distance: 1.2 + Double(index) * 0.9, isOpen: index != 3, prices: [.e5: e5, .e10: e5 - 0.06, .diesel: e5 + 0.08],
+                postCode: "10557", place: "Berlin")
         }
     }
 

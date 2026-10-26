@@ -145,7 +145,7 @@ targets:
         - "$(inherited)"
         - "@executable_path/../Frameworks"
         MACOSX_DEPLOYMENT_TARGET: '15.0'
-        MARKETING_VERSION: 7.1.3
+        MARKETING_VERSION: 7.2.0
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
         PRODUCT_NAME: Dashboard of Doom
         PROVISIONING_PROFILE_SPECIFIER: ''
@@ -218,7 +218,13 @@ targets:
       - Controllers/SurveyController.swift
       - Presenters/EnergyPresenter.swift
       - Transformers/EnergyTransformer.swift
+      - Views/EnergyDisplay.swift
       - Controllers/EnergyController.swift
+      - Controllers/FuelStockController.swift
+      - Models/NationalFuelPrices.swift
+      - Presenters/FuelStockPresenter.swift
+      - Controllers/ProducerController.swift
+      - Presenters/ProducerPresenter.swift
       - Models/FuelStation.swift
       - Controllers/FuelController.swift
       - Presenters/FuelPresenter.swift
@@ -279,7 +285,7 @@ targets:
         PRODUCT_NAME: Dashboard of Doom
         PRODUCT_MODULE_NAME: DashboardOfDoom
         PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
-        MARKETING_VERSION: 7.1.3
+        MARKETING_VERSION: 7.2.0
         CURRENT_PROJECT_VERSION: '188'
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: Apple Development

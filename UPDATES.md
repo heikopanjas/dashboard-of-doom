@@ -4,6 +4,92 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.2.0, version for release, 22:16)
+
+- marketing version is 7.2.0 for both apps in `project.yml`
+- rationale: the release check on the develop to main pull request failed because tag v7.1.3 already points at an older commit
+- version bump: 7.1.3 to 7.2.0 (MINOR - german fuel stock charts and the energy markets split are new features)
+
+### 2026-10-26 (v7.1.3, production charts without a title, 19:56)
+
+- the production charts on energy markets have no "production" title any more; the country's header above each names it, and the forecast legend keeps its place
+- rationale: the user asked to remove the labels
+- validation: 245 pointofinteresttests pass, both apps build, strict lint passes
+- version: part of the unreleased 7.2.0 feature work
+
+
+### 2026-10-26 (v7.1.3, station list layout, 19:34)
+
+- the station list shows each address on one line, street and number, then postcode and town
+- the divider under the fuel map moved: none between map and list, one after the tankerkoenig credit line, above "germany this week"; `SensorMapView` gained `showsDivider` for it
+- rationale: the user's layout requests
+- validation: both apps build, strict lint passes, the 12 ios fuel map tests pass (including the address line)
+- version: part of the unreleased 7.2.0 feature work
+
+
+### 2026-10-26 (v7.1.3, markets screen order and production from 2025, 19:24)
+
+- the energy markets screen is ordered as the user asked: the producer map on top, then the futures and spot prices, then production
+- the prices run brent futures, ttf futures, brent spot, lng spot (left to right, top to bottom on macOS), set once in `ProcessSelector.Energy.prices`
+- the production charts start in 2025 (`ProducerController.chartStart`); the estimate is still fitted on all 36 months
+- qatar instead of oman: not done, since qatar is not in americasoilwatch's opec+ feed (it left opec in 2019); the user chose to keep oman rather than take bahrain or fetch qatar from the eia with a key
+- validation: 245 pointofinteresttests (a 2024 month is parsed but not charted), both apps build, strict lint passes
+- version: part of the unreleased 7.2.0 feature work
+
+
+### 2026-10-26 (v7.1.3, national weekly fuel prices and a full-width station list, 19:09)
+
+- the energy screen gets "germany this week": germany's and the eu's average e5 and diesel pump prices including taxes from the european commission's weekly oil bulletin, via eurooilwatch's `prices` endpoint, as a yardstick for the stations on the map; it needs no tankerkoenig key
+- `FuelStockController` fetches it with the stocks, a third independent request, and hands it to the views as `customData["nationalPrices"]`, since it is one week's figures rather than a series; credited as "fuel prices in europe" in `DataSources`
+- the station list on macOS spans the map's width: its address column takes the spare width, where the grid used to size itself to its content and float in the middle with wide margins, which the user found alien
+- rationale: the user asked for both, the national comparison and the list; germany's own price history exists only in the commission's excel workbook, left for later
+- validation: 245 pointofinteresttests (bulletin parsing, all three endpoints failing one at a time) and the services package pass, both apps build, strict lint passes; not yet checked on screen
+- version: part of the unreleased 7.2.0 feature work
+
+
+### 2026-10-26 (v7.1.3, energy split into energy and energy markets, 18:31)
+
+- the energy screen is split, decided with the user: **energy** keeps fuel in germany (the tankerkoenig map with a new list of its six stations, and the fuel stocks), and the new **energy markets** screen (macos tab "markets") gets brent spot, brent futures, ttf, lng and opec+ production
+- energy markets has its own switch, `enableMarkets`, and forecast switch, `forecastMarkets`; a one-time migration copies `enableEnergy` and `forecastEnergy` into them, so nobody's choice flips; the status bar's energy values and the energy warning family follow energy markets
+- one presenter per switch: `EnergyPresenter` now only the prices, new `FuelStockPresenter`/`FuelStockController` for the stocks and new `ProducerPresenter`/`ProducerController` for production; the monthly estimate moved to `SeriesEstimate.monthly`, the month parser to `Date.monthEnd(from:)`
+- opec+ production from americasoilwatch (eia data, monthly, about four months late) for saudi arabia, uae, iran, iraq, kuwait and oman: a map without the reader's dot (`SensorMapView(showsUser: false)`), labelled with each country's production, and a chart per country with the estimate up to today; no quota line, since the feed's quotas are a late-2024 schedule
+- the fuel station list under the map shows the same six stations in the map's order and colours, with street, postcode and town (`postCode` and `place` are now parsed) and the e5, e10 and diesel prices, the ranking fuel in bold
+- macos settings: the energy tab holds both screens' switches, forecasts and four refresh intervals rather than a thirteenth settings tab; ios settings get an energy markets switch and card
+- credit: "oil production" in `DataSources` for americasoilwatch and the eia
+- validation: strict lint; all package suites and the release-mode runs; 244 pointofinteresttests and 295 ios unit tests pass, including new tests for the producer parsing and order, the migration, the stock controller's endpoints and the station list's order; both apps build; ios ui tests pass for the markets screen (four prices, the opec+ section, saudi arabia) and the toolbar (five tests); not yet checked on screen with live data
+- version: a feature, so the next release is 7.2.0; not bumped yet
+
+
+### 2026-10-26 (v7.1.3, stock estimate, minimum line and status, 17:23)
+
+- the fuel stock charts get an app estimate from the last reported month up to today, which replaces the "no estimate" of 17:11: a damped trend on a monthly grid, falling back to the last value where that did better, cut at now with its last point interpolated, behind the energy show forecast switch
+- a red line at eurooilwatch's `mandatoryMinimumDays` (90) with its label, and the stock range widened to always hold it
+- eurooilwatch's `status` of the latest month (critical, warning, watch, safe, unassessed) as a badge in the chart's title row, in the quality badges' style
+- rationale: the user asked for the estimate up to the current date, the minimum line and the status
+- validation: 239 pointofinteresttests pass (estimate ends today, the cut interpolates value and band, status and minimum parse, the range holds the minimum), both apps build, strict lint passes; not yet checked on screen
+- version: part of the unreleased feature work; the next release is 7.2.0
+
+
+### 2026-10-26 (v7.1.3, german fuel stocks on the energy tab, 17:11)
+
+- feat: both energy screens show germany's petrol, diesel and jet fuel stocks in days of supply, monthly, in a "fuel stocks in germany" section under the prices
+- source: eurooilwatch's `history` (month by month) and `stocks` (latest month with provenance) endpoints, from eurostat's monthly oil statistics, about two to three months behind; the latest month is marked uncertain when eurooilwatch did not observe it
+- three new `ProcessSelector.Energy` cases and a new unit, `UnitSupplyDays`; stocks are dated at the last day of their month, are not filled per day and get no estimate
+- the chart titles, value and date formats and the dragged marker's lookup moved into the shared `EnergyDisplay`; the marker now takes the nearest measurement within half the series' step, which daily prices meet on their own day as before
+- credit: a "fuel stocks" entry for eurostat in `DataSources`, stating that the days of supply are eurooilwatch's calculation, as eurostat's reuse terms ask for changed data
+- validation: 236 pointofinteresttests (new stock parsing and marker tests included) and the process and services package tests pass, both apps build, strict lint passes; not yet checked on screen
+- version: a feature, so the next release is 7.2.0 (minor) rather than 7.1.4; not bumped yet
+
+
+### 2026-10-26 (v7.1.3, dark theme on every map, 14:32)
+
+- fix: on macOS the covid, water level, radiation, particles and energy maps stayed light with the app set to the dark theme; only the home map followed it
+- cause: the mapkit view behind a swiftui map does not take on the app appearance on macOS, and only `MapView` applied it, through a private `MapAppearanceView`
+- decision: `MapAppearanceView` has its own file and `CollisionMapView`, which draws every map, applies it, so the source maps and any later map get it; `MapView` no longer does it itself
+- validation: both apps build and strict lint passes; checked on screen by the user: every map follows the dark theme
+- version: 7.1.3 is released, so this goes into the next patch release; no bump yet
+
+
 ### 2026-10-26 (v7.1.3, apple silicon only, 13:25)
 
 - the macos app builds for arm64 only (`ARCHS: arm64` on the app target in `project.yml`), locally and in ci; the workflows now expect an arm64 executable

@@ -46,6 +46,9 @@ struct FuelStation: Identifiable, Equatable, Sendable {
     let isOpen: Bool
     /// One entry per fuel the station sells; a station that does not sell a fuel has no entry for it.
     let prices: [Fuel: Double]
+    /// Five digits, with the leading zero the API drops from postcodes such as 01067.
+    var postCode: String? = nil
+    var place: String? = nil
 
     func price(for fuel: Fuel) -> Double? {
         return self.prices[fuel]
@@ -57,5 +60,11 @@ struct FuelStation: Identifiable, Equatable, Sendable {
         guard street.isEmpty == false else { return nil }
         let number = self.houseNumber?.trimmingCharacters(in: .whitespaces) ?? ""
         return number.isEmpty == true ? street : "\(street) \(number)"
+    }
+
+    /// Postcode and town, `10407 Berlin`, as much of it as the station gave.
+    var town: String? {
+        let parts = [self.postCode, self.place].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { $0.isEmpty == false }
+        return parts.isEmpty == true ? nil : parts.joined(separator: " ")
     }
 }

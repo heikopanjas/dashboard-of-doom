@@ -5,6 +5,7 @@ enum IOSScreen: String, Codable, CaseIterable {
     case home
     case weather
     case energy
+    case markets
     case particles
     case covid
     case level
@@ -12,13 +13,14 @@ enum IOSScreen: String, Codable, CaseIterable {
     case surveys
     case settings
 
-    static let customizable: [Self] = [.energy, .particles, .covid, .level, .radiation, .surveys]
+    static let customizable: [Self] = [.energy, .markets, .particles, .covid, .level, .radiation, .surveys]
 
     var label: String {
         switch self {
             case .home: return "Home"
             case .weather: return "Weather"
             case .energy: return "Energy"
+            case .markets: return "Energy Markets"
             case .particles: return "Particles"
             case .covid: return "COVID-19"
             case .level: return "Water Level"
@@ -33,6 +35,7 @@ enum IOSScreen: String, Codable, CaseIterable {
             case .home: return selected == true ? "house.fill" : "house"
             case .weather: return selected == true ? "cloud.bolt.fill" : "cloud.bolt"
             case .energy: return selected == true ? "fuelpump.fill" : "fuelpump"
+            case .markets: return "chart.line.uptrend.xyaxis"
             case .particles: return selected == true ? "aqi.medium" : "aqi.low"
             case .covid: return selected == true ? "facemask.fill" : "facemask"
             case .level: return "water.waves"

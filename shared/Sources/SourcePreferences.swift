@@ -119,9 +119,15 @@ enum SourcePreferences {
         return Double(min(max(kilometres, 1), 25))
     }
 
-    /// Whether energy prices are fetched and their tab shown. On by default; there is nothing of theirs on the map.
+    /// Whether the domestic Energy screen's data, the fuel stations and Germany's fuel stocks, is fetched and the screen shown. On by
+    /// default; there is nothing of theirs on the home map. The key is historical: it once governed the market prices too.
     static let energyEnableKey = "enableEnergy"
     static let energyEnabledByDefault = true
+
+    /// Whether the Energy Markets screen's data, the market prices and OPEC+ production, is fetched and the screen shown. On by default;
+    /// an install from before the split starts with the Energy switch's value (`migrateMarkets(defaults:)`).
+    static let marketsEnableKey = "enableMarkets"
+    static let marketsEnabledByDefault = true
 
     #if os(iOS)
     static let waterKey = "showWater"
@@ -179,6 +185,21 @@ enum SourcePreferences {
         return Self.enabled(key: Self.energyEnableKey, default: Self.energyEnabledByDefault, defaults: defaults)
     }
 
+    static func marketsVisible(defaults: UserDefaults = .standard) -> Bool {
+        return Self.enabled(key: Self.marketsEnableKey, default: Self.marketsEnabledByDefault, defaults: defaults)
+    }
+
+    /// The market prices used to follow the Energy switch and its Show Forecast switch. Their own switches start with those values, once,
+    /// so nobody's choice flips with the split; a value already set, or passed as a launch argument, is left alone.
+    static func migrateMarkets(defaults: UserDefaults = .standard) -> Void {
+        if defaults.object(forKey: Self.marketsEnableKey) == nil {
+            defaults.set(Self.energyVisible(defaults: defaults), forKey: Self.marketsEnableKey)
+        }
+        if defaults.object(forKey: ForecastFamily.markets.key) == nil {
+            defaults.set(Self.forecastsVisible(.energy, defaults: defaults), forKey: ForecastFamily.markets.key)
+        }
+    }
+
     /// Whether a source's charts continue past now with a forecast: the provider's where it publishes one, the app's own estimate
     /// elsewhere. One switch per source, in that source's settings, on by default, the same key on both platforms. It is not a source
     /// switch: it removes no tab.
@@ -188,7 +209,8 @@ enum SourcePreferences {
 
     /// The keys of every source switch, so a view can watch them all.
     static let switchKeys = [
-        Self.covidEnableKey, Self.waterKey, Self.radiationKey, Self.particlesKey, Self.hazardsKey, Self.energyEnableKey, Self.pollsEnableKey
+        Self.covidEnableKey, Self.waterKey, Self.radiationKey, Self.particlesKey, Self.hazardsKey, Self.energyEnableKey,
+        Self.marketsEnableKey, Self.pollsEnableKey
     ]
 }
 
@@ -198,7 +220,10 @@ enum ForecastFamily: String, CaseIterable, Sendable {
     case radiation
     case particles
     case covid
+    /// Germany's fuel stocks, on the Energy screen.
     case energy
+    /// The market prices and OPEC+ production, on the Energy Markets screen.
+    case markets
     case polls
 
     static let enabledByDefault = true
@@ -211,6 +236,7 @@ enum ForecastFamily: String, CaseIterable, Sendable {
             case .particles: return "forecastParticles"
             case .covid: return "forecastCovid"
             case .energy: return "forecastEnergy"
+            case .markets: return "forecastMarkets"
             case .polls: return "forecastPolls"
         }
     }

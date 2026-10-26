@@ -154,7 +154,7 @@ struct NotificationFamilySettingsView: View {
             case .covid:
                 return "The reporting district's incidence. Needs COVID-19 on under Sources."
             case .energy:
-                return "The daily crude oil and LNG prices. Needs Energy on under Sources."
+                return "The daily crude oil, TTF and LNG prices. Needs Energy Markets on under Sources."
             case .fuel:
                 return "Needs Energy on under Sources and a Tankerkoenig key."
         }

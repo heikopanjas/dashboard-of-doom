@@ -1,7 +1,8 @@
 import DoomKitProcess
 import SwiftUI
 
-/// The dearest, or cheapest, filling stations near the user, as a map at the top of the Energy tab.
+/// The dearest, or cheapest, filling stations near the user, as a map at the top of the Energy screen with a list of the same stations
+/// under it.
 ///
 /// A price on its own says how much; the map says where, which is the useful half. It renders nothing at all until an API key is stored
 /// in Settings and stations have loaded, so the tab looks exactly as it did before then.
@@ -36,7 +37,13 @@ struct FuelMapView: View {
         let annotations = Self.annotations(stations: self.presenter.stations, fuel: fuel, order: order, openOnly: self.openOnly)
         if annotations.isEmpty == false {
             VStack {
-                SensorMapView(annotations: annotations)
+                SensorMapView(annotations: annotations, showsDivider: false)
+                // The same stations as the pins, in the same order, with their addresses and all three prices.
+                FuelStationList(
+                    stations: Self.ranked(stations: self.presenter.stations, fuel: fuel, order: order, openOnly: self.openOnly), fuel: fuel
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
                 HStack {
                     // Crediting tankerkoenig.de and MTS-K is a condition of the CC BY licence, so it travels with the stations.
                     Text(
@@ -48,6 +55,10 @@ struct FuelMapView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 12)
+                // Map, list and credit belong together; the divider closes them off from what follows.
+                Divider()
+                    .padding(.horizontal, 5)
+                    .padding(.trailing, 5)
             }
         }
     }

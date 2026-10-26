@@ -57,7 +57,8 @@ struct RefreshRatePicker: View {
         ("15 minutes", 15),
         ("30 minutes", 30),
         ("1 hour", 60),
-        ("6 hours", 360)
+        ("6 hours", 360),
+        ("12 hours", 720)
     ]
 
     var body: some View {
@@ -84,7 +85,9 @@ struct SettingsView: View {
     let surveyPresenter: SurveyPresenter
     let covidPresenter: CovidPresenter
     let energyPresenter: EnergyPresenter
+    let producerPresenter: ProducerPresenter
     let fuelPresenter: FuelPresenter
+    let fuelStockPresenter: FuelStockPresenter
     let pointOfInterestPresenter: PointOfInterestPresenter
     /// The current reading of a status bar value, for the Menu Bar section.
     let faceplate: (StatusBarValue) -> String?
@@ -98,6 +101,7 @@ struct SettingsView: View {
     @AppStorage("showElectionPolls") private var showElectionPolls: Bool = true
     @AppStorage(SourcePreferences.hazardsKey) private var showHazards: Bool = true
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
+    @AppStorage(SourcePreferences.marketsEnableKey) private var enableMarkets: Bool = SourcePreferences.marketsEnabledByDefault
 
     // Fuel stations: which fuel, which end of the price range and how far. Ranking is local, so only the radius refetches.
     @AppStorage(SourcePreferences.fuelTypeKey) private var fuelType: Int = FuelStation.Fuel.e5.rawValue
@@ -130,6 +134,8 @@ struct SettingsView: View {
     @AppStorage("surveyRefreshInterval") private var surveyRefreshInterval: Int = 360
     @AppStorage("hazardRefreshInterval") private var hazardRefreshInterval: Int = 15
     @AppStorage("energyRefreshInterval") private var energyRefreshInterval: Int = 360
+    @AppStorage("producerRefreshInterval") private var producerRefreshInterval: Int = 720
+    @AppStorage("stockRefreshInterval") private var stockRefreshInterval: Int = 720
     @AppStorage("fuelRefreshInterval") private var fuelRefreshInterval: Int = 60
 
     /// The waterway choice over the two stored level switches, which keep their historical keys.
@@ -369,9 +375,9 @@ struct SettingsView: View {
 
     private var energyContent: some View {
         Form {
-            Section("Data Source") {
-                Toggle("Enable Energy Prices", isOn: $enableEnergy)
-                    .help("Brent spot and futures and TTF futures from EuroOilWatch, plus ACER LNG spot. Also governs the fuel station map")
+            Section("Energy") {
+                Toggle("Enable Energy", isOn: $enableEnergy)
+                    .help("The fuel station map and list, and Germany's fuel stocks from EuroOilWatch and Eurostat, on the Energy tab")
             }
             if self.enableEnergy == true {
                 Section("Fuel Stations") {
@@ -383,7 +389,7 @@ struct SettingsView: View {
                             AppProcess.shared.refreshSubscription(subscriber: self.fuelPresenter)
                         })
                     Text(
-                        "Puts a map of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
+                        "Puts a map and a list of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
                     )
                     .font(.footnote)
                     .foregroundColor(.gray)
@@ -410,12 +416,24 @@ struct SettingsView: View {
                     }
                 }
             }
-            ForecastSettingsSection(family: .energy) {
+            ForecastSettingsSection(family: .energy, title: "Fuel Stock Forecast") {
+                AppProcess.shared.refreshSubscription(subscriber: self.fuelStockPresenter)
+            }
+            Section("Energy Markets") {
+                Toggle("Enable Energy Markets", isOn: $enableMarkets)
+                    .help(
+                        "Brent spot and futures and TTF futures from EuroOilWatch, ACER LNG spot, and the oil production of six Gulf producers from AmericasOilWatch, on the Markets tab"
+                    )
+            }
+            ForecastSettingsSection(family: .markets, title: "Energy Markets Forecast") {
                 AppProcess.shared.refreshSubscription(subscriber: self.energyPresenter)
+                AppProcess.shared.refreshSubscription(subscriber: self.producerPresenter)
             }
             Section("Refresh") {
-                RefreshRatePicker(label: "Price Interval", interval: $energyRefreshInterval)
                 RefreshRatePicker(label: "Fuel Station Interval", interval: $fuelRefreshInterval)
+                RefreshRatePicker(label: "Fuel Stock Interval", interval: $stockRefreshInterval)
+                RefreshRatePicker(label: "Price Interval", interval: $energyRefreshInterval)
+                RefreshRatePicker(label: "Production Interval", interval: $producerRefreshInterval)
             }
         }
         .formStyle(.grouped)
@@ -488,17 +506,20 @@ struct SettingsView: View {
 /// estimates one when the switch goes on.
 private struct ForecastSettingsSection: View {
     let family: ForecastFamily
+    /// The section's heading; a tab with two forecast switches names each.
+    let title: String
     let refresh: () -> Void
     @AppStorage private var isOn: Bool
 
-    init(family: ForecastFamily, refresh: @escaping () -> Void) {
+    init(family: ForecastFamily, title: String = "Forecast", refresh: @escaping () -> Void) {
         self.family = family
+        self.title = title
         self.refresh = refresh
         self._isOn = AppStorage(wrappedValue: ForecastFamily.enabledByDefault, family.key)
     }
 
     var body: some View {
-        Section("Forecast") {
+        Section(self.title) {
             Toggle("Show Forecast", isOn: $isOn)
                 .onChange(of: isOn) { _, _ in
                     self.refresh()

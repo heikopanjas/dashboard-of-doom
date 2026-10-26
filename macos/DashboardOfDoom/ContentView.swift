@@ -8,6 +8,8 @@ enum DashboardTab: String, CaseIterable {
     case radiation = "Radiation"
     case particles = "Particles"
     case energy = "Energy"
+    /// "Energy Markets" is too wide for a tab button; the screen's own heading says it in full.
+    case markets = "Markets"
     case polls = "Polls"
 
     var icon: String {
@@ -19,6 +21,7 @@ enum DashboardTab: String, CaseIterable {
             case .radiation: return "atom"
             case .particles: return "aqi.medium"
             case .energy: return "fuelpump"
+            case .markets: return "chart.line.uptrend.xyaxis"
             case .polls: return "chart.bar"
         }
     }
@@ -33,6 +36,7 @@ enum DashboardTab: String, CaseIterable {
             case .radiation: return SourcePreferences.radiationVisible(defaults: defaults)
             case .particles: return SourcePreferences.particlesVisible(defaults: defaults)
             case .energy: return SourcePreferences.energyVisible(defaults: defaults)
+            case .markets: return SourcePreferences.marketsVisible(defaults: defaults)
             case .polls: return SourcePreferences.pollsVisible(defaults: defaults)
         }
     }
@@ -48,10 +52,11 @@ struct ContentView: View {
     @AppStorage(SourcePreferences.radiationKey) private var showRadiation: Bool = true
     @AppStorage(SourcePreferences.particlesKey) private var showParticles: Bool = true
     @AppStorage(SourcePreferences.energyEnableKey) private var enableEnergy: Bool = SourcePreferences.energyEnabledByDefault
+    @AppStorage(SourcePreferences.marketsEnableKey) private var enableMarkets: Bool = SourcePreferences.marketsEnabledByDefault
     @AppStorage(SourcePreferences.pollsEnableKey) private var showPolls: Bool = SourcePreferences.pollsEnabledByDefault
 
     private var switches: [Bool] {
-        return [self.showCovid, self.showLevels, self.showRadiation, self.showParticles, self.enableEnergy, self.showPolls]
+        return [self.showCovid, self.showLevels, self.showRadiation, self.showParticles, self.enableEnergy, self.enableMarkets, self.showPolls]
     }
 
     var body: some View {
@@ -91,6 +96,8 @@ struct ContentView: View {
                         ParticleView().padding()
                     case .energy:
                         EnergyView().padding()
+                    case .markets:
+                        EnergyMarketsView().padding()
                     case .polls:
                         SurveyView().padding()
                 }

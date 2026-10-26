@@ -30,6 +30,13 @@ import Testing
         #expect(total.name == "TotalEnergies Berlin")
         #expect(total.brand == "TotalEnergies")
         #expect(total.address == "Margarete-Sommer-Str. 2")
+        #expect(total.postCode == "10407")
+        #expect(stations[1].town == "10407 Berlin")
+        // The leading zero of an eastern postcode survives the number the API sends, and text is taken as it is.
+        #expect(FuelController.postCode(1067) == "01067")
+        #expect(FuelController.postCode(" 10407 ") == "10407")
+        #expect(FuelController.postCode(nil) == nil)
+        #expect(FuelController.postCode(0) == nil)
         #expect(total.distance == 1.1)
         #expect(total.location == Location(latitude: 52.530831, longitude: 13.440946))
         #expect(total.isOpen == false)

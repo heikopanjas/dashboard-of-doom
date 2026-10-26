@@ -20,7 +20,7 @@ class EnergyController: ProcessController {
 
     init(
         networkManager: NetworkManager = .shared,
-        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.energy) }
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.markets) }
     ) {
         self.networkManager = networkManager
         self.showForecasts = showForecasts

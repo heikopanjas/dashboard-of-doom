@@ -6,9 +6,11 @@ import Testing
 @MainActor
 @Suite(.timeLimit(.minutes(1)))
 struct ConditionalSubscriptionTests {
+    /// A source's enable key, or for a presenter that shares its switch with another an id of its own: the fuel stocks follow the Energy
+    /// switch and the producers the Energy Markets switch (`Fixture.enableKey(for:)`).
     nonisolated private static let sources = [
         SourcePreferences.covidEnableKey, SourcePreferences.waterKey, "showRadiation", "showParticles", SourcePreferences.pollsEnableKey,
-        SourcePreferences.energyEnableKey
+        SourcePreferences.marketsEnableKey, "fuelStocks", "producers"
     ]
 
     @MainActor private final class Fixture {
@@ -27,11 +29,11 @@ struct ConditionalSubscriptionTests {
 
         init(key: String, enabled: Bool? = nil, interval: Int? = nil) throws {
             self.defaults = try #require(UserDefaults(suiteName: self.suite))
-            self.key = key
+            self.key = Self.enableKey(for: key)
             self.defaults.set(false, forKey: "showWeather")
             self.clock = ManualClock()
             self.scheduler = ProcessManager(context: Location(latitude: 52.51889, longitude: 13.36528), clock: self.clock.clock)
-            if let enabled { self.defaults.set(enabled, forKey: key) }
+            if let enabled { self.defaults.set(enabled, forKey: self.key) }
             if let interval { self.defaults.set(interval, forKey: Self.intervalKey(key)) }
             let register: @MainActor (any ProcessRefreshable, TimeInterval) -> Void = { [weak self] subscriber, interval in
                 guard let self else { return }
@@ -56,8 +58,12 @@ struct ConditionalSubscriptionTests {
             switch key {
                 case SourcePreferences.covidEnableKey:
                     self.presenter = CovidPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
-                case SourcePreferences.energyEnableKey:
+                case SourcePreferences.marketsEnableKey:
                     self.presenter = EnergyPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
+                case "fuelStocks":
+                    self.presenter = FuelStockPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
+                case "producers":
+                    self.presenter = ProducerPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case SourcePreferences.waterKey:
                     self.presenter = LevelPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case "showRadiation":
@@ -70,10 +76,20 @@ struct ConditionalSubscriptionTests {
             }
         }
 
+        static func enableKey(for id: String) -> String {
+            switch id {
+                case "fuelStocks": return SourcePreferences.energyEnableKey
+                case "producers": return SourcePreferences.marketsEnableKey
+                default: return id
+            }
+        }
+
         static func intervalKey(_ key: String) -> String {
             switch key {
                 case SourcePreferences.covidEnableKey: return "covidRefreshInterval"
-                case SourcePreferences.energyEnableKey: return "energyRefreshInterval"
+                case SourcePreferences.marketsEnableKey: return "energyRefreshInterval"
+                case "fuelStocks": return "stockRefreshInterval"
+                case "producers": return "producerRefreshInterval"
                 case SourcePreferences.waterKey: return "levelRefreshInterval"
                 case "showRadiation": return "radiationRefreshInterval"
                 case "showParticles": return "particleRefreshInterval"
@@ -212,8 +228,10 @@ struct ConditionalSubscriptionTests {
         var starts = fixture.starts.stream.makeAsyncIterator()
         var finishes = fixture.finishes.stream.makeAsyncIterator()
         await starts.next()
-        let sixHourly = [SourcePreferences.covidEnableKey, SourcePreferences.pollsEnableKey, SourcePreferences.energyEnableKey]
-        let fallback: TimeInterval = key == "showParticles" ? 30 : (sixHourly.contains(key) == true ? 360 : 15)
+        let sixHourly = [SourcePreferences.covidEnableKey, SourcePreferences.pollsEnableKey, SourcePreferences.marketsEnableKey]
+        let twiceDaily = ["fuelStocks", "producers"]
+        let fallback: TimeInterval =
+            key == "showParticles" ? 30 : (sixHourly.contains(key) == true ? 360 : (twiceDaily.contains(key) == true ? 720 : 15))
         #expect(fixture.registrations == [fallback])
         fixture.complete(name: "retained")
         await finishes.next()
