@@ -7,6 +7,7 @@ public class UnitOilPrice: Dimension, @unchecked Sendable {
         converter: UnitConverterLinear(coefficient: 1.0)
     )
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.usDollarsPerBarrel as! Self
     }
 }

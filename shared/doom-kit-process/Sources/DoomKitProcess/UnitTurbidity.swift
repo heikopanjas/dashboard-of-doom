@@ -8,6 +8,7 @@ public class UnitTurbidity: Dimension, @unchecked Sendable {
 
     // If you plan to add NTU later, choose a consistent base unit (e.g., FNU or NTU)
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.fnu as! Self
     }
 }

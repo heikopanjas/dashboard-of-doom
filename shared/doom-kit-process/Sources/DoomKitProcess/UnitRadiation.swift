@@ -22,6 +22,7 @@ public class UnitRadiation: Dimension, @unchecked Sendable {
     )  // Optional: Gray unit
 
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.sieverts as! Self
     }
 }

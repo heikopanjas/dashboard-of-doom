@@ -90,13 +90,13 @@ public class PolygonProximityCalculator {
         lineEnd: Location
     ) -> Location {
 
-        let A = point.latitude - lineStart.latitude
-        let B = point.longitude - lineStart.longitude
-        let C = lineEnd.latitude - lineStart.latitude
-        let D = lineEnd.longitude - lineStart.longitude
+        let pointLatitudeOffset = point.latitude - lineStart.latitude
+        let pointLongitudeOffset = point.longitude - lineStart.longitude
+        let segmentLatitudeSpan = lineEnd.latitude - lineStart.latitude
+        let segmentLongitudeSpan = lineEnd.longitude - lineStart.longitude
 
-        let dot = A * C + B * D
-        let lenSq = C * C + D * D
+        let dot = pointLatitudeOffset * segmentLatitudeSpan + pointLongitudeOffset * segmentLongitudeSpan
+        let lenSq = segmentLatitudeSpan * segmentLatitudeSpan + segmentLongitudeSpan * segmentLongitudeSpan
 
         // Handle degenerate case where line segment is actually a point
         guard lenSq > 0 else { return lineStart }
@@ -116,8 +116,8 @@ public class PolygonProximityCalculator {
         else {
             // Closest point is somewhere along the line segment
             result = Location(
-                latitude: lineStart.latitude + param * C,
-                longitude: lineStart.longitude + param * D
+                latitude: lineStart.latitude + param * segmentLatitudeSpan,
+                longitude: lineStart.longitude + param * segmentLongitudeSpan
             )
         }
 

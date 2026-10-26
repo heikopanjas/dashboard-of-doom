@@ -23,21 +23,21 @@ struct SurveyChartView: View {
         .survey(.csu): "CSU",
         .survey(.sonstige): "Sonstige",
         .survey(.piraten): "Piraten",
-        .survey(.freie_waehler): "Freie Wähler",
+        .survey(.freieWaehler): "Freie Wähler",
         .survey(.npd): "NPD",
         .survey(.ssw): "SSW",
         .survey(.bayernpartei): "Bayernpartei",
         .survey(.oedp): "ÖDP",
         .survey(.partei): "Die PARTEI",
-        .survey(.bvb_fw): "BVB/FW",
+        .survey(.bvbFw): "BVB/FW",
         .survey(.tierschutz): "Tierschutzpartei",
         .survey(.biw): "BIW",
         .survey(.familie): "Familie",
         .survey(.volt): "Volt",
-        .survey(.bunt_saar): "bunt.saar",
+        .survey(.buntSaar): "bunt.saar",
         .survey(.bfth): "BfTh",
-        .survey(.plus_brandenburg): "Plus Brandenburg",
-        .survey(.werte_union): "WerteUnion"
+        .survey(.plusBrandenburg): "Plus Brandenburg",
+        .survey(.werteUnion): "WerteUnion"
     ]
 
     private let fullLabels: [ProcessSelector: String] = [
@@ -54,21 +54,21 @@ struct SurveyChartView: View {
         .survey(.csu): "Christlich-Soziale Union",
         .survey(.sonstige): "Sonstige",
         .survey(.piraten): "Piratenpartei",
-        .survey(.freie_waehler): "Freie Wähler",
+        .survey(.freieWaehler): "Freie Wähler",
         .survey(.npd): "Nationaldemokratische Partei Deutschlands",
         .survey(.ssw): "Südschleswigscher Wählerverband",
         .survey(.bayernpartei): "Bayernpartei e.V.",
         .survey(.oedp): "Ökologisch-Demokratische Partei",
         .survey(.partei): "Partei für Arbeit, Rechtsstaat, Tierschutz, Elitenförderung und basisdemokratische Initiative",
-        .survey(.bvb_fw): "Brandenburger Vereinigte Bürgerbewegungen/Freie Wähler",
+        .survey(.bvbFw): "Brandenburger Vereinigte Bürgerbewegungen/Freie Wähler",
         .survey(.tierschutz): "Partei Mensch Umwelt Tierschutz",
         .survey(.biw): "Bürger in Wut",
         .survey(.familie): "Familienpartei Deutschlands",
         .survey(.volt): "Volt Deutschland",
-        .survey(.bunt_saar): "bunt.saar - sozial-ökologische liste",
+        .survey(.buntSaar): "bunt.saar - sozial-ökologische liste",
         .survey(.bfth): "Bürger für Thüringen",
-        .survey(.plus_brandenburg): "Plus Brandenburg (Listenvereinigung aus Piratenpartei, ÖDP und Volt)",
-        .survey(.werte_union): "WerteUnion"
+        .survey(.plusBrandenburg): "Plus Brandenburg (Listenvereinigung aus Piratenpartei, ÖDP und Volt)",
+        .survey(.werteUnion): "WerteUnion"
     ]
 
     /// The forecast after the last measurement, while forecasts are switched on.

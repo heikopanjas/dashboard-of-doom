@@ -5,7 +5,8 @@ import Testing
 
 /// Parsing only. Nothing here touches the network.
 struct HazardControllerTests {
-    private static let now = ISO8601DateFormatter().date(from: "2026-09-20T12:00:00+02:00")!
+    /// 2026-09-20T12:00:00+02:00
+    private static let now = Date(timeIntervalSince1970: 1_789_898_400)
     private static let hkw = Location(latitude: 52.51889, longitude: 13.36528)
 
     private static func data(_ json: String) -> Data {

@@ -186,7 +186,7 @@ class LevelController: ProcessController {
     }
 
     private static func nearestStations(stations: [Station], location: Location, limit: Int) -> [Station] {
-        let inRange = stations.filter { haversineDistance(location_0: $0.location, location_1: location) < Self.maximumDistance }
+        let inRange = stations.filter { haversineDistance(location0: $0.location, location1: location) < Self.maximumDistance }
         return sortByDistance(inRange, from: location, limit: limit)
     }
 
@@ -237,7 +237,8 @@ class LevelController: ProcessController {
 
     private static func nearestNaturalWaterwayName(location: Location, radius: Double) -> String? {
         var nearestName: String? = nil
-        var minDistance = Measurement(value: 1000.0, unit: UnitLength.kilometers)  // This is more than the distance from List to Oberstdorf (960km)
+        // This is more than the distance from List to Oberstdorf (960km)
+        var minDistance = Measurement(value: 1000.0, unit: UnitLength.kilometers)
         for (name, waterway) in Self.waterways where waterway.isNatural {
             for line in waterway.lines {
                 guard let nearest = PolygonProximityCalculator.nearestPointOnPolyline(from: location, to: line) else { continue }

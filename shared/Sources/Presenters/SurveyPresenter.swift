@@ -51,7 +51,7 @@ import SwiftUI
                 return Gradient.clowns
             case .survey(.fdp):
                 return Gradient.clowns
-            case .survey(.freie_waehler):
+            case .survey(.freieWaehler):
                 return Gradient.clowns
             case .survey(.cducsu):
                 return Gradient.fascists
@@ -77,7 +77,7 @@ import SwiftUI
         switch selector {
             case .survey(.fascists), .survey(.afd), .survey(.cducsu), .survey(.cdu), .survey(.csu):
                 return Color.fascists
-            case .survey(.bsw), .survey(.clowns), .survey(.fdp), .survey(.freie_waehler):
+            case .survey(.bsw), .survey(.clowns), .survey(.fdp), .survey(.freieWaehler):
                 return Color.clowns
             case .survey(.spd):
                 return .red

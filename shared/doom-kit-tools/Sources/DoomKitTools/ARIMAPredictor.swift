@@ -175,8 +175,8 @@ public class ARIMAPredictor {
             }
 
             // Add MA component (only using known errors)
-            for (j, coef) in maCoefficients.enumerated() {
-                if t - j - 1 >= 0 { forecast += coef * (forecasts[t - j - 1] - differencedData[differencedData.count - j - 1]) }
+            for (j, coef) in maCoefficients.enumerated() where t - j - 1 >= 0 {
+                forecast += coef * (forecasts[t - j - 1] - differencedData[differencedData.count - j - 1])
             }
 
             forecasts[t] = forecast
@@ -219,7 +219,16 @@ public class ARIMAPredictor {
 
     private func calculateZScore(for confidenceLevel: Double) -> Double {
         // Approximate z-score for common confidence levels
-        switch confidenceLevel { case 0.99: return 2.576 case 0.95: return 1.96 case 0.90: return 1.645 default: return 1.96  // Default to 95% confidence level
+        switch confidenceLevel {
+            case 0.99:
+                return 2.576
+            case 0.95:
+                return 1.96
+            case 0.90:
+                return 1.645
+            default:
+                // Default to 95% confidence level
+                return 1.96
         }
     }
 

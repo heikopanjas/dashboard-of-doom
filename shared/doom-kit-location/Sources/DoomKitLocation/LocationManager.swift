@@ -101,7 +101,7 @@ public final class LocationManager {
         }
         if let location = update.location {
             let previous = self.lastMeasured ?? self.state.location
-            if self.lastMeasured == nil || haversineDistance(location_0: previous, location_1: location).value > 100 {
+            if self.lastMeasured == nil || haversineDistance(location0: previous, location1: location).value > 100 {
                 self.lastMeasured = location
                 // While simulating, the fix is only remembered for when the simulation ends.
                 if self.simulated == nil {

@@ -23,8 +23,8 @@ import Testing
     ])
 
     @Test func aPlaceIsInTheDistrictThatContainsIt() throws {
-        let büsum = Location(latitude: 54.1283, longitude: 8.8589)
-        let district = try #require(try CovidController.resolveDistrict(from: Self.coast, for: büsum))
+        let buesum = Location(latitude: 54.1283, longitude: 8.8589)
+        let district = try #require(try CovidController.resolveDistrict(from: Self.coast, for: buesum))
         #expect(district.id == "01051")
         // The centroid is the land's, a place on the map, not the sea's.
         #expect(abs(district.location.latitude - 54.1) < 0.001 && abs(district.location.longitude - 9.0) < 0.001)

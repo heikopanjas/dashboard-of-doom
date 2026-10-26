@@ -79,7 +79,7 @@ import SwiftUI
         var maxDistance = Measurement<UnitLength>(value: 0.0, unit: .meters)
         for i in 0 ..< locations.count {
             for j in i + 1 ..< locations.count {
-                let distance = haversineDistance(location_0: locations[i], location_1: locations[j])
+                let distance = haversineDistance(location0: locations[i], location1: locations[j])
                 if distance > maxDistance {
                     maxDistance = distance
                 }

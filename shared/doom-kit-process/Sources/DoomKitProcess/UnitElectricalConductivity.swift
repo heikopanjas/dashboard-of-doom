@@ -13,6 +13,7 @@ public class UnitElectricalConductivity: Dimension, @unchecked Sendable {
 
     // Base unit is millisiemensPerCentimeter (mS/cm)
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.millisiemensPerCentimeter as! Self
     }
 }

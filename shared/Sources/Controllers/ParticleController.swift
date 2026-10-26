@@ -327,12 +327,9 @@ class ParticleController: ProcessController {
         catch {
             trace.error("Error fetching measurements: %@", error.localizedDescription)
         }
-        if measurements != nil {
-            for (selector, values) in measurements! {
-                measurements?[selector] = values.sorted(by: { $0.timestamp < $1.timestamp })
-            }
+        return measurements?.mapValues { values in
+            return values.sorted(by: { $0.timestamp < $1.timestamp })
         }
-        return measurements
     }
 
     /// UBA's forecast for a station, one provider forecast per pollutant. A row is `[end, created, index, incomplete, [component, value,

@@ -12,6 +12,7 @@ public class UnitIncidence: Dimension, @unchecked Sendable {
     )
 
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.casesPer100k as! Self
     }
 }

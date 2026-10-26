@@ -24,6 +24,8 @@ struct HazardPresenterTests {
         var fetches: [Location] = []
         var pending: [CheckedContinuation<Result<[Hazard], Error>, Never>] = []
         var now: Date
+        // Its closures capture the fixture, so it can only be set once every other property is.
+        // swift-format-ignore: NeverUseImplicitlyUnwrappedOptionals
         var presenter: HazardPresenter!
 
         init(enabled: Bool? = nil) throws {
@@ -48,7 +50,7 @@ struct HazardPresenterTests {
         }
 
         func refresh(at location: Location = HazardPresenterTests.hkw) -> Task<Void, Never> {
-            let presenter = self.presenter!
+            let presenter: HazardPresenter = self.presenter
             return Task { await presenter.refreshData(location: location) }
         }
 

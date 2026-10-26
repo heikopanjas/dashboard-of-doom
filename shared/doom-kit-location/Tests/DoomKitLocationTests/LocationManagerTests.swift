@@ -122,7 +122,7 @@ struct LocationManagerTests {
         #expect(GeocodedPlace(locality: "Town").constituency == "Town")
         #expect(Set([self.fallback, self.fallback]).count == 1)
         #expect(self.fallback.coordinate.latitude == 0)
-        #expect(haversineDistance(location_0: self.fallback, location_1: self.fallback).value == 0)
+        #expect(haversineDistance(location0: self.fallback, location1: self.fallback).value == 0)
     }
     @Test(arguments: [99.999, 100.0, 100.001])
     func strictMovementThreshold(meters: Double) {

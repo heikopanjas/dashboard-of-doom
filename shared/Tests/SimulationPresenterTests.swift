@@ -5,7 +5,7 @@ import Testing
 @MainActor @Suite struct SimulationPresenterTests {
     private static let hkw = Location(latitude: 52.51889, longitude: 13.36528)
     private static let dresden = Location(latitude: 51.054, longitude: 13.738)
-    private static let büsum = Location(latitude: 54.1283, longitude: 8.8589)
+    private static let buesum = Location(latitude: 54.1283, longitude: 8.8589)
 
     @Test func startingSimulatesThePlaceUnderItsName() {
         // Never started, so no real fix arrives.
@@ -18,9 +18,9 @@ import Testing
         #expect(manager.state.origin == .simulated)
         #expect(manager.state.location == Self.dresden)
         // One place follows another without a stop in between.
-        presenter.start(Self.büsum, name: "Büsum")
+        presenter.start(Self.buesum, name: "Büsum")
         #expect(presenter.placeName == "Büsum")
-        #expect(manager.state.location == Self.büsum)
+        #expect(manager.state.location == Self.buesum)
     }
 
     @Test func stoppingReturnsToTheRealLocation() {

@@ -47,7 +47,7 @@ struct SensorCandidate {
 
     private func sensor(placemark: String?, near location: Location) -> ProcessSensor {
         let measurements = self.measurements.filter { $0.value.isEmpty == false }
-        let distance = haversineDistance(location_0: location, location_1: self.location).converted(to: .meters).value
+        let distance = haversineDistance(location0: location, location1: self.location).converted(to: .meters).value
         return ProcessSensor(
             name: self.name, location: self.location, placemark: placemark, customData: self.customData, measurements: measurements,
             timestamp: Date.now, sourceID: self.id, distance: distance, forecasts: self.forecasts)

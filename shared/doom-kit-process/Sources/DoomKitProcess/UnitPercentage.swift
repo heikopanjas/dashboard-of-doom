@@ -12,6 +12,7 @@ public class UnitPercentage: Dimension, @unchecked Sendable {
     )
 
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.percent as! Self
     }
 }

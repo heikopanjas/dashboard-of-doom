@@ -7,6 +7,7 @@ public class UnitAcidity: Dimension, @unchecked Sendable {
     )
 
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.pH as! Self
     }
 }

@@ -11,6 +11,8 @@ import Testing
         var now = Date(timeIntervalSince1970: 1_790_000_000)
         var measured = true
         var posted: [WarningNotice] = []
+        // Its closures capture the fixture, so it can only be set once every other property is.
+        // swift-format-ignore: NeverUseImplicitlyUnwrappedOptionals
         var notifier: WarningNotifier!
 
         init(enabled: Bool = true) {

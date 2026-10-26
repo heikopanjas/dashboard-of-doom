@@ -37,14 +37,14 @@ class SurveyController: ProcessController {
     #endif
 
     let officialFascists: [ProcessSelector] = [
-        .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvb_fw), .survey(.biw), .survey(.bfth), .survey(.werte_union)
+        .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvbFw), .survey(.biw), .survey(.bfth), .survey(.werteUnion)
     ]
     let realFascists: [ProcessSelector] = [
-        .survey(.cducsu), .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvb_fw), .survey(.biw),
-        .survey(.bfth), .survey(.werte_union), .survey(.cdu), .survey(.csu)
+        .survey(.cducsu), .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvbFw), .survey(.biw),
+        .survey(.bfth), .survey(.werteUnion), .survey(.cdu), .survey(.csu)
     ]
     let officialClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw)]
-    let realClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw), .survey(.freie_waehler), .survey(.volt)]
+    let realClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw), .survey(.freieWaehler), .survey(.volt)]
 
     private let showForecasts: @Sendable () -> Bool
 
@@ -316,10 +316,11 @@ class SurveyController: ProcessController {
             try Task.checkCancellation()
             if let candidateConstituencies = try await Self.parseConstituencies(data: data) {
                 try Task.checkCancellation()
-                var minDistance = Measurement(value: 1000.0, unit: UnitLength.kilometers)  // This is more than the distance from List to Oberstdorf (960km)
+                // This is more than the distance from List to Oberstdorf (960km)
+                var minDistance = Measurement(value: 1000.0, unit: UnitLength.kilometers)
                 for candidateConstituency in candidateConstituencies {
                     let candidateLocation = candidateConstituency.location
-                    let distance = haversineDistance(location_0: candidateLocation, location_1: location)
+                    let distance = haversineDistance(location0: candidateLocation, location1: location)
                     if distance < minDistance {
                         minDistance = distance
                         nearestConstituency = candidateConstituency
@@ -512,7 +513,8 @@ class SurveyController: ProcessController {
     private func aggregateMeasurement(timestamp: Date, measurements: [ProcessValue<Dimension>], quality: ProcessQuality) -> ProcessValue<Dimension>
     {
         let value = measurements.map(\.value.value).reduce(0, +) / Double(measurements.count)
-        let unit = measurements.count > 0 ? measurements[0].value.unit : UnitPercentage.percent  // Use hardcoded unit if no measurements are available
+        // Use hardcoded unit if no measurements are available
+        let unit = measurements.count > 0 ? measurements[0].value.unit : UnitPercentage.percent
         return ProcessValue<Dimension>(value: Measurement<Dimension>(value: value, unit: unit), quality: quality, timestamp: timestamp)
     }
 

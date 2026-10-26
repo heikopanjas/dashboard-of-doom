@@ -17,6 +17,7 @@ public class UnitPopulation: Dimension, @unchecked Sendable {
     )
 
     public override class func baseUnit() -> Self {
+        // swift-format-ignore: NeverForceUnwrap
         return Self.people as! Self
     }
 }
