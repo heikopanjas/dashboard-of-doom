@@ -4,6 +4,27 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, ci builds and notarized releases, 13:10)
+
+- added `.github/workflows/build.yml` and `.github/workflows/release.yml` for the macos app, modelled on senor particle and token torch
+- build: strict lint, package and pointofinteresttests suites with and without thread sanitizer, then a developer id archive as a workflow artifact; pushes to develop are also notarized and published as a github prerelease
+- release: the same checks, a notarized and stapled build, and on pushes to main the `v<MARKETING_VERSION>` github release; a version tag already on another commit fails the run
+- the workflows install the weatherkit developer id provisioning profile from a secret, which the reference apps do not need, and use `GITHUB_RUN_ID` as `CFBundleVersion`
+- decisions with the user: macos only, no sparkle yet (added to roadmap.md), artifacts only for feature branches, prereleases on develop
+- validation: actionlint passes both workflows; locally all package tests, the release-mode runs and 228 pointofinteresttests pass, also under thread sanitizer, and version and dependency extraction work; the workflows have not run on github yet, since the repository secrets are not set
+- version: no bump, tooling only
+
+
+### 2026-10-26 (v7.1.3, swift-format over all sources, 12:55)
+
+- every tracked swift file is formatted with the existing `.swift-format`, one mechanical commit listed in `.git-blame-ignore-revs`, and `swift-format lint --strict` now reports nothing
+- the remaining findings were fixed by hand: lowercamelcase for the haversine labels (`location0`, `latitude0`), the polygon offsets and the party selector cases (`freieWaehler`, `bvbFw`, `buntSaar`, `plusBrandenburg`, `werteUnion`; their int raw values are unchanged and nothing used the names as strings), no force unwraps in the particle controller and the tests, ascii identifiers in tests
+- kept with an ignore comment: the `as! Self` in the dimension `baseUnit()` overrides and the two test fixtures whose closures capture the fixture
+- rationale: the ci lint job is strict, as in senor particle and token torch, chosen by the user
+- validation: all package tests (and release mode for process, tools, services), 228 pointofinteresttests, both app builds and the macos build script tests pass
+- version: no bump, no behaviour change
+
+
 ### 2026-10-26 (v7.1.3, popup fix verified with ice, 12:45)
 
 - verified on screen by the user with ice: the popup closes when the hidden section is hidden again, and stays open on clicks inside it

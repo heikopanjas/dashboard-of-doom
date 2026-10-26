@@ -1,6 +1,6 @@
 # Agent Instructions for Dashboard of Doom (macOS and iOS)
 
-*Last updated: October 26, 2026, 12:45 CET (popup fix verified with Ice)*
+*Last updated: October 26, 2026, 13:10 CET (CI builds and notarized releases)*
 
 ## Project Overview
 
@@ -261,6 +261,16 @@ Controllers → Services → Transformers → Presenters → Views
 - `PointOfInterestPresenter` publishes two lists: `points` is what the map shows, filtered by the master switch and the category switches; `allPoints` is every cached point near the user. iOS constructs it with `fetchesWhenHidden: true`, so all five categories keep loading while switched off and the settings switches only change the map; the nearest places row reads `allPoints`. macOS passes `fetchesWhenHidden: true` as well, since its Home tab has the nearest places row too.
 
 - COVID, water levels, radiation, particles, hazards, polls and energy prices own preference-observed conditional subscriptions; disabled sources retain values but cancel and remove refresh work. Weather and forecasts always refresh regardless of display visibility.
+
+### CI and Releases
+
+- `.github/workflows/build.yml` runs on pushes and pull requests for `develop` and `feature/**` (and by hand). `.github/workflows/release.yml` validates pull requests to `main` and publishes on pushes to `main`. Both are macOS only, use `macos-26`, `actions/checkout@v6` and `actions/upload-artifact@v6`, and keep their work under `.build/CI`, `.build/DerivedData/CI` and `.build/SourcePackages`. They follow Senor Particle and Token Torch; the iOS app is not built in CI
+- Both workflows run the same `lint` job, `swift-format lint --strict` over every tracked Swift file (`git ls-files`, so local package `.build` folders are never read), and the same `test` matrix, plain and under Thread Sanitizer: the six package tests, `PointOfInterestTests`, and in the plain leg the release-mode package tests and `macos/BuildTests`. The signed job waits for both. Keep the sources strict-clean: run `xcrun swift-format format -i` before committing. The one-time reformat is listed in `.git-blame-ignore-revs`; `// swift-format-ignore: <Rule>` is used only where the rule is wrong for the code (the `Dimension` `baseUnit()` casts, test fixtures whose closures capture the fixture)
+- Every job installs XcodeGen with Homebrew and runs `xcodegen generate`, since the Xcode project is not tracked. The signed jobs import the Developer ID certificate into a temporary keychain and install the "Dashboard of Doom macOS" Developer ID provisioning profile, checking its name and that it grants WeatherKit. The app's restricted WeatherKit entitlement needs that profile, which neither reference app has. They archive with `CURRENT_PROJECT_VERSION=$GITHUB_RUN_ID`, one increasing `CFBundleVersion` across both workflows, which Sparkle will need. The `CURRENT_PROJECT_VERSION` in `project.yml` is only the local build number. They export with `macos/exportOptions.plist`, verify the signature, the universal `arm64 x86_64` executable and the WeatherKit entitlement, and package the app with `CHANGELOG.md` (commits since the last `v*` tag) and `BILL_OF_MATERIALS.md`
+- `build.yml` uploads the zip as a workflow artifact. On pushes to `develop` it also notarizes, staples and publishes a GitHub prerelease `dashboard-of-doom-build-<run>-<UTC time>`. This is notarized, unlike Token Torch's, because a download from GitHub is quarantined and Gatekeeper opens only a notarized app. Feature branches and pull requests get the artifact only
+- `release.yml` refuses a `v<MARKETING_VERSION>` tag that already points at another commit, so bump `MARKETING_VERSION` in `project.yml` before merging `develop` into `main`; a retry on the same commit is safe. It notarizes with the App Store Connect API key, staples, checks Gatekeeper with `spctl`, and the `publish` job creates the `v<MARKETING_VERSION>` release with `dashboard-of-doom-v<version>.zip` and generated notes. Pull requests to `main` run everything except publishing. There is no Sparkle feed yet (see ROADMAP.md)
+- Repository secrets: `APPLE_CERTIFICATE_P12_BASE64`, `APPLE_CERTIFICATE_PASSWORD` and `APPLE_SIGNING_IDENTITY` (Developer ID Application), `MACOS_PROVISIONING_PROFILE_BASE64` (the profile file from `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`, base64), and `APPSTORE_CONNECT_KEY_ID`, `APPSTORE_CONNECT_ISSUER_ID` and `APPSTORE_CONNECT_KEY_P8_BASE64` for notarization; the values other than the profile are the ones Senor Particle and Token Torch use. The team ID is read from `macos/exportOptions.plist`. Unit test jobs never receive secrets. Pull requests from forks have no secrets, so their signed job fails
+- `./macos/build.sh --notarize` remains the local path to a notarized build; CI does not call it, because it notarizes through a local Keychain profile
 
 ### iOS Lifecycle and Validation
 

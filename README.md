@@ -470,6 +470,29 @@ shellcheck macos/build.sh
 Install ShellCheck with `brew install shellcheck` if needed. Define future app
 test targets in `project.yml`.
 
+### Continuous Integration
+
+GitHub Actions builds the macOS app (the iOS app is not built in CI):
+
+- `.github/workflows/build.yml`, on `develop`, `feature/**` and their pull
+  requests: strict swift-format lint, the package and `PointOfInterestTests`
+  suites with and without Thread Sanitizer, then a Developer ID signed archive
+  uploaded as a workflow artifact. Pushes to `develop` are also notarized and
+  published as a GitHub prerelease.
+- `.github/workflows/release.yml`, on pull requests to and pushes to `main`:
+  the same checks, then a notarized and stapled build. Pushes publish it as the
+  `v<MARKETING_VERSION>` GitHub release, so bump `MARKETING_VERSION` in
+  `project.yml` before merging.
+
+Keep the sources lint-clean before pushing:
+
+```bash
+git ls-files -z '*.swift' | xargs -0 xcrun swift-format format -i --parallel
+git ls-files -z '*.swift' | xargs -0 xcrun swift-format lint --strict --parallel
+```
+
+The required repository secrets are listed in AGENTS.md under CI and Releases.
+
 ### Permissions & Configuration
 
 - **Location Services**: Required for geographic data filtering and location-based environmental data
