@@ -68,6 +68,7 @@ import Testing
             value: Measurement(value: 8.4095, unit: UnitOilProduction.millionBarrelsPerDay), quality: .good, timestamp: date)
         #expect(EnergyDisplay.valueText(value, for: .energy(.production)) == "8.41 mb/d")
         #expect(EnergyDisplay.dateText(date, for: .energy(.production)) == date.formatted(.dateTime.month(.abbreviated).year()))
-        #expect(EnergyDisplay.title(for: .energy(.production)) == "Production")
+        // No title: the country's header above the chart names it.
+        #expect(EnergyDisplay.title(for: .energy(.production)).isEmpty == true)
     }
 }

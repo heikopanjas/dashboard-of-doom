@@ -4,6 +4,14 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, production charts without a title, 19:56)
+
+- the production charts on energy markets have no "production" title any more; the country's header above each names it, and the forecast legend keeps its place
+- rationale: the user asked to remove the labels
+- validation: 245 pointofinteresttests pass, both apps build, strict lint passes
+- version: part of the unreleased 7.2.0 feature work
+
+
 ### 2026-10-26 (v7.1.3, station list layout, 19:34)
 
 - the station list shows each address on one line, street and number, then postcode and town

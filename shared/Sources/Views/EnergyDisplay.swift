@@ -21,7 +21,8 @@ enum EnergyDisplay {
             case .jetFuelStock:
                 return "Jet Fuel"
             case .production:
-                return "Production"
+                // The country's header above the chart says whose production it is; a title would only repeat the section's heading.
+                return ""
         }
     }
 

@@ -19,7 +19,9 @@ struct EnergyChartView: View {
     var body: some View {
         VStack {
             HStack(alignment: .bottom) {
-                Text(EnergyDisplay.title(for: self.selector))
+                if EnergyDisplay.title(for: self.selector).isEmpty == false {
+                    Text(EnergyDisplay.title(for: self.selector))
+                }
                 if let status = EnergyDisplay.status(in: self.reading.measurements[selector] ?? []) {
                     StockStatusBadge(status: status, period: EnergyDisplay.statusPeriod(in: self.reading.measurements[selector] ?? []))
                 }
