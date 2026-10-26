@@ -4,6 +4,12 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.2.0, version for release, 22:16)
+
+- marketing version is 7.2.0 for both apps in `project.yml`
+- rationale: the release check on the develop to main pull request failed because tag v7.1.3 already points at an older commit
+- version bump: 7.1.3 to 7.2.0 (MINOR - german fuel stock charts and the energy markets split are new features)
+
 ### 2026-10-26 (v7.1.3, production charts without a title, 19:56)
 
 - the production charts on energy markets have no "production" title any more; the country's header above each names it, and the forecast legend keeps its place
