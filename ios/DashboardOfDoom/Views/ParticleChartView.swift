@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 struct ParticleChartView: View {
@@ -59,36 +59,37 @@ struct ParticleChartView: View {
             .accentLabel()
             Chart {
                 ForEach(self.reading.measurements[selector] ?? []) { measurement in
-//                    if selector == .particle(.pm10) {
-//                        LineMark(
-//                            x: .value("Date", measurement.timestamp),
-//                            y: .value("Particle", 40.0)
-//                        )
-//                        .interpolationMethod(.linear)
-//                        .foregroundStyle(Color.treshold)
-//                        .lineStyle(StrokeStyle(lineWidth: 1))
-//                    }
-//                    else if selector == .particle(.pm25) {
-//                        LineMark(
-//                            x: .value("Date", measurement.timestamp),
-//                            y: .value("Particle", 25.0)
-//                        )
-//                        .interpolationMethod(.linear)
-//                        .foregroundStyle(Color.treshold)
-//                        .lineStyle(StrokeStyle(lineWidth: 1))
-//                    }
-//                    else if selector == .particle(.no2) {
-//                        LineMark(
-//                            x: .value("Date", measurement.timestamp),
-//                            y: .value("Particle", 40.0)
-//                        )
-//                        .interpolationMethod(.linear)
-//                        .foregroundStyle(Color.treshold)
-//                        .lineStyle(StrokeStyle(lineWidth: 1))
-//                    }
+                    //                    if selector == .particle(.pm10) {
+                    //                        LineMark(
+                    //                            x: .value("Date", measurement.timestamp),
+                    //                            y: .value("Particle", 40.0)
+                    //                        )
+                    //                        .interpolationMethod(.linear)
+                    //                        .foregroundStyle(Color.treshold)
+                    //                        .lineStyle(StrokeStyle(lineWidth: 1))
+                    //                    }
+                    //                    else if selector == .particle(.pm25) {
+                    //                        LineMark(
+                    //                            x: .value("Date", measurement.timestamp),
+                    //                            y: .value("Particle", 25.0)
+                    //                        )
+                    //                        .interpolationMethod(.linear)
+                    //                        .foregroundStyle(Color.treshold)
+                    //                        .lineStyle(StrokeStyle(lineWidth: 1))
+                    //                    }
+                    //                    else if selector == .particle(.no2) {
+                    //                        LineMark(
+                    //                            x: .value("Date", measurement.timestamp),
+                    //                            y: .value("Particle", 40.0)
+                    //                        )
+                    //                        .interpolationMethod(.linear)
+                    //                        .foregroundStyle(Color.treshold)
+                    //                        .lineStyle(StrokeStyle(lineWidth: 1))
+                    //                    }
                     AreaMark(
                         x: .value("Date", Date.round(from: measurement.timestamp, strategy: .previousHour) ?? Date.now),
-                        yStart: .value("Particle", ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast).lowerBound),
+                        yStart: .value(
+                            "Particle", ForecastDisplay.domain(range: self.reading.range[selector], forecast: self.forecast).lowerBound),
                         yEnd: .value("Particle", measurement.value.value)
                     )
                     .interpolationMethod(.catmullRom(alpha: 0.33))
@@ -97,7 +98,8 @@ struct ParticleChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Particle")
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Particle")
                 }
 
                 if let measurement = self.reading.current[selector] {
@@ -154,7 +156,9 @@ struct ParticleChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.0f%@", color: self.colorScheme.markerColor, xLabel: "Date", yLabel: "Particle")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.0f%@", color: self.colorScheme.markerColor, xLabel: "Date",
+                            yLabel: "Particle")
                     }
                 }
             }
@@ -163,4 +167,3 @@ struct ParticleChartView: View {
         }
     }
 }
-

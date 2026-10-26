@@ -6,7 +6,8 @@ import Foundation
 struct Hazard: Identifiable, Equatable, Sendable {
     /// CAP severity, ordered so that a higher case is more serious.
     enum Severity: Int, Comparable, Sendable {
-        case unknown = 0, minor, moderate, severe, extreme
+        case unknown = 0
+        case minor, moderate, severe, extreme
 
         init(cap: String?) {
             switch cap?.lowercased() {

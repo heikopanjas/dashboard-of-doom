@@ -89,7 +89,7 @@ import Testing
             self.hour(9, -4, celsius),
             self.hour(12, -1, celsius),
             self.hour(30, -30, celsius),  // beyond the day, does not count
-            self.hour(10, -40, celsius, quality: .unknown),  // a placeholder, does not count
+            self.hour(10, -40, celsius, quality: .unknown)  // a placeholder, does not count
         ]
         let reading = self.reading(.forecast(.temperature), series: series)
         let frost = WarningEvaluator.assessments(readings: [reading], defaults: self.defaults(), now: Self.now).first { $0.key == "weather.frost" }
@@ -174,7 +174,8 @@ import Testing
             .water(.level), current: Measurement(value: 2, unit: UnitLength.meters), sourceID: "celle", customData: marks, name: "CELLE",
             forecasts: [.water(.level): self.forecast(.provider("PEGELONLINE"), [3: 3.5], UnitLength.meters)])
         func forecastKeys(_ defaults: UserDefaults) -> [String] {
-            return WarningEvaluator.assessments(readings: [air, gauge], defaults: defaults, now: Self.now).filter { $0.input == "forecast" }.map(\.key)
+            return WarningEvaluator.assessments(readings: [air, gauge], defaults: defaults, now: Self.now).filter { $0.input == "forecast" }.map(
+                \.key)
         }
         #expect(forecastKeys(self.defaults()) == ["particle.pm10.DEBE010", "level.marks.celle"])
         let particlesOff = self.defaults()

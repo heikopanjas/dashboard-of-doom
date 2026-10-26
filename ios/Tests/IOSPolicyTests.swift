@@ -81,7 +81,7 @@ struct IOSPolicyTests {
     }
 
     @Test(arguments: [
-        ("purple", "blue"), ("indigo", "blue"), ("red", "orange"), ("mint", "cyan"), ("black", "cyan"),
+        ("purple", "blue"), ("indigo", "blue"), ("red", "orange"), ("mint", "cyan"), ("black", "cyan")
     ])
     func retiredAccentMigratesOnLaunch(stored: String, expected: String) throws {
         let suite = "IOSPolicyTests.accent.\(UUID())"

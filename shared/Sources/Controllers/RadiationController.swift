@@ -1,7 +1,7 @@
+import DoomKitLocation
+import DoomKitProcess
 import DoomKitServices
 import DoomKitTools
-import DoomKitProcess
-import DoomKitLocation
 import Foundation
 
 class RadiationController: ProcessController {

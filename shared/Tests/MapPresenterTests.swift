@@ -45,7 +45,8 @@ import Testing
         self.presenter.updateRegion(for: id, with: Self.munich)
         #expect(self.presenter.visibleRegion[id] == Self.munich)
         // The rectangle is rebuilt from the visible locations, not added to, so the old position does not stretch it.
-        #expect(MKMapRectEqualToRect(self.presenter.visibleRectangle, MapPresenter.rectangle(for: Array(self.presenter.visibleRegion.values))) == true)
+        #expect(
+            MKMapRectEqualToRect(self.presenter.visibleRectangle, MapPresenter.rectangle(for: Array(self.presenter.visibleRegion.values))) == true)
     }
 
     @Test func anUpdateWithoutACheckKeepsTheOneItHas() {

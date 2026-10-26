@@ -60,6 +60,3 @@ extension View {
         self.modifier(QualityCodeViewModifier(qualityCode: quality, opaque: opaque))
     }
 }
-
-
-

@@ -72,9 +72,11 @@ private struct FamilySection: View {
                         ForEach(self.levelPresenter.readings) { reading in
                             LabeledContent(reading.sensor.name, value: Self.summary(WarningEvaluator.marks(of: reading.sensor)))
                         }
-                        Text("Each gauge against its own official marks: a warning at the first flood stage or the mean high water, critical at the second stage, the highest navigable level or the record high. Gauges without marks raise nothing.")
-                            .font(.footnote)
-                            .foregroundColor(.gray)
+                        Text(
+                            "Each gauge against its own official marks: a warning at the first flood stage or the mean high water, critical at the second stage, the highest navigable level or the record high. Gauges without marks raise nothing."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.gray)
                     case .hazards:
                         HazardSeverityRows()
                     default:

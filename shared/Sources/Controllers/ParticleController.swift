@@ -1,7 +1,7 @@
+import DoomKitLocation
+import DoomKitProcess
 import DoomKitServices
 import DoomKitTools
-import DoomKitProcess
-import DoomKitLocation
 import Foundation
 
 class ParticleController: ProcessController {
@@ -247,9 +247,10 @@ class ParticleController: ProcessController {
                 // Only as many as are still missing, so a single station is still probed one at a time and nothing is fetched in vain.
                 let batch = Array(stations[next ..< Swift.min(next + count - qualifying.count, stations.count)])
                 next += batch.count
-                let probed = (try? await batch.concurrentCompactMap(limit: Self.probeConcurrency) { station in
-                    return await probe(station).map { (station, $0) }
-                }) ?? []
+                let probed =
+                    (try? await batch.concurrentCompactMap(limit: Self.probeConcurrency) { station in
+                        return await probe(station).map { (station, $0) }
+                    }) ?? []
                 if Task.isCancelled == true {
                     return []
                 }
@@ -287,7 +288,9 @@ class ParticleController: ProcessController {
                             if let measurementSequence = features[featureId] as? [String: [Any]] {
                                 for (_, measurementValues) in measurementSequence {
                                     if let measurementEnd = measurementValues[0] as? String {
-                                        if let timestamp = Date.fromString(measurementEnd, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone) {
+                                        if let timestamp = Date.fromString(
+                                            measurementEnd, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone)
+                                        {
                                             for measurementItems in measurementValues[3...] {
                                                 if let measurementItem = measurementItems as? [Any] {
                                                     if let componentId = measurementItem[0] as? Int {
@@ -345,7 +348,8 @@ class ParticleController: ProcessController {
             guard let end = row[0] as? String,
                 let timestamp = Date.fromString(end, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone)
             else { continue }
-            if let created = row[1] as? String, let date = Date.fromString(created, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone) {
+            if let created = row[1] as? String, let date = Date.fromString(created, format: "yyyy-MM-dd HH:mm:ss", timeZone: Self.serviceTimeZone)
+            {
                 issued = max(issued ?? date, date)
             }
             for item in row[4...] {

@@ -75,7 +75,8 @@ import Testing
 
     @Test(arguments: [nil, "Elbe"] as [String?])
     func withoutAMatchingWaterwayTheFirstIsTheNearestAndTheExtrasFollow(waterwayName: String?) {
-        let selected = LevelController.selectStations(from: Self.mixed, near: Self.user, waterwayName: waterwayName, limit: 3, otherWaterways: true)
+        let selected = LevelController.selectStations(
+            from: Self.mixed, near: Self.user, waterwayName: waterwayName, limit: 3, otherWaterways: true)
         #expect(Self.ids(selected) == ["h1", "l1", "s1"])
     }
 
@@ -87,7 +88,10 @@ import Testing
 
     @Test func fewerGaugesThanTheLimitAreAllReported() {
         let two = [Self.mixed[0], Self.mixed[2]]
-        #expect(Self.ids(LevelController.selectStations(from: two, near: Self.user, waterwayName: "Spree", limit: 3, otherWaterways: true)) == ["s1", "h1"])
+        #expect(
+            Self.ids(LevelController.selectStations(from: two, near: Self.user, waterwayName: "Spree", limit: 3, otherWaterways: true)) == [
+                "s1", "h1"
+            ])
         #expect(LevelController.selectStations(from: [], near: Self.user, waterwayName: "Spree", limit: 3, otherWaterways: true).isEmpty == true)
     }
 

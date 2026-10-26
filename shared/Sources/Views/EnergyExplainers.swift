@@ -13,6 +13,6 @@ enum EnergyExplainers {
             + "Dates refer to market sessions; between updates the latest available quote or close is shown. The contract rolls as expiry approaches.",
         .energy(.lng):
             "Liquefied natural gas delivered by ship to Europe, per megawatt hour of gas, as assessed each weekday by ACER, the EU energy "
-            + "regulator. Germany has imported much of its gas as LNG since 2022, so this follows what heating and power cost here.",
+            + "regulator. Germany has imported much of its gas as LNG since 2022, so this follows what heating and power cost here."
     ]
 }

@@ -1,5 +1,5 @@
-import DoomKitProcess
 import DoomKitLocation
+import DoomKitProcess
 import Foundation
 import Testing
 
@@ -12,9 +12,15 @@ struct PublicAPITests {
         func refreshData(location: Location) async {}
     }
     private final class Transformer: ProcessTransformer {
-        override func renderCurrent(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ProcessValue<Dimension>] { return [:] }
-        override func renderFaceplate(current: [ProcessSelector: ProcessValue<Dimension>]) -> [ProcessSelector: String] { return [.water(.level): "override"] }
-        override func renderRange(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ClosedRange<Double>] { return [:] }
+        override func renderCurrent(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ProcessValue<Dimension>] {
+            return [:]
+        }
+        override func renderFaceplate(current: [ProcessSelector: ProcessValue<Dimension>]) -> [ProcessSelector: String] {
+            return [.water(.level): "override"]
+        }
+        override func renderRange(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ClosedRange<Double>] {
+            return [:]
+        }
         override func renderTrend(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: String] { return [:] }
         override func renderData(sensor: ProcessSensor) throws { try super.renderData(sensor: sensor) }
     }
@@ -22,16 +28,20 @@ struct PublicAPITests {
     @MainActor @Test func modelsAndOverrides() throws {
         let location = Location(latitude: 52, longitude: 13)
         let date = Date.now.addingTimeInterval(-60)
-        let value = ProcessValue<Dimension>(value: Measurement(value: 2, unit: UnitLength.meters), customData: ["nested": ["answer": 42]], quality: .good, timestamp: date)
-        let previous = ProcessValue<Dimension>(value: Measurement(value: 1, unit: UnitLength.meters), quality: .good, timestamp: date.addingTimeInterval(-60))
-        let sensor = ProcessSensor(name: "Station", location: location, placemark: "Berlin", customData: ["icon": "water.waves"], measurements: [.water(.level): [previous, value]], timestamp: date)
+        let value = ProcessValue<Dimension>(
+            value: Measurement(value: 2, unit: UnitLength.meters), customData: ["nested": ["answer": 42]], quality: .good, timestamp: date)
+        let previous = ProcessValue<Dimension>(
+            value: Measurement(value: 1, unit: UnitLength.meters), quality: .good, timestamp: date.addingTimeInterval(-60))
+        let sensor = ProcessSensor(
+            name: "Station", location: location, placemark: "Berlin", customData: ["icon": "water.waves"],
+            measurements: [.water(.level): [previous, value]], timestamp: date)
         #expect((value.customData?["nested"] as? [String: Int])?["answer"] == 42)
         #expect(value.id != previous.id)
         let transformer = ProcessTransformer()
         try transformer.renderData(sensor: sensor)
         #expect(transformer.current[.water(.level)]?.id == value.id)
         #expect(transformer.faceplate[.water(.level)] == "2.00m")
-        #expect(transformer.range[.water(.level)] == 1...2)
+        #expect(transformer.range[.water(.level)] == 1 ... 2)
         #expect(transformer.trend[.water(.level)] == "arrow.up.forward.circle")
         let presenter = Presenter()
         presenter.replace(readings: [ProcessReading(sensor: sensor, transformer: transformer)])
@@ -53,10 +63,13 @@ struct PublicAPITests {
         let origin = Location(latitude: 52, longitude: 13)
         let date = Date.now.addingTimeInterval(-60)
         let sensors = (0 ..< 3).map { index in
-            let value = ProcessValue<Dimension>(value: Measurement(value: Double(index + 1), unit: UnitLength.meters), quality: .good, timestamp: date)
+            let value = ProcessValue<Dimension>(
+                value: Measurement(value: Double(index + 1), unit: UnitLength.meters), quality: .good, timestamp: date)
             return ProcessSensor(
-                name: "Station \(index)", location: Location(latitude: 52 + Double(index) * 0.01, longitude: 13), placemark: index == 0 ? "Berlin" : nil,
-                customData: ["icon": "water.waves"], measurements: [.water(.level): [value]], timestamp: date, sourceID: "id-\(index)", distance: Double(index) * 1000)
+                name: "Station \(index)", location: Location(latitude: 52 + Double(index) * 0.01, longitude: 13),
+                placemark: index == 0 ? "Berlin" : nil,
+                customData: ["icon": "water.waves"], measurements: [.water(.level): [value]], timestamp: date, sourceID: "id-\(index)",
+                distance: Double(index) * 1000)
         }
         let readings = try sensors.map { sensor in
             let transformer = ProcessTransformer()
@@ -93,7 +106,8 @@ struct PublicAPITests {
         func reading(sourceID: String?, values: [(Double, ProcessQuality)]) -> ProcessReading {
             let series = values.enumerated().map { index, entry in
                 return ProcessValue<Dimension>(
-                    value: Measurement(value: entry.0, unit: UnitLength.meters), quality: entry.1, timestamp: date.addingTimeInterval(Double(index)))
+                    value: Measurement(value: entry.0, unit: UnitLength.meters), quality: entry.1,
+                    timestamp: date.addingTimeInterval(Double(index)))
             }
             let sensor = ProcessSensor(
                 name: "Station", location: location, placemark: nil, customData: nil, measurements: [.water(.level): series], timestamp: date,
@@ -157,7 +171,10 @@ struct PublicAPITests {
         #expect(minDistance([far, near], from: origin).value == 0)
         #expect(maxDistance([far, near], from: origin).value > 100_000)
         #expect(maxDistance([Place](), from: origin).value == 0)
-        let polygon = [Location(latitude: -0.5, longitude: -0.5), Location(latitude: 0.5, longitude: -0.5), Location(latitude: 0.5, longitude: 0.5), Location(latitude: -0.5, longitude: 0.5)]
+        let polygon = [
+            Location(latitude: -0.5, longitude: -0.5), Location(latitude: 0.5, longitude: -0.5), Location(latitude: 0.5, longitude: 0.5),
+            Location(latitude: -0.5, longitude: 0.5)
+        ]
         #expect(isItemInPolygon(near, polygon: polygon) == true)
         #expect(filterItemsInPolygon([near, far], polygon: polygon).count == 1)
         #expect(isPointInPolygon(point: origin, polygon: []) == false)

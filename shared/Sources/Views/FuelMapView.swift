@@ -54,7 +54,9 @@ struct FuelMapView: View {
 
     /// One pin per ranked station. The id is the provider's own, so a station keeps its label placement across refreshes, and the rank
     /// rides in the icon so the price keeps the text slot at full size.
-    static func annotations(stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest, openOnly: Bool = true) -> [MapAnnotationSnapshot] {
+    static func annotations(
+        stations: [FuelStation], fuel: FuelStation.Fuel, order: Order = .dearest, openOnly: Bool = true
+    ) -> [MapAnnotationSnapshot] {
         return Self.ranked(stations: stations, fuel: fuel, order: order, openOnly: openOnly).enumerated().map { index, station in
             // A closed station, only there when the user asked for them, carries a lock instead of its rank.
             return MapAnnotationSnapshot(

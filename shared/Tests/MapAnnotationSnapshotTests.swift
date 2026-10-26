@@ -8,7 +8,8 @@ import Testing
 @Suite struct MapAnnotationSnapshotTests {
     @Test func aSnapshotFromValuesCarriesThemAndIsNotTheUser() {
         let location = Location(latitude: 52.5, longitude: 13.4)
-        let snapshot = MapAnnotationSnapshot(id: "water-a", location: location, selector: .water(.level), icon: "water.waves", faceplate: "H: 2.73m")
+        let snapshot = MapAnnotationSnapshot(
+            id: "water-a", location: location, selector: .water(.level), icon: "water.waves", faceplate: "H: 2.73m")
         #expect(snapshot.id == "water-a")
         #expect(snapshot.location == location)
         #expect(snapshot.selector == .water(.level))
@@ -16,9 +17,12 @@ import Testing
         #expect(snapshot.faceplate == "H: 2.73m")
         #expect(snapshot.showsLabel == true)
         #expect(snapshot.user == false)
-        #expect(MapAnnotationSnapshot(id: "a", location: location, selector: .water(.level), icon: "x", faceplate: "y", showsLabel: false).showsLabel == false)
+        #expect(
+            MapAnnotationSnapshot(id: "a", location: location, selector: .water(.level), icon: "x", faceplate: "y", showsLabel: false).showsLabel
+                == false)
         // The user's own marker belongs to no presenter, so the value init has to be able to flag it.
-        #expect(MapAnnotationSnapshot(id: "user", location: location, selector: .water(.level), icon: "x", faceplate: "y", user: true).user == true)
+        #expect(
+            MapAnnotationSnapshot(id: "user", location: location, selector: .water(.level), icon: "x", faceplate: "y", user: true).user == true)
     }
 
     @Test func aSnapshotUsesItsSelectorColorUnlessItHasOneOfItsOwn() {

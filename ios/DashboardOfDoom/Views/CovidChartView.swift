@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 struct CovidChartView: View {
@@ -53,7 +53,8 @@ struct CovidChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
@@ -110,7 +111,9 @@ struct CovidChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.1f%@", color: self.colorScheme.markerColor, xLabel: "Date", yLabel: "Value")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.1f%@", color: self.colorScheme.markerColor, xLabel: "Date",
+                            yLabel: "Value")
                     }
                 }
             }

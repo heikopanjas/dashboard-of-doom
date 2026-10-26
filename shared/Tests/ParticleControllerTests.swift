@@ -24,7 +24,8 @@ import Testing
     private static func measurements(_ selectors: [ProcessSelector]) -> [ProcessSelector: [ProcessValue<Dimension>]] {
         var result: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
         for selector in selectors {
-            let value = ProcessValue<Dimension>(value: Measurement(value: 1, unit: UnitConcentrationMass.microgramsPerCubicMeter), quality: .good, timestamp: .now)
+            let value = ProcessValue<Dimension>(
+                value: Measurement(value: 1, unit: UnitConcentrationMass.microgramsPerCubicMeter), quality: .good, timestamp: .now)
             result[selector] = [value]
         }
         return result

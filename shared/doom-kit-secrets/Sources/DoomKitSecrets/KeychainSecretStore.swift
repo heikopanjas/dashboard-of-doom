@@ -60,7 +60,7 @@ public final class KeychainSecretStore: SecretStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: key.name,
             kSecAttrSynchronizable as String: true,
-            kSecUseDataProtectionKeychain as String: true,
+            kSecUseDataProtectionKeychain as String: true
         ]
     }
 }

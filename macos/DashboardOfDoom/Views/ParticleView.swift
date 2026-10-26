@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 /// The Particles tab: the map of the stations, then one section per station, nearest first, each with its header and the two-column grid

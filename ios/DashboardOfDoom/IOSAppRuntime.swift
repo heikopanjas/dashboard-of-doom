@@ -14,12 +14,13 @@ final class IOSAppRuntime {
     let fuel = FuelPresenter()
     let colors = ColorPresenter()
     let simulation = SimulationPresenter()
-    let pointsOfInterest = PointOfInterestPresenter(fetch: { category, location in
-        #if DEBUG
-        if IOSPreviewData.isEnabled == true { return IOSPreviewData.points(category: category) }
-        #endif
-        return try await PointOfInterestController().fetch(category: category, location: location)
-    }, fetchesWhenHidden: true)
+    let pointsOfInterest = PointOfInterestPresenter(
+        fetch: { category, location in
+            #if DEBUG
+            if IOSPreviewData.isEnabled == true { return IOSPreviewData.points(category: category) }
+            #endif
+            return try await PointOfInterestController().fetch(category: category, location: location)
+        }, fetchesWhenHidden: true)
 
     lazy var lifecycle = AppActivityLifecycle(
         start: { [weak self] in

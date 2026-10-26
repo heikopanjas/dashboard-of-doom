@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 /// The Level tab: the map of the gauges, then one card per gauge, nearest first. Up to six with Multiple Sensors on, else the nearest.
@@ -19,7 +19,9 @@ struct LevelView: View {
                 else {
                     SensorCardGrid(readings: readings, colorSelector: .water(.level)) { reading in
                         // Any value counts: a level can be zero or below its gauge zero at low water, as the Rhine at Koblenz was.
-                        ForEach(ProcessSelector.Water.allCases.filter { reading.isAvailable(selector: .water($0), treshold: -.infinity) }, id: \.self) {
+                        ForEach(
+                            ProcessSelector.Water.allCases.filter { reading.isAvailable(selector: .water($0), treshold: -.infinity) }, id: \.self
+                        ) {
                             selector in
                             VStack {
                                 LevelChartView(reading: reading, selector: .water(selector))

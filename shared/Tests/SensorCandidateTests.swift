@@ -27,7 +27,9 @@ import Testing
     private static func candidate(_ id: String, north: Double, data: Bool = true) -> SensorCandidate {
         var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
         if data == true {
-            measurements[.water(.level)] = [ProcessValue<Dimension>(value: Measurement(value: 1, unit: UnitLength.meters), quality: .good, timestamp: .now)]
+            measurements[.water(.level)] = [
+                ProcessValue<Dimension>(value: Measurement(value: 1, unit: UnitLength.meters), quality: .good, timestamp: .now)
+            ]
         }
         return SensorCandidate(id: id, name: "Name \(id)", location: Self.location(north), customData: ["icon": "x"], measurements: measurements)
     }

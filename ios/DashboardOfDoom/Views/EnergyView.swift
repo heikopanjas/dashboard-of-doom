@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 /// The Energy tab: a chart per price. There is one sensor and it has no place, so the location row names the sources instead.

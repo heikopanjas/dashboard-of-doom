@@ -8,7 +8,7 @@ import Testing
 @Suite struct CovidMapViewTests {
     private let ring = [
         Location(latitude: 52.50, longitude: 13.35), Location(latitude: 52.55, longitude: 13.35),
-        Location(latitude: 52.55, longitude: 13.42), Location(latitude: 52.50, longitude: 13.42),
+        Location(latitude: 52.55, longitude: 13.42), Location(latitude: 52.50, longitude: 13.42)
     ]
 
     private func reading(polygons: [[Location]]?, faceplate: [ProcessSelector: String] = [.covid(.incidence): "Ο: 142.7"]) -> ProcessReading {

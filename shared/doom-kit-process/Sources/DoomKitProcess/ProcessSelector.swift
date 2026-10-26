@@ -56,29 +56,29 @@ public enum ProcessSelector: Hashable {
     }
 
     public enum Water: Int, CaseIterable {
-        case level = 0 // W, WASSERSTAND, cm
-        case waterTemperature = 1 // WT, WASSERTEMPERATUR, °C
-        case electricalConductivity = 2 // LF, ELEKTRISCHE LEITFÄHIGKEIT, mS/cm
-        case discharge = 3 // Q, ABFLUSS, m³/s
-        case clearanceHeight = 4 // DFH, DURCHFAHRTSHÖHE, cm
-        case airTemperature = 5 // LT, LUFTTEMPERATUR, °C
-        case flowVelocity = 6 // VA, FLIESSGESCHWINDIGKEIT, m/s
-        case groundWater = 7 // GRU, GRUNDWASSER, m
-        case windSpeed = 8 // WG, WINDGESCHWINDIGKEIT, m/s
-        case humidity = 9 // HL, LUFTFEUCHTE, %
-        case oxygenConcentration = 10 // O2, SAUERSTOFFGEHALT, mg/l
-        case turbity = 11 // TR, TRÜBUNG, FNU
-        case windDirection = 12 // WR, WINDRICHTUNG, °
-        case salinity = 13 // S, SALINITÄT, %
-        case precipitation = 14 // NIEDERSCHLAG, NIEDERSCHLAG, mm
-        case precipitationIntensity = 15 // NIEDERSCHLAGSINTENSITÄT, NIEDERSCHLAGSINTENSITÄT, mm/h
-        case wavePeriod = 16 // TP, WELLENPERIODE, s
-        case significantWaveHeight = 17 // SIGH, SIGNIFIKANTEWELLENHÖHE, m
-        case maximumWaveHeight = 18 // MAXH, MAXIMALEWELLENHÖHE, m
-        case primarySwellDirection = 19 // DIRTP, RICHTUNG HAUPTSEEGANG, °
-        case flowDirection = 20 // RV, STRÖMUNGSRICHTUNG, °
-        case pH = 21 // PH, PH-WERT, ---
-        case chloride = 22 // CL, CHLORID, mg/l
+        case level = 0  // W, WASSERSTAND, cm
+        case waterTemperature = 1  // WT, WASSERTEMPERATUR, °C
+        case electricalConductivity = 2  // LF, ELEKTRISCHE LEITFÄHIGKEIT, mS/cm
+        case discharge = 3  // Q, ABFLUSS, m³/s
+        case clearanceHeight = 4  // DFH, DURCHFAHRTSHÖHE, cm
+        case airTemperature = 5  // LT, LUFTTEMPERATUR, °C
+        case flowVelocity = 6  // VA, FLIESSGESCHWINDIGKEIT, m/s
+        case groundWater = 7  // GRU, GRUNDWASSER, m
+        case windSpeed = 8  // WG, WINDGESCHWINDIGKEIT, m/s
+        case humidity = 9  // HL, LUFTFEUCHTE, %
+        case oxygenConcentration = 10  // O2, SAUERSTOFFGEHALT, mg/l
+        case turbity = 11  // TR, TRÜBUNG, FNU
+        case windDirection = 12  // WR, WINDRICHTUNG, °
+        case salinity = 13  // S, SALINITÄT, %
+        case precipitation = 14  // NIEDERSCHLAG, NIEDERSCHLAG, mm
+        case precipitationIntensity = 15  // NIEDERSCHLAGSINTENSITÄT, NIEDERSCHLAGSINTENSITÄT, mm/h
+        case wavePeriod = 16  // TP, WELLENPERIODE, s
+        case significantWaveHeight = 17  // SIGH, SIGNIFIKANTEWELLENHÖHE, m
+        case maximumWaveHeight = 18  // MAXH, MAXIMALEWELLENHÖHE, m
+        case primarySwellDirection = 19  // DIRTP, RICHTUNG HAUPTSEEGANG, °
+        case flowDirection = 20  // RV, STRÖMUNGSRICHTUNG, °
+        case pH = 21  // PH, PH-WERT, ---
+        case chloride = 22  // CL, CHLORID, mg/l
     }
 
     public static func water(from rawValue: Int) -> ProcessSelector? {
@@ -192,5 +192,3 @@ public enum ProcessSelector: Hashable {
         }
     }
 }
-
-

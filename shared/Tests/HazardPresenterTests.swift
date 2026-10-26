@@ -89,7 +89,11 @@ struct HazardPresenterTests {
         await second.value
         #expect(fixture.presenter.hazards.map(\.id) == ["storm"])
         #expect(fixture.presenter.timestamp == loadedAt)
-        if case .failed = fixture.presenter.state {} else { Issue.record("expected a failed state") }
+        if case .failed = fixture.presenter.state {
+        }
+        else {
+            Issue.record("expected a failed state")
+        }
     }
 
     @Test func disablingRemovesRegistrationAndSkipsFetch() async throws {

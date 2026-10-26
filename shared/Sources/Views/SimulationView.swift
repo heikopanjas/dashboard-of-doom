@@ -20,7 +20,8 @@ struct SimulationView: View {
 
     init(start: Location, onStart: @escaping (Location, String?) -> Void) {
         self.onStart = onStart
-        self._camera = State(initialValue: .region(MKCoordinateRegion(center: start.coordinate, latitudinalMeters: 60_000, longitudinalMeters: 60_000)))
+        self._camera = State(
+            initialValue: .region(MKCoordinateRegion(center: start.coordinate, latitudinalMeters: 60_000, longitudinalMeters: 60_000)))
     }
 
     var body: some View {
@@ -77,7 +78,7 @@ struct SimulationView: View {
         } label: {
             Text("Start")
                 #if os(iOS)
-                .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)
                 #endif
         }
         .keyboardShortcut(.defaultAction)

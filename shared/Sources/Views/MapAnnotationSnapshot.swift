@@ -18,7 +18,9 @@ struct MapAnnotationSnapshot: Identifiable {
         return self.color ?? Color.faceplate(selector: self.selector)
     }
 
-    @MainActor init(id: String, presenter: ProcessPresenter, selector: ProcessSelector, user: Bool = false, showsLabel: Bool = true, location: Location? = nil) {
+    @MainActor init(
+        id: String, presenter: ProcessPresenter, selector: ProcessSelector, user: Bool = false, showsLabel: Bool = true, location: Location? = nil
+    ) {
         self.id = id
         self.location = location ?? presenter.location
         self.selector = selector

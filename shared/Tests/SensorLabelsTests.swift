@@ -13,7 +13,8 @@ import Testing
 
     @Test func theNearestShowsItsAddressTheOthersTheirStation() {
         #expect(SensorLabels.title(for: self.reading(name: "X", placemark: "Tiergarten"), isNearest: true) == "Tiergarten")
-        #expect(SensorLabels.title(for: self.reading(name: "BERLIN-MÜHLENDAMM UP", placemark: "Mitte"), isNearest: false) == "Berlin-Mühlendamm UP")
+        #expect(
+            SensorLabels.title(for: self.reading(name: "BERLIN-MÜHLENDAMM UP", placemark: "Mitte"), isNearest: false) == "Berlin-Mühlendamm UP")
     }
 
     @Test func theOthersSayHowFarAway() {

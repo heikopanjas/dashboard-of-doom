@@ -1,9 +1,9 @@
 import Compression
+import DoomKitLocation
 import DoomKitNetwork
+import DoomKitProcess
 import DoomKitServices
 import DoomKitTools
-import DoomKitProcess
-import DoomKitLocation
 import Foundation
 
 class LevelController: ProcessController {
@@ -14,13 +14,15 @@ class LevelController: ProcessController {
     private let showForecasts: @Sendable () -> Bool
     private let measurementDistance: TimeInterval
 
-    init(networkManager: NetworkManager = .shared,
+    init(
+        networkManager: NetworkManager = .shared,
         nearestSensor: @escaping @Sendable () -> Bool = { return UserDefaults.standard.bool(forKey: SourcePreferences.nearestLevelSensorKey) },
         sensorLimit: @escaping @Sendable () -> Int = { return SourcePreferences.sensorLimit(forKey: SourcePreferences.multiSensorLevelKey) },
         otherWaterways: @escaping @Sendable () -> Bool = {
             return UserDefaults.standard.bool(forKey: SourcePreferences.multiSensorLevelOtherWaterwaysKey)
         },
-        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.level) }) {
+        showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.level) }
+    ) {
         self.networkManager = networkManager
         self.nearestSensor = nearestSensor
         self.sensorLimit = sensorLimit
@@ -128,7 +130,9 @@ class LevelController: ProcessController {
     /// The gauges to report. Normally all of them follow one rule: the nearest gauges on the waterway, or the nearest overall. With
     /// `otherWaterways` only the first does; the rest are the nearest remaining gauges, whatever waterway they are on. They come after the
     /// first, so one of them can be nearer than it when it is on another waterway.
-    static func selectStations(from stations: [Station], near location: Location, waterwayName: String?, limit: Int, otherWaterways: Bool = false) -> [Station] {
+    static func selectStations(
+        from stations: [Station], near location: Location, waterwayName: String?, limit: Int, otherWaterways: Bool = false
+    ) -> [Station] {
         if otherWaterways == false || limit <= 1 {
             return Self.selectStationsOnWaterway(from: stations, near: location, waterwayName: waterwayName, limit: limit)
         }
@@ -140,7 +144,8 @@ class LevelController: ProcessController {
         return selected
     }
 
-    private static func selectStationsOnWaterway(from stations: [Station], near location: Location, waterwayName: String?, limit: Int) -> [Station] {
+    private static func selectStationsOnWaterway(from stations: [Station], near location: Location, waterwayName: String?, limit: Int) -> [Station]
+    {
         var selected: [Station] = []
         if let waterwayName = waterwayName {
             // Only the gauges of that waterway: mixing in gauges of other rivers would break the order by distance along one water body.
@@ -260,7 +265,9 @@ class LevelController: ProcessController {
     /// The gauge's characteristic values and whether it has a forecast, never throwing: marks only add warnings and a forecast only adds a
     /// line, so a failure must not cost the gauge its readings.
     private func fetchCharacteristics(station: Station, includeForecast: Bool) async -> (marks: [String: Double]?, hasForecast: Bool) {
-        guard let data = try? await LevelService.fetchCharacteristics(for: station.id, includeForecast: includeForecast, networkManager: self.networkManager)
+        guard
+            let data = try? await LevelService.fetchCharacteristics(
+                for: station.id, includeForecast: includeForecast, networkManager: self.networkManager)
         else { return (nil, false) }
         return (Self.parseMarks(data: data), Self.hasForecast(data: data))
     }

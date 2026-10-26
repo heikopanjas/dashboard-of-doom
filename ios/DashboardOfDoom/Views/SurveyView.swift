@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 struct SurveyView: View {
@@ -41,7 +41,7 @@ struct SurveyView: View {
                 }
                 .font(.footnote)
                 #endif
-                
+
                 ForEach(ProcessSelector.Survey.allCases, id: \.self) { selector in
                     if self.presenter.isAvailable(selector: .survey(selector)) {
                         VStack {

@@ -84,12 +84,17 @@ struct HazardControllerTests {
             "type": "FeatureCollection",
             "features": [
                 ["geometry": ["type": "Polygon", "coordinates": [[[13.0, 52.0], [13.1, 52.0], [13.1, 52.1], [13.0, 52.0]]]]],
-                ["geometry": ["type": "MultiPolygon", "coordinates": [
-                    [[[14.0, 53.0], [14.1, 53.0], [14.1, 53.1], [14.0, 53.0]]],
-                    [[[15.0, 54.0], [15.1, 54.0], [15.1, 54.1], [15.0, 54.0]]],
-                ]]],
-                ["geometry": ["type": "Point", "coordinates": [1.0, 2.0]]],
-            ],
+                [
+                    "geometry": [
+                        "type": "MultiPolygon",
+                        "coordinates": [
+                            [[[14.0, 53.0], [14.1, 53.0], [14.1, 53.1], [14.0, 53.0]]],
+                            [[[15.0, 54.0], [15.1, 54.0], [15.1, 54.1], [15.0, 54.0]]]
+                        ]
+                    ]
+                ],
+                ["geometry": ["type": "Point", "coordinates": [1.0, 2.0]]]
+            ]
         ]
         let polygons = GeoJSON.polygons(fromFeatureCollection: json)
         #expect(polygons.count == 3)
@@ -106,7 +111,8 @@ struct HazardControllerTests {
         }
         #expect(
             hazard("dwdmap.2.49.0.0.276.0.DWD.PVW.1789822740000.0e032817-18f7-4426-ba05-2d596cd4616b.MUL").sourceURL?.absoluteString
-                == "https://warnung.bund.de/meldungen/dwdmap.2.49.0.0.276.0.DWD.PVW.1789822740000.0e032817-18f7-4426-ba05-2d596cd4616b.MUL/warnung/")
+                == "https://warnung.bund.de/meldungen/dwdmap.2.49.0.0.276.0.DWD.PVW.1789822740000.0e032817-18f7-4426-ba05-2d596cd4616b.MUL/warnung/"
+        )
         #expect(
             hazard("mow.DE-SL-SLS-W038-20260904-000").sourceURL?.absoluteString
                 == "https://warnung.bund.de/meldungen/mow.DE-SL-SLS-W038-20260904-000/warnung/")
@@ -116,7 +122,7 @@ struct HazardControllerTests {
     @Test func placementKeepsInsideAndNearbyAndDropsFarAlerts() {
         let around = [
             Location(latitude: 52.4, longitude: 13.2), Location(latitude: 52.4, longitude: 13.5),
-            Location(latitude: 52.6, longitude: 13.5), Location(latitude: 52.6, longitude: 13.2),
+            Location(latitude: 52.6, longitude: 13.5), Location(latitude: 52.6, longitude: 13.2)
         ]
         let candidate = HazardController.Candidate(id: "in", feed: .dwd, expires: nil)
         let inside = HazardController.place(candidate, polygons: [around], near: Self.hkw)
@@ -125,7 +131,7 @@ struct HazardControllerTests {
         // Roughly 30 km east of HKW: inside the 50 km weather radius, outside the 25 km civil one.
         let east = [
             Location(latitude: 52.4, longitude: 13.8), Location(latitude: 52.4, longitude: 14.0),
-            Location(latitude: 52.6, longitude: 14.0), Location(latitude: 52.6, longitude: 13.8),
+            Location(latitude: 52.6, longitude: 14.0), Location(latitude: 52.6, longitude: 13.8)
         ]
         let weather = HazardController.place(HazardController.Candidate(id: "w", feed: .dwd, expires: nil), polygons: [east], near: Self.hkw)
         let civil = HazardController.place(HazardController.Candidate(id: "c", feed: .mowas, expires: nil), polygons: [east], near: Self.hkw)

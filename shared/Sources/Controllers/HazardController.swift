@@ -117,7 +117,7 @@ struct HazardController {
                     return Self.place(candidate, polygons: GeoJSON.polygons(fromFeatureCollection: json), near: location)
                 }
             }
-            for _ in 0..<Self.regionConcurrency {
+            for _ in 0 ..< Self.regionConcurrency {
                 if let next = iterator.next() { submit(next) }
             }
             var placed: [Placed] = []
@@ -133,7 +133,8 @@ struct HazardController {
         if polygons.contains(where: { isPointInPolygon(point: location, polygon: $0) }) {
             return Placed(candidate: candidate, location: location, distance: 0)
         }
-        let nearest = polygons
+        let nearest =
+            polygons
             .compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0) }
             .min { $0.distance < $1.distance }
         guard let nearest, nearest.distance <= Self.radius(for: candidate.feed) else { return nil }
@@ -173,7 +174,7 @@ struct HazardController {
                         placemark: placemark)
                 }
             }
-            for _ in 0..<Self.detailConcurrency {
+            for _ in 0 ..< Self.detailConcurrency {
                 if let next = iterator.next() { submit(next) }
             }
             var hazards: [Hazard] = []

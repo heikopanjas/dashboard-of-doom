@@ -1,6 +1,6 @@
-import DoomKitProcess
-import DoomKitNetwork
 import AppKit
+import DoomKitNetwork
+import DoomKitProcess
 import KeyboardShortcuts
 import SwiftUI
 
@@ -59,9 +59,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let fuelPresenter = FuelPresenter()
     let colorPresenter = ColorPresenter()
     // Every category keeps loading whatever the map shows, for the nearest places row on the Home tab, as on iOS.
-    let pointOfInterestPresenter = PointOfInterestPresenter(fetch: { category, location in
-        return try await PointOfInterestController().fetch(category: category, location: location)
-    }, fetchesWhenHidden: true)
+    let pointOfInterestPresenter = PointOfInterestPresenter(
+        fetch: { category, location in
+            return try await PointOfInterestController().fetch(category: category, location: location)
+        }, fetchesWhenHidden: true)
 
     let settingsSelection = SettingsSelection()
     var settingsPanel: NSPanel?

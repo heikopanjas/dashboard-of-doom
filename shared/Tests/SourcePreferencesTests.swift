@@ -79,7 +79,7 @@ import Testing
             (SourcePreferences.particlesKey, { SourcePreferences.particlesVisible(defaults: $0) }),
             (SourcePreferences.hazardsKey, { SourcePreferences.hazardsVisible(defaults: $0) }),
             (SourcePreferences.energyEnableKey, { SourcePreferences.energyVisible(defaults: $0) }),
-            (SourcePreferences.pollsEnableKey, { SourcePreferences.pollsVisible(defaults: $0) }),
+            (SourcePreferences.pollsEnableKey, { SourcePreferences.pollsVisible(defaults: $0) })
         ]
         #expect(Set(sources.map { $0.0 }) == Set(SourcePreferences.switchKeys))
         for (key, visible) in sources {
@@ -100,9 +100,10 @@ import Testing
 
     @Test func eachSourceHasItsOwnForecastSwitch() {
         // Stored in the user's defaults and passed as launch arguments, so a rename would silently reset the setting.
-        #expect(ForecastFamily.allCases.map(\.key) == [
-            "forecastLevel", "forecastRadiation", "forecastParticles", "forecastCovid", "forecastEnergy", "forecastPolls"
-        ])
+        #expect(
+            ForecastFamily.allCases.map(\.key) == [
+                "forecastLevel", "forecastRadiation", "forecastParticles", "forecastCovid", "forecastEnergy", "forecastPolls"
+            ])
         // None is a source switch: they remove no tab.
         #expect(ForecastFamily.allCases.contains { SourcePreferences.switchKeys.contains($0.key) } == false)
     }

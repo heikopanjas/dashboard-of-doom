@@ -37,7 +37,9 @@ struct ForecastMarks: ChartContent {
 
     private var samples: [Sample] {
         var samples = self.forecast.points.map { point in
-            Sample(timestamp: point.timestamp, value: point.value.value, lower: point.lower ?? point.value.value, upper: point.upper ?? point.value.value)
+            Sample(
+                timestamp: point.timestamp, value: point.value.value, lower: point.lower ?? point.value.value,
+                upper: point.upper ?? point.value.value)
         }
         if let anchor = self.anchor, anchor.timestamp < (samples.first?.timestamp ?? .distantPast) {
             let value = anchor.value.value
@@ -105,8 +107,10 @@ struct ForecastMarker: ChartContent {
                 Text(String(format: self.format, self.point.value.value, self.point.value.unit.symbol))
                     .font(.headline)
                 if let lower = self.point.lower, let upper = self.point.upper {
-                    Text(String(format: "\(self.format) – \(self.format)", lower, self.point.value.unit.symbol, upper, self.point.value.unit.symbol))
-                        .font(.caption2)
+                    Text(
+                        String(format: "\(self.format) – \(self.format)", lower, self.point.value.unit.symbol, upper, self.point.value.unit.symbol)
+                    )
+                    .font(.caption2)
                 }
                 Text(ForecastDisplay.label(for: self.origin))
                     .font(.caption2)

@@ -79,7 +79,8 @@ enum IOSPreviewData {
             if presenter === runtime.levels || presenter === runtime.radiation {
                 series = Array(measurements.prefix(25))
                 let levels = presenter === runtime.levels
-                forecasts[selector] = Self.forecast(after: series, origin: levels ? .provider("PEGELONLINE") : .estimate("usual range"), widening: levels)
+                forecasts[selector] = Self.forecast(
+                    after: series, origin: levels ? .provider("PEGELONLINE") : .estimate("usual range"), widening: levels)
             }
             let sensor = ProcessSensor(
                 name: presenter === runtime.levels ? "BERLIN-HKW UP" : "HKW fixture", location: location, placemark: "HKW, Berlin",
@@ -99,7 +100,8 @@ enum IOSPreviewData {
         // the waterway their charts are titled with separately.
         Self.populateAdditionalSensors(
             runtime.levels, selector: .water(.level), unit: UnitLength.meters, value: 2.73, date: date,
-            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP", "BERLIN-SPANDAU OP", "BERLIN-KÖPENICK", "BERLIN-SCHMÖCKWITZ"], waterway: "Spree")
+            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP", "BERLIN-SPANDAU OP", "BERLIN-KÖPENICK", "BERLIN-SCHMÖCKWITZ"],
+            waterway: "Spree")
         Self.populateAdditionalSensors(
             runtime.radiation, selector: .radiation(.total), unit: UnitRadiation.microsieverts, value: 0.08, date: date,
             stations: ["Berlin-Marzahn", "Berlin-Tegel", "Berlin-Buch", "Berlin-Wannsee", "Berlin-Köpenick"])
@@ -110,15 +112,19 @@ enum IOSPreviewData {
         Self.populateConditions(runtime.weather, date: date)
         runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
         let energyDate = Date.round(from: date, strategy: .lastDayChange) ?? date
-        let energySeries = Dictionary(uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
-            let unit: Dimension = [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
-            let values = (0..<60).map { day in
-                return ProcessValue<Dimension>(value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
-                    timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
-            }
-            return (ProcessSelector.energy(selector), values)
-        })
-        let energySensor = ProcessSensor(name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
+        let energySeries = Dictionary(
+            uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
+                let unit: Dimension =
+                    [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
+                let values = (0 ..< 60).map { day in
+                    return ProcessValue<Dimension>(
+                        value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
+                        timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
+                }
+                return (ProcessSelector.energy(selector), values)
+            })
+        let energySensor = ProcessSensor(
+            name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
             placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"], measurements: energySeries, timestamp: date)
         if let readings = try? ProcessReading.render(sensors: [energySensor], transformer: { EnergyTransformer() }) {
             runtime.energy.replace(readings: readings)
@@ -175,7 +181,8 @@ enum IOSPreviewData {
             }
             let sensor = ProcessSensor(
                 name: station, location: location, placemark: nil, customData: customData,
-                measurements: [selector: series], timestamp: date, sourceID: "fixture-\(position)-\(station)", distance: 800 + Double(position) * 2_400)
+                measurements: [selector: series], timestamp: date, sourceID: "fixture-\(position)-\(station)",
+                distance: 800 + Double(position) * 2_400)
             readings.append(
                 ProcessReading(
                     sensor: sensor, measurements: [selector: series], current: [selector: series[24]],
@@ -188,7 +195,8 @@ enum IOSPreviewData {
     /// Merges extra series into the nearest reading, keeping its sensor and everything else already rendered.
     @MainActor
     private static func amend(
-        _ presenter: ProcessPresenter, measurements: [ProcessSelector: [ProcessValue<Dimension>]], current: [ProcessSelector: ProcessValue<Dimension>]
+        _ presenter: ProcessPresenter, measurements: [ProcessSelector: [ProcessValue<Dimension>]],
+        current: [ProcessSelector: ProcessValue<Dimension>]
     ) -> Void {
         guard let reading = presenter.readings.first else { return }
         presenter.replace(readings: [
@@ -222,7 +230,7 @@ enum IOSPreviewData {
             (.weather(.humidity), UnitPercentage.percent, 64),
             (.weather(.windSpeed), UnitSpeed.kilometersPerHour, 12),
             (.weather(.windGust), UnitSpeed.kilometersPerHour, 28),
-            (.weather(.pressure), UnitPressure.millibars, 1013),
+            (.weather(.pressure), UnitPressure.millibars, 1013)
         ]
         var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
         var current: [ProcessSelector: ProcessValue<Dimension>] = [:]
@@ -272,7 +280,7 @@ enum IOSPreviewData {
                 description: "Starke Rauchentwicklung.", instruction: "Fenster und Türen geschlossen halten.",
                 severity: .severe, sent: sent.addingTimeInterval(-1800), expires: sent.addingTimeInterval(7200),
                 areaDescription: "Berlin-Spandau", location: Location(latitude: 52.5352, longitude: 13.1995),
-                distance: 9_000, placemark: nil),
+                distance: 9_000, placemark: nil)
         ]
     }
 }

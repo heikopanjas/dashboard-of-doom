@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct SurveyChartView: View {
@@ -109,7 +109,7 @@ struct SurveyChartView: View {
                             y: .value("Value", 5.0)
                         )
                         .interpolationMethod(.catmullRom)
-//                        .foregroundStyle(Color.treshold)
+                        //                        .foregroundStyle(Color.treshold)
                         .foregroundStyle(Color.red.opacity(0.67))
                         .lineStyle(StrokeStyle(lineWidth: 1))
                     }
@@ -123,7 +123,8 @@ struct SurveyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: self.presenter.color(selector: self.selector), colorScheme: self.colorScheme, xLabel: "Timestamp", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: self.presenter.color(selector: self.selector),
+                        colorScheme: self.colorScheme, xLabel: "Timestamp", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
@@ -176,7 +177,9 @@ struct SurveyChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.1f%@", color: Color.accentColor, xLabel: "Timestamp", yLabel: "Value")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.1f%@", color: Color.accentColor, xLabel: "Timestamp", yLabel: "Value"
+                        )
                     }
                 }
             }

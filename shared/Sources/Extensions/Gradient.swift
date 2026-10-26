@@ -1,7 +1,7 @@
 import SwiftUI
 
 extension Gradient {
-#if os(macOS)
+    #if os(macOS)
     static let linear = LinearGradient(
         gradient: Gradient(colors: [
             Color.chart.opacity(1.0),
@@ -9,7 +9,7 @@ extension Gradient {
         ]),
         startPoint: .top,
         endPoint: .bottom)
-#else
+    #else
     static let linear = LinearGradient(
         gradient: Gradient(colors: [
             Color.chart.opacity(0.67),
@@ -17,7 +17,7 @@ extension Gradient {
         ]),
         startPoint: .top,
         endPoint: .bottom)
-#endif
+    #endif
 
     static let fascists = LinearGradient(
         gradient: Gradient(colors: [

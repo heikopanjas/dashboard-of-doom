@@ -14,7 +14,8 @@ struct ProcessForecastTests {
     }
 
     private func measurement(_ hours: Double, _ value: Double) -> ProcessValue<Dimension> {
-        return ProcessValue<Dimension>(value: Measurement(value: value, unit: UnitLength.meters), quality: .good, timestamp: self.now.addingTimeInterval(hours * 3600))
+        return ProcessValue<Dimension>(
+            value: Measurement(value: value, unit: UnitLength.meters), quality: .good, timestamp: self.now.addingTimeInterval(hours * 3600))
     }
 
     @Test func pointsAreSortedAndLookedUpWithinATolerance() {
@@ -34,7 +35,8 @@ struct ProcessForecastTests {
 
     @MainActor @Test func forecastsTravelFromSensorToPresenterAfterTheLastMeasurement() throws {
         let forecast = ProcessForecast(
-            origin: .provider("PEGELONLINE"), issued: self.now, points: [self.point(-1, 0.9), self.point(0, 1.0), self.point(1, 1.1), self.point(2, 1.2)],
+            origin: .provider("PEGELONLINE"), issued: self.now,
+            points: [self.point(-1, 0.9), self.point(0, 1.0), self.point(1, 1.1), self.point(2, 1.2)],
             customData: ["estimateFrom": self.now.addingTimeInterval(7200)])
         let stale = ProcessForecast(origin: .estimate("trend"), points: [self.point(-2, 0.5)])
         let sensor = ProcessSensor(

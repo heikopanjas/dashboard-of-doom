@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct CovidView: View {

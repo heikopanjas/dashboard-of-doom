@@ -16,7 +16,8 @@ struct PointOfInterestSettingsView: View {
     /// Both apps keep loading every category for the nearest places row on the
     /// Home tab, so the switches only change the map.
     private var explainer: String {
-        return "Marks these places within 6.7 km on the map; the switches change only the map, and the nearest of each still shows on the Home screen. The list refreshes every hour, or as soon as you move 1 km. Map data © OpenStreetMap contributors."
+        return
+            "Marks these places within 6.7 km on the map; the switches change only the map, and the nearest of each still shows on the Home screen. The list refreshes every hour, or as soon as you move 1 km. Map data © OpenStreetMap contributors."
     }
 
     /// The master switch only clears the map, since every category keeps loading

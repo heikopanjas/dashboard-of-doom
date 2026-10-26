@@ -139,7 +139,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     /// only events sent to other apps, so a click inside the popup, which makes Ice and Bartender rehide their section, keeps it open.
     private func watchClicksOutside() -> Void {
         guard self.outsideClickMonitor == nil else { return }
-        self.outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
+        self.outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) {
+            [weak self] _ in
             MainActor.assumeIsolated { self?.popover.performClose(nil) }
         }
     }

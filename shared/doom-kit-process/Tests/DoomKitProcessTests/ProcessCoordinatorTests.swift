@@ -2,6 +2,7 @@ import DoomKitLocation
 import DoomKitNetwork
 import Foundation
 import Testing
+
 @testable import DoomKitProcess
 
 @MainActor
@@ -19,7 +20,10 @@ struct ProcessCoordinatorTests {
             return pair.stream
         }
         func start() { self.starts += 1 }
-        func stop() { self.stops += 1; self.continuation?.finish() }
+        func stop() {
+            self.stops += 1
+            self.continuation?.finish()
+        }
         func measure(_ latitude: Double) {
             self.set(latitude, origin: .measured)
         }
@@ -143,7 +147,8 @@ struct ProcessCoordinatorTests {
         source.state.location = Location(latitude: 52.51889, longitude: 13.36528)
         let network = NetworkSource()
         let clock = CoordinatorTestClock()
-        let coordinator = ProcessCoordinator(locationSource: source, networkSource: network, clock: clock.clock, locationRefreshPolicy: .everyMovement)
+        let coordinator = ProcessCoordinator(
+            locationSource: source, networkSource: network, clock: clock.clock, locationRefreshPolicy: .everyMovement)
         defer { coordinator.stop() }
         let subscriber = Subscriber(coordinator: coordinator)
         coordinator.add(subscriber: subscriber, timeout: 30)

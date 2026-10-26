@@ -1,5 +1,5 @@
-import DoomKitProcess
 import DoomKitLocation
+import DoomKitProcess
 import DoomKitTools
 import SwiftUI
 
@@ -32,8 +32,10 @@ struct SimultaneousSwipeGesture: UIGestureRecognizerRepresentable {
         var onEnded: (UILongPressGestureRecognizer, CGSize) -> Void
         var initialLocation: CGPoint = .zero
 
-        init(onChanged: @escaping (UILongPressGestureRecognizer, CGSize) -> Void,
-             onEnded: @escaping (UILongPressGestureRecognizer, CGSize) -> Void) {
+        init(
+            onChanged: @escaping (UILongPressGestureRecognizer, CGSize) -> Void,
+            onEnded: @escaping (UILongPressGestureRecognizer, CGSize) -> Void
+        ) {
             self.onChanged = onChanged
             self.onEnded = onEnded
         }
@@ -61,8 +63,10 @@ struct SimultaneousSwipeGesture: UIGestureRecognizerRepresentable {
             }
         }
 
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                               shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
             return true
         }
     }

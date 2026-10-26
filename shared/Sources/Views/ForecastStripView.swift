@@ -24,7 +24,8 @@ struct ForecastStripView: View {
     ) -> [Hour] {
         let chance = Dictionary(
             precipitation.map { ($0.timestamp, $0.value.value) }, uniquingKeysWith: { first, _ in first })
-        return temperature
+        return
+            temperature
             .filter { $0.timestamp >= start }
             .sorted { $0.timestamp < $1.timestamp }
             .prefix(limit)

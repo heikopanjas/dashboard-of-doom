@@ -21,18 +21,18 @@ enum SettingsTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .general: return "gearshape"
-        case .weather: return "cloud.sun"
-        case .warnings: return "exclamationmark.triangle"
-        case .covid: return "facemask"
-        case .level: return "water.waves"
-        case .radiation: return "atom"
-        case .particles: return "aqi.medium"
-        case .energy: return "fuelpump"
-        case .polls: return "chart.bar"
-        case .places: return "mappin.and.ellipse"
-        case .notifications: return "bell"
-        case .about: return "info.circle"
+            case .general: return "gearshape"
+            case .weather: return "cloud.sun"
+            case .warnings: return "exclamationmark.triangle"
+            case .covid: return "facemask"
+            case .level: return "water.waves"
+            case .radiation: return "atom"
+            case .particles: return "aqi.medium"
+            case .energy: return "fuelpump"
+            case .polls: return "chart.bar"
+            case .places: return "mappin.and.ellipse"
+            case .notifications: return "bell"
+            case .about: return "info.circle"
         }
     }
 }
@@ -167,30 +167,30 @@ struct SettingsView: View {
             // Content
             Group {
                 switch self.selection.tab {
-                case .general:
-                    generalContent
-                case .weather:
-                    weatherContent
-                case .warnings:
-                    warningsContent
-                case .covid:
-                    covidContent
-                case .level:
-                    levelContent
-                case .radiation:
-                    radiationContent
-                case .particles:
-                    particlesContent
-                case .energy:
-                    energyContent
-                case .polls:
-                    pollsContent
-                case .places:
-                    PointOfInterestSettingsView(presenter: self.pointOfInterestPresenter)
-                case .notifications:
-                    NotificationSettingsView(levelPresenter: self.levelPresenter)
-                case .about:
-                    aboutContent
+                    case .general:
+                        generalContent
+                    case .weather:
+                        weatherContent
+                    case .warnings:
+                        warningsContent
+                    case .covid:
+                        covidContent
+                    case .level:
+                        levelContent
+                    case .radiation:
+                        radiationContent
+                    case .particles:
+                        particlesContent
+                    case .energy:
+                        energyContent
+                    case .polls:
+                        pollsContent
+                    case .places:
+                        PointOfInterestSettingsView(presenter: self.pointOfInterestPresenter)
+                    case .notifications:
+                        NotificationSettingsView(levelPresenter: self.levelPresenter)
+                    case .about:
+                        aboutContent
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -294,7 +294,9 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorLevel)
-                    .help("Show up to \(SourcePreferences.sensorTabMaximum) gauges, nearest first, on the Water Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one.")
+                    .help(
+                        "Show up to \(SourcePreferences.sensorTabMaximum) gauges, nearest first, on the Water Level tab. Otherwise only the nearest gauge is loaded. The home map shows only the nearest one."
+                    )
                 // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
                 Picker("Waterways", selection: self.levelWaterways) {
                     ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: self.multiSensorLevel), id: \.self) { choice in
@@ -324,7 +326,9 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
-                    .help("Show up to \(SourcePreferences.sensorTabMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one.")
+                    .help(
+                        "Show up to \(SourcePreferences.sensorTabMaximum) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The home map shows only the nearest one."
+                    )
             }
             ForecastSettingsSection(family: .radiation) {
                 AppProcess.shared.refreshSubscription(subscriber: self.radiationPresenter)
@@ -344,9 +348,13 @@ struct SettingsView: View {
             }
             Section("Sensor") {
                 Toggle("Any Station", isOn: $nearestParticleSensor)
-                    .help("Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting PM10, PM2.5, O3 and NO2 are shown, nearest first, which can mean fewer of them.")
+                    .help(
+                        "Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting PM10, PM2.5, O3 and NO2 are shown, nearest first, which can mean fewer of them."
+                    )
                 Toggle("Multiple Sensors", isOn: $multiSensorParticles)
-                    .help("Show up to \(SourcePreferences.sensorTabMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one.")
+                    .help(
+                        "Show up to \(SourcePreferences.sensorTabMaximum) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The home map shows only the nearest one."
+                    )
             }
             ForecastSettingsSection(family: .particles) {
                 AppProcess.shared.refreshSubscription(subscriber: self.particlePresenter)
@@ -447,12 +455,16 @@ struct SettingsView: View {
                     Text("Dashboard of Doom")
                         .font(.title2)
                         .fontWeight(.semibold)
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Text("A macOS menu bar application with environmental and public health data for Germany: weather, civil protection warnings, air quality, water levels, radiation, COVID-19, energy and fuel prices, and election polls.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(
+                        "Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))"
+                    )
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    Text(
+                        "A macOS menu bar application with environmental and public health data for Germany: weather, civil protection warnings, air quality, water levels, radiation, COVID-19, energy and fuel prices, and election polls."
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                     Text(DataSources.disclaimer)
                         .font(.caption)
                         .foregroundColor(.secondary)

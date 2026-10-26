@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 extension View {
@@ -9,10 +9,11 @@ extension View {
         timestamp: Binding<Date?>,
         roundingStrategy: RoundingStrategy
     ) -> some View {
-        modifier(ChartInteractiveOverlayModifier(
-            timestamp: timestamp,
-            roundingStrategy: roundingStrategy
-        ))
+        modifier(
+            ChartInteractiveOverlayModifier(
+                timestamp: timestamp,
+                roundingStrategy: roundingStrategy
+            ))
     }
 }
 

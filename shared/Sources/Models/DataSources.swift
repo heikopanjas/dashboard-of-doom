@@ -39,11 +39,13 @@ enum DataSources {
                 licence: "CC BY 4.0", licenceURL: Self.ccBy4, sourceURL: URL(string: "https://api.corona-zahlen.org"), isRequired: true),
             DataSource(
                 topic: "District Boundaries",
-                attribution: "© BKG (\(year)) dl-de/by-2-0, Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf",
+                attribution:
+                    "© BKG (\(year)) dl-de/by-2-0, Datenquellen: https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf",
                 licence: "dl-de/by-2-0", licenceURL: Self.dlDeBy2, sourceURL: URL(string: "https://www.bkg.bund.de"), isRequired: true),
             DataSource(
                 topic: "Berlin Boroughs",
-                attribution: "Amt für Statistik Berlin-Brandenburg, Ortsteile merged into Bezirke by m-hoerz/berlin-shapes and the Berliner Morgenpost.",
+                attribution:
+                    "Amt für Statistik Berlin-Brandenburg, Ortsteile merged into Bezirke by m-hoerz/berlin-shapes and the Berliner Morgenpost.",
                 licence: "CC BY 3.0 DE, adapted", licenceURL: URL(string: "https://creativecommons.org/licenses/by/3.0/de/"),
                 sourceURL: URL(string: "https://www.statistik-berlin-brandenburg.de"), isRequired: true),
             DataSource(
@@ -73,7 +75,8 @@ enum DataSources {
                 sourceURL: URL(string: "https://eurooilwatch.com"), isRequired: true),
             DataSource(
                 topic: "LNG",
-                attribution: "Source: European Union Agency for the Cooperation of Energy Regulators (ACER), LNG price assessments, aegis.acer.europa.eu.",
+                attribution:
+                    "Source: European Union Agency for the Cooperation of Energy Regulators (ACER), LNG price assessments, aegis.acer.europa.eu.",
                 licence: "Reproduction with acknowledgement", licenceURL: URL(string: "https://www.acer.europa.eu/legal-notice"),
                 sourceURL: URL(string: "https://aegis.acer.europa.eu"), isRequired: true),
             DataSource(
@@ -92,7 +95,7 @@ enum DataSources {
                 isRequired: true),
             DataSource(
                 topic: "Maps and Addresses",
-                attribution: "Apple Maps; the map shows its own legal notice.", licence: nil, licenceURL: nil, sourceURL: nil, isRequired: false),
+                attribution: "Apple Maps; the map shows its own legal notice.", licence: nil, licenceURL: nil, sourceURL: nil, isRequired: false)
         ]
     }
 

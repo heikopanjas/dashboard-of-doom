@@ -11,9 +11,9 @@ final class NavigationTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Maritime · Middle East"].exists)
         app.buttons["toolbar.slot.0"].press(forDuration: 1)
         app.buttons["toolbar.choice.energy"].tap()
-        for _ in 0..<6 { app.swipeDown() }
+        for _ in 0 ..< 6 { app.swipeDown() }
         for title in ["Brent Spot", "Brent Futures", "TTF Futures", "LNG Spot"] {
-            for _ in 0..<8 {
+            for _ in 0 ..< 8 {
                 if app.staticTexts[title].isHittable { break }
                 app.swipeUp()
             }

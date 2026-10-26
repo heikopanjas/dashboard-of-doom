@@ -1,16 +1,18 @@
-import DoomKitTools
-import DoomKitProcess
 import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import Foundation
 
 @Observable class CovidPresenter: ProcessPresenter, ProcessRefreshable {
     @ObservationIgnored private var subscription: ConditionalSubscription?
     @ObservationIgnored private let fetch: @MainActor (Location) async throws -> [ProcessSensor]
 
-    init(defaults: UserDefaults = .standard,
-         register: (@MainActor (any ProcessRefreshable, TimeInterval) -> Void)? = nil,
-         remove: (@MainActor (UUID) -> Void)? = nil,
-         fetch: (@MainActor (Location) async throws -> [ProcessSensor])? = nil) {
+    init(
+        defaults: UserDefaults = .standard,
+        register: (@MainActor (any ProcessRefreshable, TimeInterval) -> Void)? = nil,
+        remove: (@MainActor (UUID) -> Void)? = nil,
+        fetch: (@MainActor (Location) async throws -> [ProcessSensor])? = nil
+    ) {
         self.fetch = fetch ?? { location in return try await CovidController().refreshData(for: location) }
         super.init()
         let id = self.id
@@ -19,12 +21,20 @@ import Foundation
             defaultEnabled: SourcePreferences.covidEnabledByDefault,
             register: { [weak self] interval in
                 guard let self else { return }
-                if let register { register(self, interval) }
-                else { AppProcess.shared.add(subscriber: self, timeout: interval) }
+                if let register {
+                    register(self, interval)
+                }
+                else {
+                    AppProcess.shared.add(subscriber: self, timeout: interval)
+                }
             },
             remove: {
-                if let remove { remove(id) }
-                else { AppProcess.shared.remove(id: id) }
+                if let remove {
+                    remove(id)
+                }
+                else {
+                    AppProcess.shared.remove(id: id)
+                }
             })
     }
 

@@ -21,7 +21,7 @@ import SwiftUI
     private static let retiredAccents: [String: Accent] = [
         "red": orange, "yellow": orange, "brown": orange, "pink": orange,
         "green": cyan, "mint": cyan, "teal": cyan,
-        "indigo": blue, "purple": blue,
+        "indigo": blue, "purple": blue
     ]
 
     private(set) var selectedAccent: Accent

@@ -21,7 +21,8 @@ public class EnergyService {
     }
 
     public static func fetchBrentSpot(networkManager: NetworkManager = .shared) async throws -> Data? {
-        return await Self.fetch(name: "Brent spot prices", urlString: "https://eurooilwatch.com/api/v1/brent-eia-daily", networkManager: networkManager)
+        return await Self.fetch(
+            name: "Brent spot prices", urlString: "https://eurooilwatch.com/api/v1/brent-eia-daily", networkManager: networkManager)
     }
 
     public static func fetchGas(networkManager: NetworkManager = .shared) async throws -> Data? {

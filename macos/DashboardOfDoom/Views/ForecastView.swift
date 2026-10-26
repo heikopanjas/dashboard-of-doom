@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct ForecastView: View {
@@ -11,7 +11,7 @@ struct ForecastView: View {
                 ActivityIndicator()
             }
             else {
-#if os(macOS)
+                #if os(macOS)
                 HStack(alignment: .bottom) {
                     HStack {
                         Image(systemName: "safari")
@@ -22,7 +22,7 @@ struct ForecastView: View {
                         .foregroundColor(.gray)
                 }
                 .font(.footnote)
-#else
+                #else
                 VStack(alignment: .leading) {
                     HStack {
                         Image(systemName: "safari")
@@ -37,7 +37,7 @@ struct ForecastView: View {
                     .foregroundColor(.gray)
                 }
                 .font(.footnote)
-#endif
+                #endif
 
                 let selectors = ProcessSelector.Forecast.allCases.filter {
                     self.presenter.isAvailable(selector: .forecast($0), treshold: self.computeThreshold(selector: $0))
@@ -62,7 +62,7 @@ struct ForecastView: View {
     }
 
     func computeThreshold(selector: ProcessSelector.Forecast) -> Double {
-        if selector == .temperature || selector == .apparentTemperature || selector == .dewPoint  {
+        if selector == .temperature || selector == .apparentTemperature || selector == .dewPoint {
             return -33.0
         }
         return 0.0

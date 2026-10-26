@@ -1,7 +1,7 @@
-import DoomKitProcess
-import DoomKitLocation
-import DoomKitTools
 import Charts
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitTools
 import SwiftUI
 
 struct LevelChartView: View {
@@ -52,7 +52,8 @@ struct LevelChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Level")
+                        forecast: forecast, anchor: self.reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = self.reading.current[selector] {
@@ -109,7 +110,9 @@ struct LevelChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f%@", color: self.colorScheme.markerColor, xLabel: "Date", yLabel: "Level")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.2f%@", color: self.colorScheme.markerColor, xLabel: "Date",
+                            yLabel: "Level")
                     }
                 }
             }

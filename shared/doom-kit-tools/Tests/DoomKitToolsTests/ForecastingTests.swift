@@ -1,6 +1,7 @@
-@testable import DoomKitTools
 import Foundation
 import Testing
+
+@testable import DoomKitTools
 
 /// A seeded generator, so every synthetic series is the same on every run.
 struct SplitMix64: RandomNumberGenerator {
@@ -99,7 +100,8 @@ struct ForecastingTests {
     }
 
     @Test func aLongGapEndsTheHistory() {
-        let points = [0.0, 1, 2].map { TimeSeriesPoint(timestamp: Self.start.addingTimeInterval($0 * 3600), value: $0) }
+        let points =
+            [0.0, 1, 2].map { TimeSeriesPoint(timestamp: Self.start.addingTimeInterval($0 * 3600), value: $0) }
             + [10.0, 11].map { TimeSeriesPoint(timestamp: Self.start.addingTimeInterval($0 * 3600), value: $0) }
         let grid = TimeSeriesGrid.regularize(points, step: 3600, maximumGap: 4 * 3600)
         #expect(grid.map(\.value) == [10, 11])
@@ -136,7 +138,8 @@ struct ForecastingTests {
     @Test func boundsAndTheLogarithmKeepValuesPossible() throws {
         // A falling poll share cannot fall below zero.
         let falling = Self.points((0 ..< 60).map { 12 - 0.3 * Double($0) }, step: 86_400)
-        let poll = try Forecaster.forecast(falling, model: DampedTrendModel(), request: ForecastRequest(step: 86_400, horizon: 60, bounds: 0 ... 100))
+        let poll = try Forecaster.forecast(
+            falling, model: DampedTrendModel(), request: ForecastRequest(step: 86_400, horizon: 60, bounds: 0 ... 100))
         #expect(poll.allSatisfy { $0.lower >= 0 && $0.value >= 0 })
         #expect(poll.last?.value == 0)
         // A price forecast in logarithms stays above zero however wide the band.

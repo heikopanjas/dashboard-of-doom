@@ -47,12 +47,20 @@ import Observation
             defaultEnabled: SourcePreferences.energyEnabledByDefault,
             register: { [weak self] interval in
                 guard let self else { return }
-                if let register { register(self, interval) }
-                else { AppProcess.shared.add(subscriber: self, timeout: interval) }
+                if let register {
+                    register(self, interval)
+                }
+                else {
+                    AppProcess.shared.add(subscriber: self, timeout: interval)
+                }
             },
             remove: {
-                if let remove { remove(id) }
-                else { AppProcess.shared.remove(id: id) }
+                if let remove {
+                    remove(id)
+                }
+                else {
+                    AppProcess.shared.remove(id: id)
+                }
             })
     }
 

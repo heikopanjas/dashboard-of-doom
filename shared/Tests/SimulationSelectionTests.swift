@@ -40,9 +40,10 @@ import Testing
     }
 
     @Test func withoutATownTheNameIsTheAddress() async {
-        let selection = SimulationSelection(geocoding: GeocodingService { _ in
-            return GeocodedPlace(name: "Hallig Hooge", isoCountryCode: "DE")
-        })
+        let selection = SimulationSelection(
+            geocoding: GeocodingService { _ in
+                return GeocodedPlace(name: "Hallig Hooge", isoCountryCode: "DE")
+            })
         await selection.select(Location(latitude: 54.57, longitude: 8.55))
         #expect(selection.placeName == "Hallig Hooge")
         // A pick outside Germany has no name to show.

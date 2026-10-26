@@ -32,7 +32,8 @@ import Testing
     @Test func anEstimateIsLabelledWithItsMethodAndKeepsTheUnit() throws {
         let raw = Self.series((0 ..< 48).map { 0.1 + 0.001 * sin(Double($0)) }, step: 3600, unit: UnitRadiation.microsieverts)
         let estimate = try #require(
-            SeriesEstimate.make(from: raw, model: BaselineModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now))
+            SeriesEstimate.make(
+                from: raw, model: BaselineModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now))
         #expect(estimate.origin == .estimate("usual range"))
         #expect(estimate.origin.isProvider == false)
         #expect(estimate.points.count == 6)
@@ -43,8 +44,12 @@ import Testing
 
     @Test func aFeedThatStoppedIsNotContinued() {
         let raw = Self.series((0 ..< 48).map { Double($0) }, step: 3600, age: 7200, unit: UnitLength.meters)
-        #expect(SeriesEstimate.make(from: raw, model: DampedTrendModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now) == nil)
-        #expect(SeriesEstimate.make(from: [], model: DampedTrendModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now) == nil)
+        #expect(
+            SeriesEstimate.make(
+                from: raw, model: DampedTrendModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now) == nil)
+        #expect(
+            SeriesEstimate.make(
+                from: [], model: DampedTrendModel(), request: ForecastRequest(step: 3600, horizon: 6), maximumAge: 3600, now: Self.now) == nil)
     }
 
     @Test func aModelWorseThanTheLastValueGivesWayToIt() throws {
@@ -57,9 +62,11 @@ import Testing
 
     @Test func valuesOfUnknownQualityAreLeftOut() throws {
         var raw = Self.series((0 ..< 48).map { _ in 1.0 }, step: 3600, unit: UnitLength.meters)
-        raw.append(ProcessValue(value: Measurement(value: 0, unit: UnitLength.meters), quality: .unknown, timestamp: Self.now.addingTimeInterval(1800)))
+        raw.append(
+            ProcessValue(value: Measurement(value: 0, unit: UnitLength.meters), quality: .unknown, timestamp: Self.now.addingTimeInterval(1800)))
         let estimate = try #require(
-            SeriesEstimate.make(from: raw, model: BaselineModel(), request: ForecastRequest(step: 3600, horizon: 3), maximumAge: 3600, now: Self.now))
+            SeriesEstimate.make(
+                from: raw, model: BaselineModel(), request: ForecastRequest(step: 3600, horizon: 3), maximumAge: 3600, now: Self.now))
         #expect(estimate.points.first?.timestamp == Self.now.addingTimeInterval(3600))
         #expect(estimate.points.first?.value.value == 1)
     }
@@ -71,7 +78,8 @@ import Testing
             let spike: Double = hour % 40 == 0 ? 0.08 : 0
             return 0.1 + 0.004 * sin(Double(hour) / 3) + spike
         }
-        let estimate = try #require(RadiationController.estimate(from: Self.series(values, step: 3600, unit: UnitRadiation.microsieverts), now: Self.now))
+        let estimate = try #require(
+            RadiationController.estimate(from: Self.series(values, step: 3600, unit: UnitRadiation.microsieverts), now: Self.now))
         #expect(estimate.origin == .estimate("usual range"))
         #expect(estimate.points.count == 24)
         #expect(Set(estimate.points.map(\.value.value)).count == 1)
@@ -80,7 +88,8 @@ import Testing
 
     @Test func energyIsTheLastPriceWithABandWiderAboveThanBelow() throws {
         let values = (0 ..< 250).map { 80 + 5 * sin(Double($0) / 9) + Double($0 % 3) }
-        let estimate = try #require(EnergyController.estimate(from: Self.series(values, step: 86_400, unit: UnitOilPrice.usDollarsPerBarrel), now: Self.now))
+        let estimate = try #require(
+            EnergyController.estimate(from: Self.series(values, step: 86_400, unit: UnitOilPrice.usDollarsPerBarrel), now: Self.now))
         #expect(estimate.origin == .estimate("last value"))
         #expect(estimate.points.count == 30)
         let last = try #require(estimate.points.last)
@@ -88,7 +97,9 @@ import Testing
         #expect(try #require(last.upper) - last.value.value > last.value.value - (try #require(last.lower)))
         #expect(estimate.points.allSatisfy { ($0.lower ?? 0) > 0 })
         // A mirror a fortnight behind is not continued.
-        #expect(EnergyController.estimate(from: Self.series(values, step: 86_400, age: 14 * 86_400, unit: UnitOilPrice.usDollarsPerBarrel), now: Self.now) == nil)
+        #expect(
+            EnergyController.estimate(
+                from: Self.series(values, step: 86_400, age: 14 * 86_400, unit: UnitOilPrice.usDollarsPerBarrel), now: Self.now) == nil)
     }
 
     @Test func ttfHasFourDaysOfEstimateAndTheOthersThirty() throws {
@@ -99,7 +110,8 @@ import Testing
         let values = (0 ..< 21).map { 80 + Double($0 % 4) }
         let estimate = try #require(
             EnergyController.estimate(
-                from: Self.series(values, step: 86_400, unit: UnitGasPrice.eurosPerMegawattHour), horizon: EnergyController.horizon(for: .energy(.ttf)),
+                from: Self.series(values, step: 86_400, unit: UnitGasPrice.eurosPerMegawattHour),
+                horizon: EnergyController.horizon(for: .energy(.ttf)),
                 now: Self.now))
         #expect(estimate.points.count == 4)
     }
@@ -150,15 +162,21 @@ import Testing
         #expect(fdp.points.allSatisfy { $0.value.value >= 0 && ($0.lower ?? 0) >= 0 && ($0.upper ?? 0) <= 100 })
         #expect(estimates[.survey(.spd)] != nil)
         // A parliament without a poll for half a year is not continued.
-        let old: [ProcessSelector: [ProcessValue<Dimension>]] = [.survey(.spd): Self.series(steady, step: 4 * 86_400, age: 180 * 86_400, unit: UnitPercentage.percent)]
+        let old: [ProcessSelector: [ProcessValue<Dimension>]] = [
+            .survey(.spd): Self.series(steady, step: 4 * 86_400, age: 180 * 86_400, unit: UnitPercentage.percent)
+        ]
         #expect(SurveyController.estimates(from: old, now: Self.now).isEmpty == true)
     }
 
     @Test func pollsAreAveragedPerWeekBackFromTheLastPoll() throws {
         // Two polls three days apart in the newest week, one in the week before.
         let polls = [
-            ProcessValue<Dimension>(value: Measurement(value: 10, unit: UnitPercentage.percent), quality: .uncertain, timestamp: Self.now.addingTimeInterval(-9 * 86_400)),
-            ProcessValue<Dimension>(value: Measurement(value: 20, unit: UnitPercentage.percent), quality: .uncertain, timestamp: Self.now.addingTimeInterval(-3 * 86_400)),
+            ProcessValue<Dimension>(
+                value: Measurement(value: 10, unit: UnitPercentage.percent), quality: .uncertain,
+                timestamp: Self.now.addingTimeInterval(-9 * 86_400)),
+            ProcessValue<Dimension>(
+                value: Measurement(value: 20, unit: UnitPercentage.percent), quality: .uncertain,
+                timestamp: Self.now.addingTimeInterval(-3 * 86_400)),
             ProcessValue<Dimension>(value: Measurement(value: 30, unit: UnitPercentage.percent), quality: .uncertain, timestamp: Self.now)
         ]
         let weekly = SurveyController.weekly(polls)
@@ -196,6 +214,9 @@ import Testing
             CovidController.estimate(
                 from: Self.series(incidence, step: 86_400, unit: UnitIncidence.casesPer100k), selector: .covid(.incidence), now: Self.now))
         #expect(trend.origin == .estimate("trend"))
-        #expect(CovidController.estimate(from: Self.series(incidence, step: 86_400, age: 30 * 86_400, unit: UnitIncidence.casesPer100k), selector: .covid(.incidence), now: Self.now) == nil)
+        #expect(
+            CovidController.estimate(
+                from: Self.series(incidence, step: 86_400, age: 30 * 86_400, unit: UnitIncidence.casesPer100k), selector: .covid(.incidence),
+                now: Self.now) == nil)
     }
 }

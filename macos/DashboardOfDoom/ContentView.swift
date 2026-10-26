@@ -12,14 +12,14 @@ enum DashboardTab: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .home: return "house"
-        case .weather: return "cloud.sun"
-        case .covid: return "facemask"
-        case .level: return "water.waves"
-        case .radiation: return "atom"
-        case .particles: return "aqi.medium"
-        case .energy: return "fuelpump"
-        case .polls: return "chart.bar"
+            case .home: return "house"
+            case .weather: return "cloud.sun"
+            case .covid: return "facemask"
+            case .level: return "water.waves"
+            case .radiation: return "atom"
+            case .particles: return "aqi.medium"
+            case .energy: return "fuelpump"
+            case .polls: return "chart.bar"
         }
     }
 
@@ -27,13 +27,13 @@ enum DashboardTab: String, CaseIterable {
     /// always updates.
     func isVisible(defaults: UserDefaults = .standard) -> Bool {
         switch self {
-        case .home, .weather: return true
-        case .covid: return SourcePreferences.covidVisible(defaults: defaults)
-        case .level: return SourcePreferences.waterVisible(defaults: defaults)
-        case .radiation: return SourcePreferences.radiationVisible(defaults: defaults)
-        case .particles: return SourcePreferences.particlesVisible(defaults: defaults)
-        case .energy: return SourcePreferences.energyVisible(defaults: defaults)
-        case .polls: return SourcePreferences.pollsVisible(defaults: defaults)
+            case .home, .weather: return true
+            case .covid: return SourcePreferences.covidVisible(defaults: defaults)
+            case .level: return SourcePreferences.waterVisible(defaults: defaults)
+            case .radiation: return SourcePreferences.radiationVisible(defaults: defaults)
+            case .particles: return SourcePreferences.particlesVisible(defaults: defaults)
+            case .energy: return SourcePreferences.energyVisible(defaults: defaults)
+            case .polls: return SourcePreferences.pollsVisible(defaults: defaults)
         }
     }
 }
@@ -77,22 +77,22 @@ struct ContentView: View {
 
             Group {
                 switch self.selection {
-                case .home:
-                    HomeView().padding()
-                case .weather:
-                    ForecastView().padding()
-                case .covid:
-                    CovidView().padding()
-                case .level:
-                    LevelView().padding()
-                case .radiation:
-                    RadiationView().padding()
-                case .particles:
-                    ParticleView().padding()
-                case .energy:
-                    EnergyView().padding()
-                case .polls:
-                    SurveyView().padding()
+                    case .home:
+                        HomeView().padding()
+                    case .weather:
+                        ForecastView().padding()
+                    case .covid:
+                        CovidView().padding()
+                    case .level:
+                        LevelView().padding()
+                    case .radiation:
+                        RadiationView().padding()
+                    case .particles:
+                        ParticleView().padding()
+                    case .energy:
+                        EnergyView().padding()
+                    case .polls:
+                        SurveyView().padding()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

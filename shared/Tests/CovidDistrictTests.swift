@@ -7,7 +7,8 @@ import Testing
     private static func square(ags: String, name: String, geofactor: Int, south: Double, west: Double, size: Double) -> String {
         let ring = [[west, south], [west + size, south], [west + size, south + size], [west, south + size], [west, south]]
         let coordinates = ring.map { "[\($0[0]),\($0[1])]" }.joined(separator: ",")
-        return #"{"type":"Feature","properties":{"ags":"\#(ags)","gen":"\#(name)","gf":\#(geofactor)},"geometry":{"type":"Polygon","coordinates":[[\#(coordinates)]]}}"#
+        return
+            #"{"type":"Feature","properties":{"ags":"\#(ags)","gen":"\#(name)","gf":\#(geofactor)},"geometry":{"type":"Polygon","coordinates":[[\#(coordinates)]]}}"#
     }
 
     private static func response(_ features: [String]) -> Data {

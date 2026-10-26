@@ -40,7 +40,8 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
         self.forecasts = [:]
     }
 
-    public init(name: String, location: Location, placemark: String?, measurements: [ProcessSelector: [ProcessValue<Dimension>]], timestamp: Date?) {
+    public init(name: String, location: Location, placemark: String?, measurements: [ProcessSelector: [ProcessValue<Dimension>]], timestamp: Date?)
+    {
         self.name = name
         self.location = location
         self.placemark = placemark
@@ -53,7 +54,8 @@ public class ProcessSensor: Identifiable, ProcessLocatable {
     }
 
     public init(
-        name: String, location: Location, placemark: String?, customData: [String: Any]?, measurements: [ProcessSelector: [ProcessValue<Dimension>]],
+        name: String, location: Location, placemark: String?, customData: [String: Any]?,
+        measurements: [ProcessSelector: [ProcessValue<Dimension>]],
         timestamp: Date?, sourceID: String? = nil, distance: Double? = nil, forecasts: [ProcessSelector: ProcessForecast] = [:]
     ) {
         self.name = name

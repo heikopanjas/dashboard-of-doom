@@ -1,5 +1,5 @@
-import DoomKitProcess
 import DoomKitLocation
+import DoomKitProcess
 import Foundation
 import MapKit
 import SwiftUI
@@ -30,11 +30,11 @@ import SwiftUI
         }
     }
 
-#if os(macOS)
+    #if os(macOS)
     static let frameOffset = 0.0
-#else
+    #else
     static let frameOffset = 10_000.0
-#endif
+    #endif
 
     /// Records where a source's nearest sensor is, and when it counts. Without a check an existing entry keeps its own, which is how the
     /// iOS map moves the weather marker with the reader, and a new one always counts.

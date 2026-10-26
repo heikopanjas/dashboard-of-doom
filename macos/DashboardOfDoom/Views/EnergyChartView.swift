@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct EnergyChartView: View {
@@ -52,7 +52,8 @@ struct EnergyChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Value")
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Value")
                 }
 
                 if let measurement = presenter.current[selector] {
@@ -105,7 +106,8 @@ struct EnergyChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f %@", color: Color.accentColor, xLabel: "Date", yLabel: "Value")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.2f %@", color: Color.accentColor, xLabel: "Date", yLabel: "Value")
                     }
                 }
             }

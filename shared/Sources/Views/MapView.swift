@@ -114,12 +114,14 @@ struct MapView: View {
             }
             else {
                 VStack {
-                    CollisionMapView(position: self.viewModel.binding(for: \.region), annotations: self.annotations,
-                                     showsPointsOfInterest: self.pointOfInterestPresenter.showsAnyPlaces,
-                                     pointsOfInterest: self.pointOfInterestPresenter.points)
-                        #if os(macOS)
-                        .background(MapAppearanceView(colorScheme: self.colorScheme))
-                        #endif
+                    CollisionMapView(
+                        position: self.viewModel.binding(for: \.region), annotations: self.annotations,
+                        showsPointsOfInterest: self.pointOfInterestPresenter.showsAnyPlaces,
+                        pointsOfInterest: self.pointOfInterestPresenter.points
+                    )
+                    #if os(macOS)
+                    .background(MapAppearanceView(colorScheme: self.colorScheme))
+                    #endif
                 }
             }
         }
@@ -139,10 +141,16 @@ struct MapView: View {
     // Category identities survive presenter refreshes and replacement measurement UUIDs.
     private var annotations: [MapAnnotationSnapshot] {
         #if os(iOS)
-        var result = [MapAnnotationSnapshot(id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true,
-            showsLabel: self.showWeather && self.weather.timestamp != nil, location: self.userLocation)]
+        var result = [
+            MapAnnotationSnapshot(
+                id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true,
+                showsLabel: self.showWeather && self.weather.timestamp != nil, location: self.userLocation)
+        ]
         #else
-        var result = [MapAnnotationSnapshot(id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true, showsLabel: self.showWeather)]
+        var result = [
+            MapAnnotationSnapshot(
+                id: "weather", presenter: self.weather, selector: .weather(.temperature), user: true, showsLabel: self.showWeather)
+        ]
         #endif
         if self.covidEnabled == true {
             result.append(MapAnnotationSnapshot(id: "covid", presenter: self.incidence, selector: .covid(.incidence)))
@@ -160,8 +168,12 @@ struct MapView: View {
             result.append(MapAnnotationSnapshot(id: "surveys", presenter: self.surveys, selector: .survey(.fascists)))
         }
         #if os(iOS)
-        let available = ["weather"] + [("covid", self.incidence.sensor), ("water", self.water.sensor), ("radiation", self.radiation.sensor),
-            ("particles", self.particle.sensor), ("surveys", self.surveys.sensor)].compactMap { $0.1 == nil ? nil : $0.0 }
+        let available =
+            ["weather"]
+            + [
+                ("covid", self.incidence.sensor), ("water", self.water.sensor), ("radiation", self.radiation.sensor),
+                ("particles", self.particle.sensor), ("surveys", self.surveys.sensor)
+            ].compactMap { $0.1 == nil ? nil : $0.0 }
         return result.filter { available.contains($0.id) }
         #else
         return result

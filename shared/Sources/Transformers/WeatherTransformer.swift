@@ -1,5 +1,5 @@
-import DoomKitTools
 import DoomKitProcess
+import DoomKitTools
 import Foundation
 
 class WeatherTransformer: ProcessTransformer {
@@ -14,7 +14,8 @@ class WeatherTransformer: ProcessTransformer {
     override func renderFaceplate(current: [ProcessSelector: ProcessValue<Dimension>]) -> [ProcessSelector: String] {
         var faceplate: [ProcessSelector: String] = [:]
         for (selector, current) in current {
-            faceplate[selector] = String(format: "\(MathematicalSymbols.mathematicalBoldCapitalTau.rawValue): %.1f%@", current.value.value, current.value.unit.symbol)
+            faceplate[selector] = String(
+                format: "\(MathematicalSymbols.mathematicalBoldCapitalTau.rawValue): %.1f%@", current.value.value, current.value.unit.symbol)
         }
         return faceplate
     }

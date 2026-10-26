@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct LevelChartView: View {
@@ -47,7 +47,8 @@ struct LevelChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Level")
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Level")
                 }
 
                 if let measurement = reading.current[selector] {
@@ -100,7 +101,8 @@ struct LevelChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.2f%@", color: Color.accentColor, xLabel: "Date", yLabel: "Level")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.2f%@", color: Color.accentColor, xLabel: "Date", yLabel: "Level")
                     }
                 }
             }

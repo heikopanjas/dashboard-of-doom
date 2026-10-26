@@ -1,12 +1,12 @@
-import DoomKitTools
 import DoomKitProcess
+import DoomKitTools
 import Foundation
 
 class CovidTransformer: ProcessTransformer {
     override func renderCurrent(measurements: [ProcessSelector: [ProcessValue<Dimension>]]) -> [ProcessSelector: ProcessValue<Dimension>] {
         var current: [ProcessSelector: ProcessValue<Dimension>] = [:]
         for (selector, values) in measurements {
-            current[selector] = values.last(where: { ($0.timestamp <= Date.now) && (($0.quality == .good) || ($0.quality == .uncertain))})
+            current[selector] = values.last(where: { ($0.timestamp <= Date.now) && (($0.quality == .good) || ($0.quality == .uncertain)) })
         }
         return current
     }

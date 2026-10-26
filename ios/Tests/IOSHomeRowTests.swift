@@ -10,15 +10,16 @@ struct IOSHomeRowTests {
     private static func value(_ number: Double, unit: Dimension, hours: Int, icon: String? = nil) -> ProcessValue<Dimension> {
         let timestamp = Self.start.addingTimeInterval(Double(hours) * 3600)
         if let icon {
-            return ProcessValue(value: Measurement(value: number, unit: unit), customData: ["icon": icon], quality: .uncertain, timestamp: timestamp)
+            return ProcessValue(
+                value: Measurement(value: number, unit: unit), customData: ["icon": icon], quality: .uncertain, timestamp: timestamp)
         }
         return ProcessValue(value: Measurement(value: number, unit: unit), quality: .uncertain, timestamp: timestamp)
     }
 
     @Test func forecastHoursPairByTimestampAndKeepMissingChance() {
-        let temperature = (-2..<30).map { Self.value(Double($0), unit: UnitTemperature.celsius, hours: $0, icon: "sun.max") }
+        let temperature = (-2 ..< 30).map { Self.value(Double($0), unit: UnitTemperature.celsius, hours: $0, icon: "sun.max") }
         // No chance for hour 3, and the hours arrive out of order.
-        let chance = (0..<30).filter { $0 != 3 }.reversed().map { Self.value(Double($0 * 3), unit: UnitPercentage.percent, hours: $0) }
+        let chance = (0 ..< 30).filter { $0 != 3 }.reversed().map { Self.value(Double($0 * 3), unit: UnitPercentage.percent, hours: $0) }
         let hours = ForecastStripView.hours(temperature: temperature.shuffled(), precipitation: chance, from: Self.start)
         #expect(hours.count == ForecastStripView.hourLimit)
         #expect(hours.first?.timestamp == Self.start)
@@ -32,7 +33,7 @@ struct IOSHomeRowTests {
         var current: [ProcessSelector: ProcessValue<Dimension>] = [
             .weather(.apparentTemperature): Self.value(20.44, unit: UnitTemperature.celsius, hours: 0),
             .weather(.windSpeed): Self.value(10, unit: UnitSpeed.metersPerSecond, hours: 0),
-            .weather(.pressure): Self.value(1013, unit: UnitPressure.millibars, hours: 0),
+            .weather(.pressure): Self.value(1013, unit: UnitPressure.millibars, hours: 0)
         ]
         var items = CurrentConditionsView.items(current: current)
         #expect(items.map(\.title) == ["Feels like", "Wind", "Pressure"])
@@ -57,7 +58,7 @@ struct IOSHomeRowTests {
         }
         let points = [
             point(1, .pharmacies, 0.010), point(2, .pharmacies, 0.002), point(3, .hospitals, 0.005),
-            point(4, .stores, 0.001), point(5, .cemeteries, 0.001),
+            point(4, .stores, 0.001), point(5, .cemeteries, 0.001)
         ]
         let nearest = NearestPlacesView.nearest(points: points, from: here)
         #expect(nearest.map(\.point.elementID) == [2, 3, 4, 5])

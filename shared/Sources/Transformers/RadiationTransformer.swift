@@ -1,5 +1,5 @@
-import DoomKitTools
 import DoomKitProcess
+import DoomKitTools
 import Foundation
 
 class RadiationTransformer: ProcessTransformer {

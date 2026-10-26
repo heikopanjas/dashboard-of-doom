@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 struct ParticleChartView: View {
@@ -55,42 +55,42 @@ struct ParticleChartView: View {
             }
             Chart {
                 ForEach(reading.measurements[selector] ?? []) { measurement in
-                   if selector == .particle(.pm10) {
-                       LineMark(
-                           x: .value("Date", measurement.timestamp),
-                           y: .value("Particle", 40.0)
-                       )
+                    if selector == .particle(.pm10) {
+                        LineMark(
+                            x: .value("Date", measurement.timestamp),
+                            y: .value("Particle", 40.0)
+                        )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(Color.red.opacity(0.67))
                         .lineStyle(StrokeStyle(lineWidth: 1))
-                   }
-                   else if selector == .particle(.pm25) {
-                       LineMark(
-                           x: .value("Date", measurement.timestamp),
-                           y: .value("Particle", 25.0)
-                       )
+                    }
+                    else if selector == .particle(.pm25) {
+                        LineMark(
+                            x: .value("Date", measurement.timestamp),
+                            y: .value("Particle", 25.0)
+                        )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(Color.red.opacity(0.67))
                         .lineStyle(StrokeStyle(lineWidth: 1))
-                   }
-                   else if selector == .particle(.no2) {
-                       LineMark(
-                           x: .value("Date", measurement.timestamp),
-                           y: .value("Particle", 40.0)
-                       )
+                    }
+                    else if selector == .particle(.no2) {
+                        LineMark(
+                            x: .value("Date", measurement.timestamp),
+                            y: .value("Particle", 40.0)
+                        )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(Color.red.opacity(0.67))
                         .lineStyle(StrokeStyle(lineWidth: 1))
-                   }
-                   else if selector == .particle(.o3) {
-                       LineMark(
-                           x: .value("Date", measurement.timestamp),
-                           y: .value("Particle", 120.0)
-                       )
+                    }
+                    else if selector == .particle(.o3) {
+                        LineMark(
+                            x: .value("Date", measurement.timestamp),
+                            y: .value("Particle", 120.0)
+                        )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(Color.red.opacity(0.67))
                         .lineStyle(StrokeStyle(lineWidth: 1))
-                   }
+                    }
                     AreaMark(
                         x: .value("Date", Date.round(from: measurement.timestamp, strategy: .previousHour) ?? Date.now),
                         yStart: .value("Particle", ForecastDisplay.domain(range: reading.range[selector], forecast: self.forecast).lowerBound),
@@ -102,7 +102,8 @@ struct ParticleChartView: View {
 
                 if let forecast = self.forecast {
                     ForecastMarks(
-                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme, xLabel: "Date", yLabel: "Particle")
+                        forecast: forecast, anchor: reading.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Particle")
                 }
 
                 if let measurement = reading.current[selector] {
@@ -155,7 +156,8 @@ struct ParticleChartView: View {
                         }
                     }
                     else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
-                        ForecastMarker(point: point, origin: forecast.origin, format: "%.0f%@", color: Color.accentColor, xLabel: "Date", yLabel: "Particle")
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.0f%@", color: Color.accentColor, xLabel: "Date", yLabel: "Particle")
                     }
                 }
             }

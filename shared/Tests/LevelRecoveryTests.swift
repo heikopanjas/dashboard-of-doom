@@ -15,8 +15,11 @@ import Testing
             transport: { request in
                 let url = try #require(request.url)
                 let isGauge = url.host == "www.pegelonline.wsv.de"
-                let data = isGauge
-                    ? Data(#"[{"uuid":"near","latitude":52.52,"longitude":13.37,"water":{"longname":"SPREE"}},{"uuid":"far","latitude":53.5,"longitude":14.0,"water":{"longname":"ODER"}}]"#.utf8)
+                let data =
+                    isGauge
+                    ? Data(
+                        #"[{"uuid":"near","latitude":52.52,"longitude":13.37,"water":{"longname":"SPREE"}},{"uuid":"far","latitude":53.5,"longitude":14.0,"water":{"longname":"ODER"}}]"#
+                            .utf8)
                     : Data(#"{"elements":[]}"#.utf8)
                 let response = try #require(HTTPURLResponse(url: url, statusCode: isGauge ? 200 : status, httpVersion: nil, headerFields: nil))
                 return (data, response)
@@ -58,7 +61,8 @@ import Testing
     }
 
     @Test func theGaugesFloodMarksTravelInCustomDataInMetres() async throws {
-        let characteristics = #"{"uuid":"id","timeseries":[{"shortname":"Q","characteristicValues":[{"shortname":"MQ","value":50.0}]},{"shortname":"W","unit":"cm","characteristicValues":[{"shortname":"MHW","value":412.0},{"shortname":"M_I","value":300.0},{"shortname":"HSW","value":310.0}]}]}"#
+        let characteristics =
+            #"{"uuid":"id","timeseries":[{"shortname":"Q","characteristicValues":[{"shortname":"MQ","value":50.0}]},{"shortname":"W","unit":"cm","characteristicValues":[{"shortname":"MHW","value":412.0},{"shortname":"M_I","value":300.0},{"shortname":"HSW","value":310.0}]}]}"#
         let network = NetworkManager(
             transport: { request in
                 let url = try #require(request.url)
@@ -78,7 +82,8 @@ import Testing
     }
 
     @Test func theSeriesEndsAtTheLastMeasurement() async throws {
-        let levels = #"[{"timestamp":"2026-09-28T10:00:00+02:00","value":273.0},{"timestamp":"2026-09-28T10:15:00+02:00","value":274.0},{"timestamp":"2026-09-28T10:45:00+02:00","value":275.0}]"#
+        let levels =
+            #"[{"timestamp":"2026-09-28T10:00:00+02:00","value":273.0},{"timestamp":"2026-09-28T10:15:00+02:00","value":274.0},{"timestamp":"2026-09-28T10:45:00+02:00","value":275.0}]"#
         let network = NetworkManager(
             transport: { request in
                 let url = try #require(request.url)
@@ -89,7 +94,8 @@ import Testing
         await network.startMonitoring()
         try await network.waitForConnection(timeout: .seconds(2))
         let controller = LevelController(networkManager: network)
-        let station = LevelController.Station(id: "id", waterway: "Spree", gauge: "BERLIN-MÜHLENDAMM UP", location: Location(latitude: 52.5, longitude: 13.4))
+        let station = LevelController.Station(
+            id: "id", waterway: "Spree", gauge: "BERLIN-MÜHLENDAMM UP", location: Location(latitude: 52.5, longitude: 13.4))
         let candidate = try await controller.candidate(for: station)
         let series = try #require(candidate.measurements[.water(.level)])
         // The gap at 10:30 is filled; nothing follows 10:45. The zero-valued placeholders that used to stand in for a forecast are gone,

@@ -1,6 +1,6 @@
-import DoomKitProcess
-import DoomKitLocation
 import CoreLocation
+import DoomKitLocation
+import DoomKitProcess
 import Foundation
 import WeatherKit
 
@@ -79,11 +79,11 @@ class ForecastController: ProcessController {
             }
             measurements[.forecast(.visibility)] = visibility
 
-//            let windDirection = forecast.map {
-//                ProcessValue<Dimension>(
-//                    value: Measurement(value: $0.wind.direction.value, unit: $0.wind.direction.unit), quality: .uncertain, timestamp: $0.date)
-//            }
-//            measurements[.forecast(.windDirection)] = windDirection
+            //            let windDirection = forecast.map {
+            //                ProcessValue<Dimension>(
+            //                    value: Measurement(value: $0.wind.direction.value, unit: $0.wind.direction.unit), quality: .uncertain, timestamp: $0.date)
+            //            }
+            //            measurements[.forecast(.windDirection)] = windDirection
 
             let windSpeed = forecast.map {
                 ProcessValue<Dimension>(

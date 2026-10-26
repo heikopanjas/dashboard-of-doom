@@ -1,7 +1,7 @@
+import DoomKitLocation
+import DoomKitProcess
 import DoomKitServices
 import DoomKitTools
-import DoomKitProcess
-import DoomKitLocation
 import Foundation
 
 private struct Poll {
@@ -279,7 +279,8 @@ class SurveyController: ProcessController {
                     }
                 }
             }
-        } catch {
+        }
+        catch {
             trace.error("Error processing survey data: \(error)")
         }
         return sensor

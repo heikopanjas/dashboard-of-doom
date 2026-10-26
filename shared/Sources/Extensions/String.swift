@@ -12,4 +12,3 @@ extension String {
         return String(string[..<index]) + "...."
     }
 }
-

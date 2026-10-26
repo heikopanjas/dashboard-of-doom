@@ -4,7 +4,9 @@ import Foundation
 import Testing
 
 @Suite struct SensorHeaderViewTests {
-    private func reading(name: String = "Spree", placemark: String? = nil, customData: [String: Any]? = nil, distance: Double? = nil) -> ProcessReading {
+    private func reading(
+        name: String = "Spree", placemark: String? = nil, customData: [String: Any]? = nil, distance: Double? = nil
+    ) -> ProcessReading {
         let sensor = ProcessSensor(
             name: name, location: Location(latitude: 52.5, longitude: 13.4), placemark: placemark, customData: customData, measurements: [:],
             timestamp: Date(timeIntervalSince1970: 0), sourceID: "id", distance: distance)

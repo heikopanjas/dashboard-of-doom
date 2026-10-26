@@ -15,7 +15,9 @@ private struct MapAnnotationPreview: View {
     )
 
     var body: some View {
-        CollisionMapView(position: self.$position, annotations: self.annotations, showsPointsOfInterest: self.showsPointsOfInterest, pointsOfInterest: self.places)
+        CollisionMapView(
+            position: self.$position, annotations: self.annotations, showsPointsOfInterest: self.showsPointsOfInterest,
+            pointsOfInterest: self.places)
     }
 
     init(coincident: Bool, separated: Bool = false, placeCount: Int = 0, showsPointsOfInterest: Bool = false) {

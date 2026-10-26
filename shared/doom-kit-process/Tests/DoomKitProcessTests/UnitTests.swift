@@ -1,6 +1,6 @@
+import DoomKitProcess
 import Foundation
 import Testing
-import DoomKitProcess
 
 struct UnitTests {
     @Test func publicUnitsPreserveDefinitions() {
@@ -56,7 +56,8 @@ struct UnitTests {
         #expect(Measurement(value: 1, unit: UnitRadiation.sieverts).converted(to: .microsieverts).value == 1_000_000)
         #expect(Measurement(value: 1, unit: UnitPopulation.million).converted(to: .thousand).value == 1000)
         #expect(Measurement(value: 10, unit: UnitPercentage.permille).converted(to: .percent).value == 1)
-        let value = ProcessValue(value: Measurement(value: 1, unit: UnitAcidity.pH), customData: ["source": "fixture"], quality: .good, timestamp: .distantPast)
+        let value = ProcessValue(
+            value: Measurement(value: 1, unit: UnitAcidity.pH), customData: ["source": "fixture"], quality: .good, timestamp: .distantPast)
         #expect(value.value.unit == .pH)
         #expect(value.quality == .good)
         #expect(value.customData?["source"] as? String == "fixture")

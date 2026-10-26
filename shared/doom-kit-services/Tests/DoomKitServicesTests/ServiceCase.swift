@@ -159,9 +159,11 @@ struct ServiceCase: Sendable {
         Self(
             name: "EnergyService.fetchBrentHistory", url: #"https://eurooilwatch.com/api/v1/brent-history"#,
             fetch: { manager in return try await EnergyService.fetchBrentHistory(networkManager: manager) }),
-        Self(name: "EnergyService.fetchBrentSpot", url: "https://eurooilwatch.com/api/v1/brent-eia-daily",
+        Self(
+            name: "EnergyService.fetchBrentSpot", url: "https://eurooilwatch.com/api/v1/brent-eia-daily",
             fetch: { manager in return try await EnergyService.fetchBrentSpot(networkManager: manager) }),
-        Self(name: "EnergyService.fetchGas", url: "https://eurooilwatch.com/api/v1/gas",
+        Self(
+            name: "EnergyService.fetchGas", url: "https://eurooilwatch.com/api/v1/gas",
             fetch: { manager in return try await EnergyService.fetchGas(networkManager: manager) }),
         Self(
             name: "EnergyService.fetchLNG", url: #"https://aegis.acer.europa.eu/terminal/price_assessments/historical_data"#,

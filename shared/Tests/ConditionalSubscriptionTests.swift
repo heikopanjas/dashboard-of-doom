@@ -58,7 +58,8 @@ struct ConditionalSubscriptionTests {
                     self.presenter = CovidPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case SourcePreferences.energyEnableKey:
                     self.presenter = EnergyPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
-                case SourcePreferences.waterKey: self.presenter = LevelPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
+                case SourcePreferences.waterKey:
+                    self.presenter = LevelPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case "showRadiation":
                     self.presenter = RadiationPresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)
                 case "showParticles": self.presenter = ParticlePresenter(defaults: self.defaults, register: register, remove: remove, fetch: fetch)

@@ -154,7 +154,8 @@ struct WarningRule: Identifiable {
         WarningRule(
             id: "particle.o3", family: .particles, label: "Ozone", current: [.particle(.o3)], forecast: nil, direction: .above,
             unit: UnitConcentrationMass.microgramsPerCubicMeter, symbol: "µg/m³", defaultWarning: 180, defaultCritical: 240,
-            basis: "The EU information threshold for ozone is 180 µg/m³ and its alert threshold 240 µg/m³, which the UBA index rates poor and very poor.",
+            basis:
+                "The EU information threshold for ozone is 180 µg/m³ and its alert threshold 240 µg/m³, which the UBA index rates poor and very poor.",
             range: 0 ... 2000, fractionDigits: 0, providerForecast: true),
         WarningRule(
             id: "radiation.total", family: .radiation, label: "Dose Rate", current: [.radiation(.total)], forecast: nil, direction: .above,
@@ -185,7 +186,7 @@ struct WarningRule: Identifiable {
             id: "fuel.price", family: .fuel, label: "Fuel Price", current: [], forecast: nil, direction: .above, unit: nil, symbol: "€/l",
             defaultWarning: 2.00, defaultCritical: 2.20,
             basis: "The cheapest open station for the fuel and radius chosen under Energy. A notice means even that one is dear.",
-            range: 0 ... 10, fractionDigits: 2),
+            range: 0 ... 10, fractionDigits: 2)
     ]
 
     static func rules(for family: WarningFamily) -> [WarningRule] {

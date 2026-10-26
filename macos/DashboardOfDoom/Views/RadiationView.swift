@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 /// The Radiation tab: the map of the stations, then one card per station, nearest first. Up to six with Multiple Sensors on, else the

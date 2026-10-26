@@ -11,7 +11,9 @@ struct AboutSettingsView: View {
                 .padding(.bottom, 4)
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))")
+                    Text(
+                        "Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"))"
+                    )
                     Spacer()
                 }
                 HStack {

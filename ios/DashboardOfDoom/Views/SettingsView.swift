@@ -1,5 +1,5 @@
-import DoomKitProcess
 import DoomKitLocation
+import DoomKitProcess
 import DoomKitTools
 import SwiftUI
 
@@ -131,9 +131,11 @@ struct SettingsView: View {
                 Toggle("Energy", isOn: $enableEnergy)
                 Toggle("Election Polls", isOn: $enableElectionPolls)
                 HStack {
-                    Text("Enabled sources keep updating and show their values on the home map; warnings appear on Home. Turning a source off stops its updates and hides its map label. Its toolbar button stays dimmed. Long press any of the four middle buttons to choose among the enabled sources. Weather always updates.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
+                    Text(
+                        "Enabled sources keep updating and show their values on the home map; warnings appear on Home. Turning a source off stops its updates and hides its map label. Its toolbar button stays dimmed. Long press any of the four middle buttons to choose among the enabled sources. Weather always updates."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
                     Spacer()
                 }
             }
@@ -174,258 +176,259 @@ struct SettingsView: View {
 
         // Only while the source is on; its switch is in the Sources card. COVID has nothing else to set, so its forecast is all there is.
         if enableCovid == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("COVID-19")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                ForecastSettingsRow(family: .covid) {
-                    AppProcess.shared.refreshSubscription(subscriber: covid)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("COVID-19")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    ForecastSettingsRow(family: .covid) {
+                        AppProcess.shared.refreshSubscription(subscriber: covid)
+                    }
                 }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
         }
 
         // Only while the source is on; its switch is in the Sources card.
         if showWater == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Water Level")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                Toggle("Multiple Sensors", isOn: $multiSensorLevel)
-                    .onChange(of: multiSensorLevel) { _, _ in
-                        AppProcess.shared.refreshSubscription(subscriber: level)
-                    }
-                HStack {
-                    Text(
-                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey)) gauges, nearest first, on the Water Level screen. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
-                    )
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    Spacer()
-                }
-                // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
-                Picker("Waterways", selection: self.levelWaterways) {
-                    ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: multiSensorLevel), id: \.self) { choice in
-                        Text(choice.label).tag(choice)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: nearestLevelSensor) { _, _ in
-                    AppProcess.shared.refreshSubscription(subscriber: level)
-                }
-                .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
-                    AppProcess.shared.refreshSubscription(subscriber: level)
-                }
-                HStack {
-                    Text("\(self.levelWaterways.wrappedValue.explanation) The map on the home screen always shows the first gauge.")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Water Level")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    Toggle("Multiple Sensors", isOn: $multiSensorLevel)
+                        .onChange(of: multiSensorLevel) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: level)
+                        }
+                    HStack {
+                        Text(
+                            "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorLevelKey)) gauges, nearest first, on the Water Level screen. Otherwise only the nearest gauge is loaded. The map on the home screen shows only the nearest one."
+                        )
                         .font(.footnote)
                         .foregroundColor(.gray)
-                    Spacer()
-                }
-                ForecastSettingsRow(family: .level) {
-                    AppProcess.shared.refreshSubscription(subscriber: level)
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
-        }
-        // Only while the source is on; its switch is in the Sources card.
-        if showRadiation == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Radiation")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
-                    .onChange(of: multiSensorRadiation) { _, _ in
-                        AppProcess.shared.refreshSubscription(subscriber: radiation)
+                        Spacer()
                     }
-                HStack {
-                    Text(
-                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey)) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The map on the home screen shows only the nearest one."
-                    )
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    Spacer()
-                }
-                ForecastSettingsRow(family: .radiation) {
-                    AppProcess.shared.refreshSubscription(subscriber: radiation)
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
-        }
-        // Only while the source is on; its switch is in the Sources card.
-        if showParticles == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Particulate Matter")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                Toggle("Any Station", isOn: $nearestParticleSensor)
-                    .onChange(of: nearestParticleSensor) { _, _ in
-                        AppProcess.shared.refreshSubscription(subscriber: particles)
-                    }
-                HStack {
-                    Text(
-                        "Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} are shown, nearest first, which can mean fewer of them."
-                    )
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    Spacer()
-                }
-                Toggle("Multiple Sensors", isOn: $multiSensorParticles)
-                    .onChange(of: multiSensorParticles) { _, _ in
-                        AppProcess.shared.refreshSubscription(subscriber: particles)
-                    }
-                HStack {
-                    Text(
-                        "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey)) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The map on the home screen shows only the nearest one."
-                    )
-                    .font(.footnote)
-                    .foregroundColor(.gray)
-                    Spacer()
-                }
-                ForecastSettingsRow(family: .particles) {
-                    AppProcess.shared.refreshSubscription(subscriber: particles)
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-        }
-        }
-
-        // Only while the source is on; its switch is in the Sources card.
-        if enableEnergy == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Energy")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                if enableEnergy == true {
-                    VStack(spacing: 12) {
-                        // Saving a key is a keychain write, which nothing observes, so the stations are refreshed by hand.
-                        SecretField(
-                            label: "Tankerkoenig API key", key: FuelController.apiKeyName,
-                            onChange: {
-                                self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
-                                AppProcess.shared.refreshSubscription(subscriber: self.fuel)
-                            })
-                        HStack {
-                            Text(
-                                "Puts a map of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
-                            )
-                            .font(.footnote)
-                            .foregroundColor(.gray)
-                            Spacer()
+                    // One choice over two stored switches; Natural First is only offered with extra gauges, since without them it is Natural.
+                    Picker("Waterways", selection: self.levelWaterways) {
+                        ForEach(SourcePreferences.LevelWaterways.choices(multiSensor: multiSensorLevel), id: \.self) { choice in
+                            Text(choice.label).tag(choice)
                         }
-                        if hasFuelKey == true {
-                            Picker("Fuel", selection: $fuelType) {
-                                ForEach(FuelStation.Fuel.allCases, id: \.rawValue) { fuel in
-                                    Text(fuel.label).tag(fuel.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            Picker("Order", selection: $fuelOrder) {
-                                ForEach(FuelMapView.Order.allCases, id: \.rawValue) { order in
-                                    Text(order.label).tag(order.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            HStack {
-                                Text("Which fuel the map shows and which end of the price range. All three prices are already loaded, so these change the map at once.")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                            }
-                            // A new radius is a different request, so this one refetches.
-                            Picker("Radius", selection: $fuelRadius) {
-                                ForEach(SourcePreferences.fuelRadiusChoices, id: \.self) { kilometres in
-                                    Text("\(kilometres) km").tag(kilometres)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .onChange(of: fuelRadius) { _, _ in
-                                AppProcess.shared.refreshSubscription(subscriber: self.fuel)
-                            }
-                            HStack {
-                                Text("How far around you to look. Tankerkoenig searches at most 25 km.")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                            }
-                            // Tankerkoenig allows no filtering the user did not ask for, so leaving out closed stations is a switch.
-                            Toggle("Open Stations Only", isOn: $fuelOpenOnly)
-                            HStack {
-                                Text("Leave out stations that are closed right now. Off, they are ranked too and marked with a lock.")
-                                    .font(.footnote)
-                                    .foregroundColor(.gray)
-                                Spacer()
-                            }
-                        }
-                    }
-                }
-                ForecastSettingsRow(family: .energy) {
-                    AppProcess.shared.refreshSubscription(subscriber: self.energy)
-                }
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
-            .onAppear {
-                self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
-            }
-        }
-        }
-
-
-        // Only while the source is on; its switch is in the Sources card.
-        if enableElectionPolls == true {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Election Polls")
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding(.bottom, 4)
-            VStack(spacing: 12) {
-                if enableElectionPolls == true {
-                    Picker("Scope", selection: $electionPollScope) {
-                        Text("Federal").tag(0)
-                        Text("State").tag(1)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: electionPollScope) { _, _ in
-                                                AppProcess.shared.refreshSubscription(subscriber: electionPolls)
+                    .onChange(of: nearestLevelSensor) { _, _ in
+                        AppProcess.shared.refreshSubscription(subscriber: level)
+                    }
+                    .onChange(of: multiSensorLevelOtherWaterways) { _, _ in
+                        AppProcess.shared.refreshSubscription(subscriber: level)
                     }
                     HStack {
-                        Text("Federal covers the Bundestag. State covers the parliament where you are.")
+                        Text("\(self.levelWaterways.wrappedValue.explanation) The map on the home screen always shows the first gauge.")
                             .font(.footnote)
                             .foregroundColor(.gray)
                         Spacer()
                     }
+                    ForecastSettingsRow(family: .level) {
+                        AppProcess.shared.refreshSubscription(subscriber: level)
+                    }
                 }
-                ForecastSettingsRow(family: .polls) {
-                    AppProcess.shared.refreshSubscription(subscriber: electionPolls)
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+        }
+        // Only while the source is on; its switch is in the Sources card.
+        if showRadiation == true {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Radiation")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    Toggle("Multiple Sensors", isOn: $multiSensorRadiation)
+                        .onChange(of: multiSensorRadiation) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: radiation)
+                        }
+                    HStack {
+                        Text(
+                            "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorRadiationKey)) measuring stations, nearest first, on the Radiation tab. Otherwise only the nearest station is loaded. The map on the home screen shows only the nearest one."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    ForecastSettingsRow(family: .radiation) {
+                        AppProcess.shared.refreshSubscription(subscriber: radiation)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+        }
+        // Only while the source is on; its switch is in the Sources card.
+        if showParticles == true {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Particulate Matter")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    Toggle("Any Station", isOn: $nearestParticleSensor)
+                        .onChange(of: nearestParticleSensor) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: particles)
+                        }
+                    HStack {
+                        Text(
+                            "Use the closest stations even if they measure fewer or other pollutants. Otherwise only stations reporting \u{1D40F}\u{1D40C}\u{2081}\u{2080}, \u{1D40F}\u{1D40C}\u{2082}\u{2085}, \u{1D40E}\u{2083} and \u{1D40D}\u{1D40E}\u{2082} are shown, nearest first, which can mean fewer of them."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    Toggle("Multiple Sensors", isOn: $multiSensorParticles)
+                        .onChange(of: multiSensorParticles) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: particles)
+                        }
+                    HStack {
+                        Text(
+                            "Show up to \(SourcePreferences.sensorMaximum(forKey: SourcePreferences.multiSensorParticlesKey)) stations, nearest first, on the Particles tab. Otherwise only the nearest station is loaded, which needs fewer requests. The map on the home screen shows only the nearest one."
+                        )
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        Spacer()
+                    }
+                    ForecastSettingsRow(family: .particles) {
+                        AppProcess.shared.refreshSubscription(subscriber: particles)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+        }
+
+        // Only while the source is on; its switch is in the Sources card.
+        if enableEnergy == true {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Energy")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    if enableEnergy == true {
+                        VStack(spacing: 12) {
+                            // Saving a key is a keychain write, which nothing observes, so the stations are refreshed by hand.
+                            SecretField(
+                                label: "Tankerkoenig API key", key: FuelController.apiKeyName,
+                                onChange: {
+                                    self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
+                                    AppProcess.shared.refreshSubscription(subscriber: self.fuel)
+                                })
+                            HStack {
+                                Text(
+                                    "Puts a map of the dearest filling stations near you at the top of the Energy tab. A key is free from creativecommons.tankerkoenig.de and is kept in the keychain, never in the app."
+                                )
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                                Spacer()
+                            }
+                            if hasFuelKey == true {
+                                Picker("Fuel", selection: $fuelType) {
+                                    ForEach(FuelStation.Fuel.allCases, id: \.rawValue) { fuel in
+                                        Text(fuel.label).tag(fuel.rawValue)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                Picker("Order", selection: $fuelOrder) {
+                                    ForEach(FuelMapView.Order.allCases, id: \.rawValue) { order in
+                                        Text(order.label).tag(order.rawValue)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                HStack {
+                                    Text(
+                                        "Which fuel the map shows and which end of the price range. All three prices are already loaded, so these change the map at once."
+                                    )
+                                    .font(.footnote)
+                                    .foregroundColor(.gray)
+                                    Spacer()
+                                }
+                                // A new radius is a different request, so this one refetches.
+                                Picker("Radius", selection: $fuelRadius) {
+                                    ForEach(SourcePreferences.fuelRadiusChoices, id: \.self) { kilometres in
+                                        Text("\(kilometres) km").tag(kilometres)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .onChange(of: fuelRadius) { _, _ in
+                                    AppProcess.shared.refreshSubscription(subscriber: self.fuel)
+                                }
+                                HStack {
+                                    Text("How far around you to look. Tankerkoenig searches at most 25 km.")
+                                        .font(.footnote)
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                }
+                                // Tankerkoenig allows no filtering the user did not ask for, so leaving out closed stations is a switch.
+                                Toggle("Open Stations Only", isOn: $fuelOpenOnly)
+                                HStack {
+                                    Text("Leave out stations that are closed right now. Off, they are ranked too and marked with a lock.")
+                                        .font(.footnote)
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                }
+                            }
+                        }
+                    }
+                    ForecastSettingsRow(family: .energy) {
+                        AppProcess.shared.refreshSubscription(subscriber: self.energy)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .onAppear {
+                    self.hasFuelKey = AppSecrets.shared.contains(FuelController.apiKeyName)
                 }
             }
-            .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(10)
         }
+
+        // Only while the source is on; its switch is in the Sources card.
+        if enableElectionPolls == true {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Election Polls")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .padding(.bottom, 4)
+                VStack(spacing: 12) {
+                    if enableElectionPolls == true {
+                        Picker("Scope", selection: $electionPollScope) {
+                            Text("Federal").tag(0)
+                            Text("State").tag(1)
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: electionPollScope) { _, _ in
+                            AppProcess.shared.refreshSubscription(subscriber: electionPolls)
+                        }
+                        HStack {
+                            Text("Federal covers the Bundestag. State covers the parliament where you are.")
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                            Spacer()
+                        }
+                    }
+                    ForecastSettingsRow(family: .polls) {
+                        AppProcess.shared.refreshSubscription(subscriber: electionPolls)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
         }
 
         AboutSettingsView()

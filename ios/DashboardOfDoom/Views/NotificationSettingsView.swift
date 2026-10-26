@@ -26,9 +26,11 @@ struct NotificationSettingsView: View {
                         }
                     }
                 HStack {
-                    Text("Sends a notice when a reading reaches its warning or its critical limit, once for each, and checks now and then in the background. Nothing is sent about the Berlin fallback location.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
+                    Text(
+                        "Sends a notice when a reading reaches its warning or its critical limit, once for each, and checks now and then in the background. Nothing is sent about the Berlin fallback location."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
                     Spacer()
                 }
                 if self.enabled == true && self.status == .denied {
@@ -142,11 +144,13 @@ struct NotificationFamilySettingsView: View {
             case .hazards:
                 return "Official NINA warnings that cover your location or lie nearby, once for each new warning. Needs Warnings on under Sources."
             case .level:
-                return "Every gauge that is loaded, against its own official marks, and where PEGELONLINE publishes a forecast, its next 24 hours too while the Water Level forecast is on. Needs Water Level on under Sources."
+                return
+                    "Every gauge that is loaded, against its own official marks, and where PEGELONLINE publishes a forecast, its next 24 hours too while the Water Level forecast is on. Needs Water Level on under Sources."
             case .radiation:
                 return "Every radiation station that is loaded. Needs Radiation on under Sources."
             case .particles:
-                return "Every air quality station that is loaded, one notice per pollutant, and UBA's forecast for the next 24 hours while the Particulate Matter forecast is on. Needs Particulate Matter on under Sources."
+                return
+                    "Every air quality station that is loaded, one notice per pollutant, and UBA's forecast for the next 24 hours while the Particulate Matter forecast is on. Needs Particulate Matter on under Sources."
             case .covid:
                 return "The reporting district's incidence. Needs COVID-19 on under Sources."
             case .energy:
@@ -243,9 +247,11 @@ private struct HazardSeverityCard: View {
                 Text("Critical from")
                 self.picker($critical)
                 HStack {
-                    Text("The severity the issuing office gives a warning. The DWD's yellow, orange, red and purple are minor, moderate, severe and extreme.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
+                    Text(
+                        "The severity the issuing office gives a warning. The DWD's yellow, orange, red and purple are minor, moderate, severe and extreme."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
                     Spacer()
                 }
             }
@@ -289,9 +295,11 @@ private struct LevelMarksCard: View {
                     }
                 }
                 HStack {
-                    Text("A warning at the first official flood stage, or the mean high water where there is none. Critical at the second stage, the highest navigable level or the record high, whichever comes first above it. About a quarter of all gauges, many on canals, publish no marks and raise no notices.")
-                        .font(.footnote)
-                        .foregroundColor(.gray)
+                    Text(
+                        "A warning at the first official flood stage, or the mean high water where there is none. Critical at the second stage, the highest navigable level or the record high, whichever comes first above it. About a quarter of all gauges, many on canals, publish no marks and raise no notices."
+                    )
+                    .font(.footnote)
+                    .foregroundColor(.gray)
                     Spacer()
                 }
             }

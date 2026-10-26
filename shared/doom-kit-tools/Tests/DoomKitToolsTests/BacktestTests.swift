@@ -1,6 +1,7 @@
-@testable import DoomKitTools
 import Foundation
 import Testing
+
+@testable import DoomKitTools
 
 /// Each model on the kind of series it is for, against repeating the last value. A MASE below 1 beats that; the 80 % band should hold
 /// about 80 % of what happened.
@@ -8,7 +9,8 @@ struct BacktestTests {
     private static let seeds: [UInt64] = [11, 12, 13, 14, 15]
 
     /// The results of several seeds together, so one lucky or unlucky series does not decide.
-    private static func pooled(_ series: (UInt64) -> [Double], model: some ForecastModel, horizon: Int, origins: Int = 5) throws -> BacktestResult {
+    private static func pooled(_ series: (UInt64) -> [Double], model: some ForecastModel, horizon: Int, origins: Int = 5) throws -> BacktestResult
+    {
         var mae = 0.0
         var naive = 0.0
         var inside = 0.0

@@ -7,9 +7,11 @@ let package = Package(
     products: [.library(name: "DoomKitTools", targets: ["DoomKitTools"])],
     dependencies: [.package(path: "../doom-kit-location")],
     targets: [
-        .target(name: "DoomKitTools", dependencies: [
-        .product(name: "DoomKitLocation", package: "doom-kit-location")
-        ]),
+        .target(
+            name: "DoomKitTools",
+            dependencies: [
+                .product(name: "DoomKitLocation", package: "doom-kit-location")
+            ]),
         .testTarget(name: "DoomKitToolsTests", dependencies: ["DoomKitTools"])
     ],
     swiftLanguageModes: [.v6]

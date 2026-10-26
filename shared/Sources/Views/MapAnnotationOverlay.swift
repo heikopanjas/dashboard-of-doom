@@ -30,9 +30,11 @@ struct MapAnnotationOverlay: View {
             .accessibilityHidden(true)
             ForEach(self.annotations) { annotation in
                 if let placement = self.placements.first(where: { $0.id == annotation.id }) {
-                    MapAnnotationLabel(selector: annotation.selector, icon: annotation.icon, faceplate: annotation.faceplate,
-                                       backgroundOpacity: self.showsPointsOfInterest == true ? 1.0 : 0.5, color: annotation.color)
-                        .position(x: placement.rect.midX, y: placement.rect.midY)
+                    MapAnnotationLabel(
+                        selector: annotation.selector, icon: annotation.icon, faceplate: annotation.faceplate,
+                        backgroundOpacity: self.showsPointsOfInterest == true ? 1.0 : 0.5, color: annotation.color
+                    )
+                    .position(x: placement.rect.midX, y: placement.rect.midY)
                 }
             }
         }

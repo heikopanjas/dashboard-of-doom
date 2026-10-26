@@ -253,7 +253,8 @@ struct ContentView: View {
                     ToolbarItem(placement: .bottomBar) {
                         DashboardToolbar(
                             selected: self.$selectedScreen, storedConfiguration: self.$toolbarConfiguration,
-                            available: Set(IOSScreen.allCases.filter { self.isAvailable($0) }))
+                            available: Set(IOSScreen.allCases.filter { self.isAvailable($0) })
+                        )
                         .frame(width: self.toolbarWidth)
                     }
                 }

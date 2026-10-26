@@ -122,7 +122,8 @@ enum WarningEvaluator {
             return WarningAssessment(
                 key: Self.key(rule.id, reading: reading), input: "forecast", family: rule.family, level: level,
                 title: Self.title(rule.label, level: level),
-                body: "\(Self.place(of: reading)): \(rule.format(worst.value)) expected \(Self.when(worst.timestamp, now: now)) (\(provider) forecast). "
+                body:
+                    "\(Self.place(of: reading)): \(rule.format(worst.value)) expected \(Self.when(worst.timestamp, now: now)) (\(provider) forecast). "
                     + Self.limitSentence(level, limits: limits, rule: rule))
         }
         return nil
@@ -135,7 +136,7 @@ enum WarningEvaluator {
         let end = now.addingTimeInterval(Self.forecastWindow)
         var worst: (value: Double, timestamp: Date)?
         for sample in samples where sample.timestamp > now && sample.timestamp <= end {
-            if let current = worst, (direction == .above ? sample.value <= current.value : sample.value >= current.value) { continue }
+            if let current = worst, direction == .above ? sample.value <= current.value : sample.value >= current.value { continue }
             worst = sample
         }
         return worst

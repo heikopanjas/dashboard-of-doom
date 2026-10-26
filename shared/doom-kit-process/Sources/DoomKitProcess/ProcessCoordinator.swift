@@ -17,11 +17,17 @@ public final class ProcessCoordinator {
     private var hasPerformedInitialRefresh = false
     private var startupExpired = false
 
-    public convenience init(locationManager: LocationManager, networkManager: NetworkManager, clock: ProcessClock = .continuous, locationRefreshPolicy: LocationRefreshPolicy = .firstMeasurement) {
+    public convenience init(
+        locationManager: LocationManager, networkManager: NetworkManager, clock: ProcessClock = .continuous,
+        locationRefreshPolicy: LocationRefreshPolicy = .firstMeasurement
+    ) {
         self.init(locationSource: locationManager, networkSource: networkManager, clock: clock, locationRefreshPolicy: locationRefreshPolicy)
     }
 
-    init(locationSource: any ProcessLocationSource, networkSource: any ProcessNetworkSource, clock: ProcessClock = .continuous, locationRefreshPolicy: LocationRefreshPolicy = .firstMeasurement) {
+    init(
+        locationSource: any ProcessLocationSource, networkSource: any ProcessNetworkSource, clock: ProcessClock = .continuous,
+        locationRefreshPolicy: LocationRefreshPolicy = .firstMeasurement
+    ) {
         self.locationRefreshPolicy = locationRefreshPolicy
         self.locationManager = locationSource
         self.networkManager = networkSource

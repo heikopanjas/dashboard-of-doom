@@ -40,10 +40,12 @@ import Testing
     private static func result(end: Date) -> ParticleController.StationResult {
         let unit = UnitConcentrationMass.microgramsPerCubicMeter
         let values = [-4.0, -3.0, -1.0, 0.0].map { hours in
-            ProcessValue<Dimension>(value: Measurement(value: 10 + hours, unit: unit), quality: .good, timestamp: end.addingTimeInterval(hours * 3600))
+            ProcessValue<Dimension>(
+                value: Measurement(value: 10 + hours, unit: unit), quality: .good, timestamp: end.addingTimeInterval(hours * 3600))
         }
         return ParticleController.StationResult(
-            station: ParticleController.Station(id: "121", code: "DEBE010", name: "Berlin Wedding", location: Location(latitude: 52.54, longitude: 13.35)),
+            station: ParticleController.Station(
+                id: "121", code: "DEBE010", name: "Berlin Wedding", location: Location(latitude: 52.54, longitude: 13.35)),
             cachedMeasurements: [.particle(.pm10): values, .particle(.no2): values])
     }
 
@@ -67,10 +69,12 @@ import Testing
 
     @Test func theForecastTravelsBesideTheMeasurementsForPollutantsTheStationMeasures() async throws {
         let calls = Calls()
-        let controller = ParticleController(showForecasts: { true }, fetchForecast: { _, _, _ in
-            calls.record()
-            return Data(Self.forecast.utf8)
-        })
+        let controller = ParticleController(
+            showForecasts: { true },
+            fetchForecast: { _, _, _ in
+                calls.record()
+                return Data(Self.forecast.utf8)
+            })
         let end = Date(timeIntervalSince1970: (Date.now.timeIntervalSince1970 / 3600).rounded(.down) * 3600)
         let candidate = try #require(try await controller.candidate(for: Self.result(end: end), from: end.addingTimeInterval(-86_400), to: end))
         #expect(calls.value == 1)
@@ -84,10 +88,12 @@ import Testing
 
     @Test func withForecastsSwitchedOffNothingIsRequested() async throws {
         let calls = Calls()
-        let controller = ParticleController(showForecasts: { false }, fetchForecast: { _, _, _ in
-            calls.record()
-            return Data(Self.forecast.utf8)
-        })
+        let controller = ParticleController(
+            showForecasts: { false },
+            fetchForecast: { _, _, _ in
+                calls.record()
+                return Data(Self.forecast.utf8)
+            })
         let end = Date(timeIntervalSince1970: (Date.now.timeIntervalSince1970 / 3600).rounded(.down) * 3600)
         let candidate = try #require(try await controller.candidate(for: Self.result(end: end), from: end.addingTimeInterval(-86_400), to: end))
         #expect(calls.value == 0)

@@ -33,9 +33,11 @@ struct StatusBarSettingsSection: View {
                     .disabled(self.selection.contains(value) == false && self.selection.count >= StatusBarPreferences.maximum)
                 }
             }
-            Text("Up to two values, from any source. With none ticked, the menu bar shows the temperature; a value whose source is switched off is left out.")
-                .font(.footnote)
-                .foregroundColor(.gray)
+            Text(
+                "Up to two values, from any source. With none ticked, the menu bar shows the temperature; a value whose source is switched off is left out."
+            )
+            .font(.footnote)
+            .foregroundColor(.gray)
         } header: {
             Text("Menu Bar")
         }

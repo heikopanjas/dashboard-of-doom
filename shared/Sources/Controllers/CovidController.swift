@@ -1,7 +1,7 @@
+import DoomKitLocation
+import DoomKitProcess
 import DoomKitServices
 import DoomKitTools
-import DoomKitProcess
-import DoomKitLocation
 import Foundation
 
 class CovidController: ProcessController {
@@ -120,8 +120,12 @@ class CovidController: ProcessController {
             // Location falls outside every fetched candidate (bbox edge, fallback location) —
             // fall back to nearest polygon edge, same pattern HazardController uses.
             resolved = candidates.min { a, b in
-                let distanceA = a.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min() ?? .greatestFiniteMagnitude
-                let distanceB = b.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min() ?? .greatestFiniteMagnitude
+                let distanceA =
+                    a.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min()
+                    ?? .greatestFiniteMagnitude
+                let distanceB =
+                    b.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min()
+                    ?? .greatestFiniteMagnitude
                 return distanceA < distanceB
             }
         }
@@ -146,24 +150,24 @@ class CovidController: ProcessController {
         "Treptow-Köpenick": "11009",
         "Marzahn-Hellersdorf": "11010",
         "Lichtenberg": "11011",
-        "Reinickendorf": "11012",
+        "Reinickendorf": "11012"
     ]
 
     private static func resolveBerlinBezirk(for location: Location) -> District? {
         guard let url = Bundle.main.url(forResource: "BerlinBezirke", withExtension: "geojson"),
-              let data = try? Data(contentsOf: url),
-              let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any],
-              let features = json["features"] as? [[String: Any]]
+            let data = try? Data(contentsOf: url),
+            let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any],
+            let features = json["features"] as? [[String: Any]]
         else { return nil }
 
         var bezirke: [District] = []
         for feature in features {
             guard let properties = feature["properties"] as? [String: Any],
-                  let name = properties["name"] as? String,
-                  let id = Self.berlinBezirkRKIIds[name],
-                  let geometry = feature["geometry"] as? [String: Any],
-                  let polygons = Self.parsePolygons(from: geometry),
-                  let centroid = Self.centroid(of: polygons)
+                let name = properties["name"] as? String,
+                let id = Self.berlinBezirkRKIIds[name],
+                let geometry = feature["geometry"] as? [String: Any],
+                let polygons = Self.parsePolygons(from: geometry),
+                let centroid = Self.centroid(of: polygons)
             else { continue }
             bezirke.append(District(id: id, name: "Berlin \(name)", location: centroid, polygons: polygons))
         }
@@ -176,25 +180,29 @@ class CovidController: ProcessController {
         }
 
         return bezirke.min { a, b in
-            let distanceA = a.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min() ?? .greatestFiniteMagnitude
-            let distanceB = b.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min() ?? .greatestFiniteMagnitude
+            let distanceA =
+                a.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min()
+                ?? .greatestFiniteMagnitude
+            let distanceB =
+                b.polygons.compactMap { PolygonProximityCalculator.nearestPointOnPolygon(from: location, to: $0)?.distance }.min()
+                ?? .greatestFiniteMagnitude
             return distanceA < distanceB
         }
     }
 
     static private func parseDistricts(data: Data) throws -> [District]? {
         guard let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any],
-              let features = json["features"] as? [[String: Any]]
+            let features = json["features"] as? [[String: Any]]
         else { return nil }
 
         var districts: [District] = []
         for feature in features {
             guard let properties = feature["properties"] as? [String: Any],
-                  let id = properties["ags"] as? String,
-                  let name = properties["gen"] as? String,
-                  let geometry = feature["geometry"] as? [String: Any],
-                  let polygons = Self.parsePolygons(from: geometry),
-                  let centroid = Self.centroid(of: polygons)
+                let id = properties["ags"] as? String,
+                let name = properties["gen"] as? String,
+                let geometry = feature["geometry"] as? [String: Any],
+                let polygons = Self.parsePolygons(from: geometry),
+                let centroid = Self.centroid(of: polygons)
             else { continue }
             // VG250 gives a coastal district's waters as separate features (geofactor 1 and 2; land is 3 and 4). Only the land counts:
             // the Wadden Sea off Dithmarschen would otherwise be a district of its own, drawn as one and geocoded in the sea. A point in
@@ -258,7 +266,6 @@ class CovidController: ProcessController {
         }
         return Location(latitude: weightedLatitude / totalArea, longitude: weightedLongitude / totalArea)
     }
-
 
     private func fetchIncidence(for district: District) async throws -> [ProcessValue<Dimension>]? {
         var incidence: [ProcessValue<Dimension>]? = nil

@@ -1,5 +1,5 @@
-import DoomKitProcess
 import Charts
+import DoomKitProcess
 import SwiftUI
 
 /// The Energy tab: the fuel station map, then a chart per price. There is one price sensor and it has no place, so the location row names

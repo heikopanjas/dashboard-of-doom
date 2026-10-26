@@ -6,13 +6,16 @@ import Testing
 
 @MainActor
 @Suite struct ParticleMapViewTests {
-    private func reading(id: String?, faceplate: [ProcessSelector: String] = [:], north: Double = 0, icon: String? = "aqi.medium") -> ProcessReading {
+    private func reading(
+        id: String?, faceplate: [ProcessSelector: String] = [:], north: Double = 0, icon: String? = "aqi.medium"
+    ) -> ProcessReading {
         var customData: [String: Any]? = nil
         if let icon = icon {
             customData = ["icon": icon]
         }
         let sensor = ProcessSensor(
-            name: "Station", location: Location(latitude: 52.5 + north, longitude: 13.4), placemark: nil, customData: customData, measurements: [:],
+            name: "Station", location: Location(latitude: 52.5 + north, longitude: 13.4), placemark: nil, customData: customData,
+            measurements: [:],
             timestamp: nil, sourceID: id)
         return ProcessReading(sensor: sensor, faceplate: faceplate)
     }
@@ -32,7 +35,9 @@ import Testing
 
     @Test func aLabelShowsTheFirstPollutantOfTheTabsOrder() {
         // The tab lists PM10, PM2.5, ozone, then nitrogen dioxide, so that is the order the label follows.
-        let all: [ProcessSelector: String] = [.particle(.no2): "NO2: 30", .particle(.o3): "O3: 60", .particle(.pm25): "PM25: 8", .particle(.pm10): "PM10: 12"]
+        let all: [ProcessSelector: String] = [
+            .particle(.no2): "NO2: 30", .particle(.o3): "O3: 60", .particle(.pm25): "PM25: 8", .particle(.pm10): "PM10: 12"
+        ]
         #expect(ParticleMapView.selector(for: self.reading(id: "a", faceplate: all)) == .particle(.pm10))
         let withoutPM10 = all.filter { $0.key != .particle(.pm10) }
         #expect(ParticleMapView.selector(for: self.reading(id: "a", faceplate: withoutPM10)) == .particle(.pm25))

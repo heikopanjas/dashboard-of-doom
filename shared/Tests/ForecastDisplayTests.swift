@@ -5,7 +5,9 @@ import Testing
 @Suite struct ForecastDisplayTests {
     private let start = Date(timeIntervalSince1970: 1_800_000_000)
 
-    private func forecast(_ values: [Double], step: TimeInterval = 3600, band: Double? = nil, origin: ProcessForecast.Origin = .provider("UBA")) -> ProcessForecast {
+    private func forecast(
+        _ values: [Double], step: TimeInterval = 3600, band: Double? = nil, origin: ProcessForecast.Origin = .provider("UBA")
+    ) -> ProcessForecast {
         let points = values.enumerated().map { index, value in
             ProcessForecast.Point(
                 timestamp: self.start.addingTimeInterval(Double(index + 1) * step), value: Measurement(value: value, unit: UnitLength.meters),
