@@ -91,6 +91,19 @@ import Testing
         #expect(EnergyController.estimate(from: Self.series(values, step: 86_400, age: 14 * 86_400, unit: UnitOilPrice.usDollarsPerBarrel), now: Self.now) == nil)
     }
 
+    @Test func ttfHasFourDaysOfEstimateAndTheOthersThirty() throws {
+        #expect(EnergyController.horizon(for: .energy(.ttf)) == 4)
+        #expect(EnergyController.horizon(for: .energy(.brent)) == 30)
+        #expect(EnergyController.horizon(for: .energy(.brentSpot)) == 30)
+        #expect(EnergyController.horizon(for: .energy(.lng)) == 30)
+        let values = (0 ..< 21).map { 80 + Double($0 % 4) }
+        let estimate = try #require(
+            EnergyController.estimate(
+                from: Self.series(values, step: 86_400, unit: UnitGasPrice.eurosPerMegawattHour), horizon: EnergyController.horizon(for: .energy(.ttf)),
+                now: Self.now))
+        #expect(estimate.points.count == 4)
+    }
+
     @Test func aTidalGaugeFollowsItsTide() throws {
         let m2 = 12.4206 * 4
         let values: [Double] = (0 ..< 288).map { (step: Int) -> Double in

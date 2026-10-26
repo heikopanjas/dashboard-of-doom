@@ -50,7 +50,8 @@ class EnergyController: ProcessController {
         var forecasts: [ProcessSelector: ProcessForecast] = [:]
         if self.showForecasts() == true {
             for (selector, values) in prices where measurements[selector] != nil {
-                forecasts[selector] = Self.estimate(from: values.filter { $0.timestamp >= now.addingTimeInterval(-Self.span) }, now: now)
+                forecasts[selector] = Self.estimate(
+                    from: values.filter { $0.timestamp >= now.addingTimeInterval(-Self.span) }, horizon: Self.horizon(for: selector), now: now)
             }
         }
         // Nothing at all means nothing is published, so the last prices stay on screen.
@@ -69,10 +70,16 @@ class EnergyController: ProcessController {
     /// price, with a band as wide as a year of daily moves says it should be after so many days. In logarithms, since prices move in
     /// proportion and cannot go below zero, which makes the band wider above than below. Weekends between trading days are interpolated,
     /// so the band grows per calendar day. Not continued when the source has not updated for ten days.
-    static func estimate(from raw: [ProcessValue<Dimension>], now: Date = .now) -> ProcessForecast? {
+    static func estimate(from raw: [ProcessValue<Dimension>], horizon: Int = 30, now: Date = .now) -> ProcessForecast? {
         return SeriesEstimate.make(
-            from: raw, model: RandomWalkModel(), request: ForecastRequest(step: 24 * 3600, horizon: 30, transform: .logarithm),
+            from: raw, model: RandomWalkModel(), request: ForecastRequest(step: 24 * 3600, horizon: horizon, transform: .logarithm),
             maximumAge: 10 * 24 * 3600, now: now)
+    }
+
+    /// Days of estimate per price. TTF has only about a month of history, so 30 days of estimate took half its chart; four keep the
+    /// measured month across the width. The others have a year behind them and keep 30.
+    static func horizon(for selector: ProcessSelector) -> Int {
+        return selector == .energy(.ttf) ? 4 : 30
     }
 
     // MARK: - Parsing

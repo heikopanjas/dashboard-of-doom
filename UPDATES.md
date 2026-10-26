@@ -4,6 +4,38 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, four-day ttf estimate, 01:25)
+
+- the ttf estimate covers 4 days instead of the 5 set at 01:20; the other energy prices keep 30
+- rationale: the user asked for four days of forecast
+- validation: series estimate tests pass
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, five-day ttf estimate, 01:20)
+
+- the ttf estimate covers 5 days instead of the 3 set at 01:15; the other energy prices keep 30
+- rationale: the user asked for five days of forecast
+- validation: series estimate tests pass
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, three-day ttf estimate, 01:15)
+
+- the ttf chart's estimate covers 3 days instead of 30, so the measured month fills the chart width; brent futures, brent spot and lng keep 30 days, chosen per selector by `EnergyController.horizon(for:)`
+- rationale: ttf has only about a month of history from eurooilwatch, so a 30-day estimate took half the chart; the user wants the history stretched with three days of forecast
+- validation: series estimate tests pass, including a new one for the per-selector horizon
+- version: no bump, ships in the still unreleased 7.1.3 with the thinner forecast line
+
+
+### 2026-10-26 (v7.1.3, thinner forecast line, 01:00)
+
+- the forecast line in every sensor, covid, poll and energy chart and its legend swatch are 0.75 points wide instead of 1.5, one shared constant `ForecastMarks.lineWidth`; the band, colors and the hairline at now are unchanged
+- the flat lines themselves stay: a live backtest showed a trend loses to the last value on brent, brent spot and lng, radiation is a baseline by design, and no keyless forward curve for ttf or lng exists; eia's steo brent forecast was found but not adopted
+- rationale: the user wants the forecast line, flat or not, less prominent than the measured 1-point series while keeping the band visuals
+- version bump: both apps 7.1.2 to 7.1.3 (patch: visual tweak); macos build 159 to 160 and ios build 187 to 188
+
+
 ### 2026-10-26 (v7.1.2, remove advisory cards, 00:07)
 
 - removed marad and centcom cards, settings switches, presenter subscriptions, fetching, parsing, preview data and source credits on both platforms

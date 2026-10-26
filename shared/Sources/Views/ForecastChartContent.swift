@@ -20,6 +20,10 @@ struct ForecastMarks: ChartContent {
         return colorScheme == .dark ? color.opacity(0.4) : color
     }
 
+    /// The line's width, which the legend's swatch shares: thinner than the measured series' 1 point, so the forecast reads as secondary
+    /// and the band carries the uncertainty.
+    static let lineWidth: CGFloat = 0.75
+
     private struct Sample: Identifiable {
         let timestamp: Date
         let value: Double
@@ -65,7 +69,7 @@ struct ForecastMarks: ChartContent {
             .interpolationMethod(.monotone)
             .foregroundStyle(Self.lineColor(self.color, in: self.colorScheme))
             // Solid: a dashed line broke an hourly forecast into dots that could not be read as a series.
-            .lineStyle(StrokeStyle(lineWidth: 1.5))
+            .lineStyle(StrokeStyle(lineWidth: Self.lineWidth))
         }
         // `Color.secondary`, not `.secondary`: in a chart the hierarchical style derives from the accent color and draws the rule blue.
         RuleMark(x: .value(self.xLabel, Date.now))
@@ -149,7 +153,7 @@ struct ForecastLegend: View {
             path.move(to: CGPoint(x: 0, y: 4))
             path.addLine(to: CGPoint(x: 16, y: 4))
         }
-        .stroke(ForecastMarks.lineColor(self.color, in: self.colorScheme), style: StrokeStyle(lineWidth: 1.5))
+        .stroke(ForecastMarks.lineColor(self.color, in: self.colorScheme), style: StrokeStyle(lineWidth: ForecastMarks.lineWidth))
         .frame(width: 16, height: 8)
     }
 }
