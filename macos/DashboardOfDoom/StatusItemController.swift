@@ -26,6 +26,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let stopSimulationItem = NSMenuItem(title: "Stop Simulation", action: #selector(stopSimulation), keyEquivalent: "")
     /// The uptime at which a press on the item closed the popup, so the mouse-up of that click does not open it again.
     private var closedByItemPress: TimeInterval?
+    /// Watches clicks in other apps while the popup is open; see `watchClicksOutside()`.
+    private var outsideClickMonitor: Any?
 
     init(appDelegate: AppDelegate) {
         self.appDelegate = appDelegate
@@ -128,6 +130,25 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         // The app has no Dock icon and is never active on its own, so it activates first for the popup to take keyboard focus.
         NSApp.activate()
         self.popover.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+        self.watchClicksOutside()
+    }
+
+    /// A transient popover closes on a click elsewhere in its own app or when the app resigns active. Opened from a menu bar manager's
+    /// hidden section the app often stays inactive, and a click on the manager's own item, another app or the desktop goes to another
+    /// process, so neither happens and the popup stayed open, out of reach once the manager hid the item again. A global monitor sees
+    /// only events sent to other apps, so a click inside the popup, which makes Ice and Bartender rehide their section, keeps it open.
+    private func watchClicksOutside() -> Void {
+        guard self.outsideClickMonitor == nil else { return }
+        self.outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
+            MainActor.assumeIsolated { self?.popover.performClose(nil) }
+        }
+    }
+
+    private func stopWatchingClicksOutside() -> Void {
+        if let monitor = self.outsideClickMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        self.outsideClickMonitor = nil
     }
 
     /// The status item's frame on screen, nil while it has no window.
@@ -162,6 +183,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
+        self.stopWatchingClicksOutside()
         self.anchor.orderOut(nil)
     }
 

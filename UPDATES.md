@@ -4,6 +4,22 @@ This file is the append-only log of project decisions and notable changes, maint
 
 <!-- {changelog} -->
 
+### 2026-10-26 (v7.1.3, popup fix verified with ice, 12:45)
+
+- verified on screen by the user with ice: the popup closes when the hidden section is hidden again, and stays open on clicks inside it
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, popup closes on clicks outside under menu bar managers, 12:30)
+
+- fix: with ice, revealing the hidden section, opening the dashboard and hiding the section again left the popup open, and no click closed it
+- cause: opened from the hidden section the app stays inactive, and a transient popover only closes on a click in its own app or when the app resigns active; clicks on ice's item, other apps or the desktop go to other processes
+- decision: while the popup is open a global mouse-down monitor closes it on any click sent to another app; it sees no clicks inside the popup, so the anchor fix of 2026-09-28 still keeps the popup open when ice rehides on such a click
+- not covered: switching apps with the keyboard while the app is inactive still leaves the popup open
+- validation: the macos app builds; not verified on screen with ice or bartender, which needs the user
+- version: no bump, ships in the still unreleased 7.1.3
+
+
 ### 2026-10-26 (v7.1.3, four-day ttf estimate, 01:25)
 
 - the ttf estimate covers 4 days instead of the 5 set at 01:20; the other energy prices keep 30
