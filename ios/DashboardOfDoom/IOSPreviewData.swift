@@ -1,0 +1,287 @@
+#if DEBUG
+import DoomKitLocation
+import DoomKitProcess
+import Foundation
+
+/// Deterministic, offline UI-test data. Only enabled by an explicit Debug launch argument.
+enum IOSPreviewData {
+    static var isEnabled: Bool {
+        return ProcessInfo.processInfo.arguments.contains("--ui-fixture")
+    }
+
+    static var pointCount: Int {
+        return ProcessInfo.processInfo.arguments.contains("--poi-10000") == true ? 10_000 : 2_000
+    }
+
+    static func points(category: PointOfInterestCategory) -> [PointOfInterest] {
+        guard let categoryIndex = PointOfInterestCategory.allCases.firstIndex(of: category) else { return [] }
+        var result: [PointOfInterest] = []
+        for index in stride(from: categoryIndex, to: Self.pointCount, by: PointOfInterestCategory.allCases.count) {
+            let latitude = 52.51889 + Double((index * 37) % 1000 - 500) / 20_000
+            let longitude = 13.36528 + Double((index * 61) % 1000 - 500) / 12_000
+            result.append(
+                PointOfInterest(
+                    category: category, elementType: "node", elementID: Int64(index), name: "Fixture \(index)",
+                    location: Location(latitude: latitude, longitude: longitude)))
+        }
+        return result
+    }
+
+    /// A stand-in district boundary: a lopsided ring a few kilometres across, so the COVID map has a shape to fit its camera to and the
+    /// screenshot shows something a real Kreis outline would resemble. Deliberately not a circle, which no district is.
+    static func district(around center: Location) -> [Location] {
+        let radii: [Double] = [0.9, 1.25, 1.0, 1.4, 0.85, 1.15, 1.3, 0.95]
+        return radii.enumerated().map { index, radius in
+            let angle = Double(index) / Double(radii.count) * 2 * .pi
+            return Location(
+                latitude: center.latitude + 0.022 * radius * cos(angle), longitude: center.longitude + 0.036 * radius * sin(angle))
+        }
+    }
+
+    @MainActor
+    static func populate(_ runtime: IOSAppRuntime) {
+        if ProcessInfo.processInfo.arguments.contains("--reset-toolbar") == true {
+            UserDefaults.standard.removeObject(forKey: IOSToolbarConfiguration.storageKey)
+        }
+        let entries: [(ProcessPresenter, ProcessSelector, Dimension, Double, String)] = [
+            (runtime.weather, .weather(.temperature), UnitTemperature.celsius, 22, "thermometer"),
+            (runtime.forecast, .forecast(.temperature), UnitTemperature.celsius, 22, "cloud.sun"),
+            (runtime.covid, .covid(.incidence), UnitIncidence.casesPer100k, 12.3, "cross.case"),
+            (runtime.levels, .water(.level), UnitLength.meters, 2.73, "water.waves"),
+            (runtime.radiation, .radiation(.total), UnitRadiation.microsieverts, 0.08, "atom"),
+            (runtime.particles, .particle(.pm10), UnitConcentrationMass.microgramsPerCubicMeter, 18, "aqi.medium"),
+            (runtime.surveys, .survey(.fascists), UnitPercentage.percent, 20, "chart.bar"),
+            (runtime.energy, .energy(.brent), UnitOilPrice.usDollarsPerBarrel, 80, "fuelpump")
+        ]
+        // Hour-aligned, so the forecast strip labels read 14:00 rather than 14:37.
+        let date = Date.round(from: Date.now, strategy: .previousHour) ?? Date.now
+        for (index, entry) in entries.enumerated() {
+            let (presenter, selector, unit, value, icon) = entry
+            let location = Location(latitude: 52.51889 + Double(index % 3) * 0.012, longitude: 13.36528 + Double(index / 3) * 0.015)
+            let measurements = (0 ..< 48).map { hour in
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: value * (1 + 0.1 * sin(Double(hour))), unit: unit),
+                    quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
+            }
+            var customData: [String: Any] = ["icon": icon]
+            // COVID alone carries a boundary, which is what its tab draws instead of a pin.
+            if presenter === runtime.covid {
+                customData["polygons"] = [Self.district(around: location)]
+            }
+            // Level alone carries a waterway, which titles its charts, and its sensor is named after a gauge like the gauges behind it.
+            if presenter === runtime.levels {
+                customData["waterway"] = "Spree"
+            }
+            // Level and radiation end at now and continue as a forecast, so the screenshots show both kinds: the provider's with a band
+            // that widens, the app's own estimate with a constant one.
+            var series = measurements
+            var forecasts: [ProcessSelector: ProcessForecast] = [:]
+            if presenter === runtime.levels || presenter === runtime.radiation {
+                series = Array(measurements.prefix(25))
+                let levels = presenter === runtime.levels
+                forecasts[selector] = Self.forecast(
+                    after: series, origin: levels ? .provider("PEGELONLINE") : .estimate("usual range"), widening: levels)
+            }
+            let sensor = ProcessSensor(
+                name: presenter === runtime.levels ? "BERLIN-HKW UP" : "HKW fixture", location: location, placemark: "HKW, Berlin",
+                customData: customData, measurements: [selector: series], timestamp: date, forecasts: forecasts)
+            presenter.replace(readings: [
+                ProcessReading(
+                    sensor: sensor, measurements: [selector: series], current: [selector: measurements[24]],
+                    faceplate: [selector: String(format: "%.2f %@", value, unit.symbol)], range: [selector: 0 ... max(value * 1.5, 1)],
+                    trend: [selector: "arrow.right"], forecasts: forecasts)
+            ])
+            // Forecasts and prices have no place on the map.
+            if presenter !== runtime.forecast && presenter !== runtime.energy {
+                MapPresenter.shared.updateRegion(for: presenter.id, with: location)
+            }
+        }
+        // Every sensor is named after its station. Level gauges arrive from PEGELONLINE in capitals, which the header re-cases, and carry
+        // the waterway their charts are titled with separately.
+        Self.populateAdditionalSensors(
+            runtime.levels, selector: .water(.level), unit: UnitLength.meters, value: 2.73, date: date,
+            stations: ["BERLIN-MÜHLENDAMM OP", "BERLIN-CHARLOTTENBURG UP", "BERLIN-SPANDAU OP", "BERLIN-KÖPENICK", "BERLIN-SCHMÖCKWITZ"],
+            waterway: "Spree")
+        Self.populateAdditionalSensors(
+            runtime.radiation, selector: .radiation(.total), unit: UnitRadiation.microsieverts, value: 0.08, date: date,
+            stations: ["Berlin-Marzahn", "Berlin-Tegel", "Berlin-Buch", "Berlin-Wannsee", "Berlin-Köpenick"])
+        Self.populateAdditionalSensors(
+            runtime.particles, selector: .particle(.pm10), unit: UnitConcentrationMass.microgramsPerCubicMeter, value: 18, date: date,
+            stations: ["Berlin Neukölln", "Berlin Wedding", "Berlin Mitte", "Berlin Buch", "Berlin Friedrichshagen"])
+        Self.populateForecastStrip(runtime.forecast, date: date)
+        Self.populateConditions(runtime.weather, date: date)
+        runtime.hazards.publish(hazards: Self.hazards(sent: date), timestamp: date)
+        let energyDate = Date.round(from: date, strategy: .lastDayChange) ?? date
+        let energySeries = Dictionary(
+            uniqueKeysWithValues: ProcessSelector.Energy.allCases.map { selector in
+                let unit: Dimension =
+                    [.brent, .brentSpot].contains(selector) ? UnitOilPrice.usDollarsPerBarrel : UnitGasPrice.eurosPerMegawattHour
+                let values = (0 ..< 60).map { day in
+                    return ProcessValue<Dimension>(
+                        value: Measurement(value: 80 + 5 * sin(Double(day) / 4), unit: unit), quality: .good,
+                        timestamp: energyDate.addingTimeInterval(Double(day - 59) * 86400))
+                }
+                return (ProcessSelector.energy(selector), values)
+            })
+        let energySensor = ProcessSensor(
+            name: "Energy", location: Location(latitude: 52.51889, longitude: 13.36528),
+            placemark: "EuroOilWatch · ACER", customData: ["icon": "fuelpump"], measurements: energySeries, timestamp: date)
+        if let readings = try? ProcessReading.render(sensors: [energySensor], transformer: { EnergyTransformer() }) {
+            runtime.energy.replace(readings: readings)
+        }
+
+        runtime.fuel.publish(stations: Self.stations(), timestamp: date)
+    }
+
+    /// Per-hour condition symbols and a rain chance series, the two things the
+    /// forecast strip shows beyond the temperature the loop above provides.
+    @MainActor
+    private static func populateForecastStrip(_ presenter: ProcessPresenter, date: Date) {
+        let icons = ["sun.max", "cloud.sun", "cloud", "cloud.rain"]
+        guard let temperature = presenter.measurements[.forecast(.temperature)] else { return }
+        let withIcons = temperature.enumerated().map { index, value in
+            return ProcessValue<Dimension>(
+                value: value.value, customData: ["icon": icons[index % icons.count]], quality: value.quality,
+                timestamp: value.timestamp)
+        }
+        let chance = temperature.enumerated().map { index, value in
+            return ProcessValue<Dimension>(
+                value: Measurement(value: Double((index * 17) % 100), unit: UnitPercentage.percent), quality: value.quality,
+                timestamp: value.timestamp)
+        }
+        Self.amend(
+            presenter, measurements: [.forecast(.temperature): withIcons, .forecast(.precipitationChance): chance],
+            current: [.forecast(.temperature): withIcons[24]])
+    }
+
+    /// Appends one further sensor per station behind the nearest reading, each a little further away and with its own series, the way a
+    /// source that found several stations reports them. Like the real ones they have no placemark.
+    @MainActor
+    private static func populateAdditionalSensors(
+        _ presenter: ProcessPresenter, selector: ProcessSelector, unit: Dimension, value: Double, date: Date, stations: [String],
+        waterway: String? = nil
+    ) -> Void {
+        guard let nearest = presenter.readings.first else { return }
+        var readings = [nearest]
+        for (offset, station) in stations.enumerated() {
+            let position = offset + 1
+            let level = value * (1 + Double(position) * 0.15)
+            let series = (0 ..< 48).map { hour in
+                return ProcessValue<Dimension>(
+                    value: Measurement(value: level * (1 + 0.1 * sin(Double(hour + position))), unit: unit),
+                    quality: .good, timestamp: date.addingTimeInterval(Double(hour - 24) * 3600))
+            }
+            let location = Location(
+                latitude: nearest.sensor.location.latitude + Double(position) * 0.01,
+                longitude: nearest.sensor.location.longitude + Double((position % 3) - 1) * 0.015)
+            var customData: [String: Any] = ["icon": nearest.sensor.customData?["icon"] ?? "questionmark.circle"]
+            // Level alone carries a waterway, which is what its charts are titled with; every source names its sensor after its station.
+            if let waterway = waterway {
+                customData["waterway"] = waterway
+            }
+            let sensor = ProcessSensor(
+                name: station, location: location, placemark: nil, customData: customData,
+                measurements: [selector: series], timestamp: date, sourceID: "fixture-\(position)-\(station)",
+                distance: 800 + Double(position) * 2_400)
+            readings.append(
+                ProcessReading(
+                    sensor: sensor, measurements: [selector: series], current: [selector: series[24]],
+                    faceplate: [selector: String(format: "%.2f %@", level, unit.symbol)], range: [selector: 0 ... max(level * 1.5, 1)],
+                    trend: [selector: "arrow.right"]))
+        }
+        presenter.replace(readings: readings)
+    }
+
+    /// Merges extra series into the nearest reading, keeping its sensor and everything else already rendered.
+    @MainActor
+    private static func amend(
+        _ presenter: ProcessPresenter, measurements: [ProcessSelector: [ProcessValue<Dimension>]],
+        current: [ProcessSelector: ProcessValue<Dimension>]
+    ) -> Void {
+        guard let reading = presenter.readings.first else { return }
+        presenter.replace(readings: [
+            ProcessReading(
+                sensor: reading.sensor, measurements: reading.measurements.merging(measurements) { $1 },
+                current: reading.current.merging(current) { $1 }, faceplate: reading.faceplate, range: reading.range, trend: reading.trend,
+                forecasts: reading.forecasts)
+        ])
+    }
+
+    /// A day ahead of a fixture series, hourly. A widening band looks like a provider's percentiles, a constant one like the app's usual
+    /// range.
+    private static func forecast(after series: [ProcessValue<Dimension>], origin: ProcessForecast.Origin, widening: Bool) -> ProcessForecast? {
+        guard let last = series.last else { return nil }
+        let points = (1 ... 24).map { hour in
+            let value = last.value.value * (1 + 0.05 * sin(Double(hour) / 4))
+            let spread = last.value.value * (widening ? 0.01 * Double(hour) : 0.1)
+            return ProcessForecast.Point(
+                timestamp: last.timestamp.addingTimeInterval(Double(hour) * 3600), value: Measurement(value: value, unit: last.value.unit),
+                lower: value - spread, upper: value + spread)
+        }
+        return ProcessForecast(origin: origin, issued: last.timestamp, points: points)
+    }
+
+    /// Single samples for the conditions row. Pressure is in millibars so the
+    /// hPa conversion runs; wind is already km/h.
+    @MainActor
+    private static func populateConditions(_ presenter: ProcessPresenter, date: Date) {
+        let samples: [(ProcessSelector, Dimension, Double)] = [
+            (.weather(.apparentTemperature), UnitTemperature.celsius, 20.4),
+            (.weather(.humidity), UnitPercentage.percent, 64),
+            (.weather(.windSpeed), UnitSpeed.kilometersPerHour, 12),
+            (.weather(.windGust), UnitSpeed.kilometersPerHour, 28),
+            (.weather(.pressure), UnitPressure.millibars, 1013)
+        ]
+        var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+        var current: [ProcessSelector: ProcessValue<Dimension>] = [:]
+        for (selector, unit, value) in samples {
+            let sample = ProcessValue<Dimension>(value: Measurement(value: value, unit: unit), quality: .good, timestamp: date)
+            measurements[selector] = [sample]
+            current[selector] = sample
+        }
+        Self.amend(presenter, measurements: measurements, current: current)
+    }
+
+    /// A key lives in the keychain and cannot be set by a launch argument, so the stations are seeded straight into the presenter.
+    /// They are spread around HKW so the map has something to lay out, and one is shut to keep proving the open-only filter.
+    private static func stations() -> [FuelStation] {
+        let names = [
+            "HANS ENGELKE ENERGIE OHG", "BERLIN - WESTHAFENSTRASSE 1", "Aral Tankstelle", "TotalEnergies Berlin", "Shell Berlin",
+            "ESSO TANKSTELLE", "Sprint Berlin"
+        ]
+        return names.enumerated().map { index, name in
+            let e5 = 2.389 - Double(index) * 0.017
+            let angle = Double(index) / Double(names.count) * 2 * Double.pi
+            let location = Location(
+                latitude: 52.51889 + cos(angle) * 0.022, longitude: 13.36528 + sin(angle) * 0.034)
+            return FuelStation(
+                id: "fixture-\(index)", name: name, brand: nil, street: "Fixturestr.", houseNumber: "\(index + 1)", location: location,
+                distance: 1.2 + Double(index) * 0.9, isOpen: index != 3, prices: [.e5: e5, .e10: e5 - 0.06, .diesel: e5 + 0.08])
+        }
+    }
+
+    private static func hazards(sent: Date) -> [Hazard] {
+        let hkw = Location(latitude: 52.51889, longitude: 13.36528)
+        return [
+            Hazard(
+                id: "fixture-dwd", feed: .dwd, event: "STURMBÖEN", headline: "Amtliche WARNUNG vor STURMBÖEN",
+                description: "Es treten Sturmböen mit Geschwindigkeiten um 70 km/h auf.",
+                instruction: "Frei stehende Objekte sichern; im Freien auf herabfallende Gegenstände achten.",
+                severity: .moderate, sent: sent, expires: sent.addingTimeInterval(86_400), areaDescription: "Berlin",
+                location: hkw, distance: 0, placemark: nil),
+            Hazard(
+                id: "fixture-mowas", feed: .mowas, event: "Gefahreninformation",
+                headline: "Bakteriologische Beeinträchtigung des Trinkwassers",
+                description: "Das Trinkwasser ist vor dem Gebrauch abzukochen.", instruction: nil, severity: .minor,
+                sent: sent.addingTimeInterval(-3600), expires: nil, areaDescription: "Potsdam",
+                location: Location(latitude: 52.4009, longitude: 13.0591), distance: 12_000, placemark: nil),
+            Hazard(
+                id: "fixture-katwarn", feed: .katwarn, event: "Großbrand", headline: "Großbrand in Spandau",
+                description: "Starke Rauchentwicklung.", instruction: "Fenster und Türen geschlossen halten.",
+                severity: .severe, sent: sent.addingTimeInterval(-1800), expires: sent.addingTimeInterval(7200),
+                areaDescription: "Berlin-Spandau", location: Location(latitude: 52.5352, longitude: 13.1995),
+                distance: 9_000, placemark: nil)
+        ]
+    }
+}
+#endif

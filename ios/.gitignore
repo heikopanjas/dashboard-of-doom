@@ -1,0 +1,84 @@
+# Xcode
+# User-specific files
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserdata
+
+# Build products
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager build artifacts
+.build/
+.swiftpm/
+
+# Xcode Playground
+playground.xcworkspace
+
+# Code coverage
+*.gcda
+*.gcno
+*.profdata
+*.coverage
+
+# Xcode settings
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Xcode workspace and scheme
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+*.xcscheme
+
+# AppCode
+.idea/
+
+# Pods
+Pods/
+*.podspec
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# FastLane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Swift Package Manager
+*.xcodeproj
+!Package.swift
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+._*
+
+# Temporary files
+*.swp
+*.swo
+*~.nib
+
+# Backup files
+*.bak
+*.backup

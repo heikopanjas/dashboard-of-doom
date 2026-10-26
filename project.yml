@@ -1,0 +1,411 @@
+# Source of truth for the generated Xcode project. Run xcodegen generate.
+# Disable presets to preserve the existing build settings explicitly.
+---
+name: DashboardOfDoom
+options:
+  minimumXcodeGenVersion: 2.46.0
+  xcodeVersion: '26.2'
+  projectFormat: xcode16_3
+  settingPresets: none
+  defaultConfig: Release
+  developmentLanguage: en
+configs:
+  Debug: debug
+  Release: release
+fileGroups:
+- project.yml
+- README.md
+- AGENTS.md
+- UPDATES.md
+- ios/MIGRATION.md
+- ios/build.sh
+- macos/build.sh
+settings:
+  base:
+    ALWAYS_SEARCH_USER_PATHS: 'NO'
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: 'YES'
+    CLANG_ANALYZER_NONNULL: 'YES'
+    CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION: YES_AGGRESSIVE
+    CLANG_CXX_LANGUAGE_STANDARD: gnu++20
+    CLANG_ENABLE_MODULES: 'YES'
+    CLANG_ENABLE_OBJC_ARC: 'YES'
+    CLANG_ENABLE_OBJC_WEAK: 'YES'
+    CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING: 'YES'
+    CLANG_WARN_BOOL_CONVERSION: 'YES'
+    CLANG_WARN_COMMA: 'YES'
+    CLANG_WARN_CONSTANT_CONVERSION: 'YES'
+    CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS: 'YES'
+    CLANG_WARN_DIRECT_OBJC_ISA_USAGE: YES_ERROR
+    CLANG_WARN_DOCUMENTATION_COMMENTS: 'YES'
+    CLANG_WARN_EMPTY_BODY: 'YES'
+    CLANG_WARN_ENUM_CONVERSION: 'YES'
+    CLANG_WARN_INFINITE_RECURSION: 'YES'
+    CLANG_WARN_INT_CONVERSION: 'YES'
+    CLANG_WARN_NON_LITERAL_NULL_CONVERSION: 'YES'
+    CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF: 'YES'
+    CLANG_WARN_OBJC_LITERAL_CONVERSION: 'YES'
+    CLANG_WARN_OBJC_ROOT_CLASS: YES_ERROR
+    CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: 'YES'
+    CLANG_WARN_RANGE_LOOP_ANALYSIS: 'YES'
+    CLANG_WARN_STRICT_PROTOTYPES: 'YES'
+    CLANG_WARN_SUSPICIOUS_MOVE: 'YES'
+    CLANG_WARN_UNGUARDED_AVAILABILITY: YES_AGGRESSIVE
+    CLANG_WARN_UNREACHABLE_CODE: 'YES'
+    CLANG_WARN__DUPLICATE_METHOD_MATCH: 'YES'
+    COPY_PHASE_STRIP: 'NO'
+    DEAD_CODE_STRIPPING: 'YES'
+    ENABLE_STRICT_OBJC_MSGSEND: 'YES'
+    ENABLE_USER_SCRIPT_SANDBOXING: 'YES'
+    GCC_C_LANGUAGE_STANDARD: gnu17
+    GCC_NO_COMMON_BLOCKS: 'YES'
+    GCC_WARN_64_TO_32_BIT_CONVERSION: 'YES'
+    GCC_WARN_ABOUT_RETURN_TYPE: YES_ERROR
+    GCC_WARN_UNDECLARED_SELECTOR: 'YES'
+    GCC_WARN_UNINITIALIZED_AUTOS: YES_AGGRESSIVE
+    GCC_WARN_UNUSED_FUNCTION: 'YES'
+    GCC_WARN_UNUSED_VARIABLE: 'YES'
+    LOCALIZATION_PREFERS_STRING_CATALOGS: 'YES'
+    MACOSX_DEPLOYMENT_TARGET: '15.2'
+    MTL_FAST_MATH: 'YES'
+    SDKROOT: macosx
+    STRING_CATALOG_GENERATE_SYMBOLS: 'YES'
+  configs:
+    Debug:
+      DEBUG_INFORMATION_FORMAT: dwarf
+      ENABLE_TESTABILITY: 'YES'
+      GCC_DYNAMIC_NO_PIC: 'NO'
+      GCC_OPTIMIZATION_LEVEL: '0'
+      GCC_PREPROCESSOR_DEFINITIONS:
+      - DEBUG=1
+      - "$(inherited)"
+      MTL_ENABLE_DEBUG_INFO: INCLUDE_SOURCE
+      ONLY_ACTIVE_ARCH: 'YES'
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG $(inherited)
+      SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+    Release:
+      DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+      ENABLE_NS_ASSERTIONS: 'NO'
+      MTL_ENABLE_DEBUG_INFO: 'NO'
+      SWIFT_COMPILATION_MODE: wholemodule
+packages:
+  DoomKitTools:
+    path: shared/doom-kit-tools
+  DoomKitServices:
+    path: shared/doom-kit-services
+  DoomKitProcess:
+    path: shared/doom-kit-process
+  DoomKitNetwork:
+    path: shared/doom-kit-network
+  DoomKitLocation:
+    path: shared/doom-kit-location
+  DoomKitSecrets:
+    path: shared/doom-kit-secrets
+  LaunchAtLogin-Modern:
+    url: https://github.com/sindresorhus/LaunchAtLogin-Modern
+    branch: main
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: '3.0.1'
+targets:
+  DashboardOfDoom:
+    type: application
+    platform: macOS
+    sources:
+    - path: macos/DashboardOfDoom
+      type: syncedFolder
+    - path: shared/Sources
+      type: syncedFolder
+    settings:
+      base:
+        ARCHS: arm64
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_ENTITLEMENTS: macos/DashboardOfDoom/DashboardOfDoom.entitlements
+        CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_IDENTITY[sdk=macosx*]: Developer ID Application
+        CODE_SIGN_STYLE: Manual
+        COMBINE_HIDPI_IMAGES: 'YES'
+        CURRENT_PROJECT_VERSION: '160'
+        DEAD_CODE_STRIPPING: 'YES'
+        DEVELOPMENT_ASSET_PATHS: ''
+        DEVELOPMENT_TEAM: ''
+        DEVELOPMENT_TEAM[sdk=macosx*]: 8J2G689FCZ
+        ENABLE_APP_SANDBOX: 'YES'
+        ENABLE_HARDENED_RUNTIME: 'YES'
+        ENABLE_OUTGOING_NETWORK_CONNECTIONS: 'YES'
+        ENABLE_PREVIEWS: 'YES'
+        ENABLE_RESOURCE_ACCESS_LOCATION: 'YES'
+        ENABLE_USER_SELECTED_FILES: readonly
+        GENERATE_INFOPLIST_FILE: 'YES'
+        INFOPLIST_FILE: ''
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
+        INFOPLIST_KEY_LSUIElement: 'YES'
+        INFOPLIST_KEY_NSHumanReadableCopyright: ''
+        LD_RUNPATH_SEARCH_PATHS:
+        - "$(inherited)"
+        - "@executable_path/../Frameworks"
+        MACOSX_DEPLOYMENT_TARGET: '15.0'
+        MARKETING_VERSION: 7.1.3
+        PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
+        PRODUCT_NAME: Dashboard of Doom
+        PROVISIONING_PROFILE_SPECIFIER: ''
+        PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]: Dashboard of Doom macOS
+        SWIFT_EMIT_LOC_STRINGS: 'YES'
+        SWIFT_VERSION: '5.0'
+    dependencies:
+    - package: DoomKitTools
+    - package: DoomKitServices
+    - package: DoomKitProcess
+    - package: DoomKitNetwork
+    - package: DoomKitLocation
+    - package: DoomKitSecrets
+    - package: LaunchAtLogin-Modern
+      product: LaunchAtLogin
+    - package: KeyboardShortcuts
+      product: KeyboardShortcuts
+  PointOfInterestTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+    - path: macos/Tests
+    - path: shared/Tests
+    - path: shared/Sources
+      type: syncedFolder
+      includes:
+      - Models/PointOfInterest.swift
+      - Models/PointOfInterestCategory.swift
+      - Models/PointOfInterestProjection.swift
+      - Controllers/LevelController.swift
+      - Controllers/PointOfInterestController.swift
+      - Presenters/PointOfInterestPresenter.swift
+      - AppProcess.swift
+      - AppSecrets.swift
+      - Views/SecretField.swift
+      - AppLocation.swift
+      - SourcePreferences.swift
+      - Presenters/ConditionalSubscription.swift
+      - Views/MapAnnotationLabel.swift
+      - Views/MapAnnotationOverlay.swift
+      - Views/MapAnnotationSnapshot.swift
+      - Views/PointOfInterestOverlay.swift
+      - Views/PointOfInterestCategory+Appearance.swift
+      - Presenters/MapPresenter.swift
+      - Presenters/ProcessMapVisibility.swift
+      - Extensions/Array+ConcurrentCompactMap.swift
+      - Controllers/SensorCandidate.swift
+      - Presenters/ProcessPresenter+Map.swift
+      - Presenters/ProcessPresenter+Readings.swift
+      - Extensions/Color.swift
+      - Extensions/Gradient.swift
+      - Extensions/Date.swift
+      - Presenters/CovidPresenter.swift
+      - Transformers/CovidTransformer.swift
+      - Controllers/CovidController.swift
+      - Models/GeoJSON.swift
+      - Models/Hazard.swift
+      - Controllers/HazardController.swift
+      - Presenters/HazardPresenter.swift
+      - Presenters/LevelPresenter.swift
+      - Transformers/LevelTransformer.swift
+      - Presenters/RadiationPresenter.swift
+      - Transformers/RadiationTransformer.swift
+      - Controllers/RadiationController.swift
+      - Presenters/ParticlePresenter.swift
+      - Transformers/ParticleTransformer.swift
+      - Controllers/ParticleController.swift
+      - Presenters/SurveyPresenter.swift
+      - Transformers/SurveyTransformer.swift
+      - Controllers/SurveyController.swift
+      - Presenters/EnergyPresenter.swift
+      - Transformers/EnergyTransformer.swift
+      - Controllers/EnergyController.swift
+      - Models/FuelStation.swift
+      - Controllers/FuelController.swift
+      - Presenters/FuelPresenter.swift
+      - Presenters/WeatherPresenter.swift
+      - Transformers/WeatherTransformer.swift
+      - Controllers/WeatherController.swift
+      - Presenters/ForecastPresenter.swift
+      - Transformers/ForecastTransformer.swift
+      - Controllers/ForecastController.swift
+      - Notifications/WarningRule.swift
+      - Notifications/WarningPreferences.swift
+      - Notifications/WarningEvaluator.swift
+      - Notifications/WarningNotifier.swift
+      - Notifications/NotificationCenterPoster.swift
+      - Views/SensorAnnotations.swift
+      - Views/SensorLabels.swift
+      - Models/DataSources.swift
+      - Models/StatusBarValue.swift
+      - Views/StatusItemDisplayView.swift
+      - Views/DashboardPopoverSize.swift
+      - Views/MapProjection.swift
+      - Presenters/ForecastDisplay.swift
+      - Controllers/SeriesEstimate.swift
+      - Presenters/SimulationSelection.swift
+      - Presenters/SimulationPresenter.swift
+    settings:
+      base:
+        PRODUCT_NAME: PointOfInterestTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom.poi-tests
+        GENERATE_INFOPLIST_FILE: 'YES'
+        MACOSX_DEPLOYMENT_TARGET: '15.0'
+        SWIFT_VERSION: '5.0'
+        CODE_SIGNING_ALLOWED: 'NO'
+    dependencies:
+    - package: DoomKitLocation
+    - package: DoomKitSecrets
+    - package: DoomKitServices
+    - package: DoomKitProcess
+    - package: DoomKitNetwork
+    - package: DoomKitTools
+  DashboardOfDoom-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: '26.0'
+    sources:
+    - path: ios/DashboardOfDoom
+      type: syncedFolder
+      excludes:
+      - Info.plist
+    - path: shared/Sources
+      type: syncedFolder
+    settings:
+      base:
+        SDKROOT: iphoneos
+        SUPPORTED_PLATFORMS: iphoneos iphonesimulator
+        TARGETED_DEVICE_FAMILY: '1,2'
+        SWIFT_VERSION: '5.0'
+        PRODUCT_NAME: Dashboard of Doom
+        PRODUCT_MODULE_NAME: DashboardOfDoom
+        PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom
+        MARKETING_VERSION: 7.1.3
+        CURRENT_PROJECT_VERSION: '188'
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        DEVELOPMENT_TEAM: 8J2G689FCZ
+        CODE_SIGN_ENTITLEMENTS: ios/DashboardOfDoom/DashboardOfDoom.entitlements
+        GENERATE_INFOPLIST_FILE: 'YES'
+        INFOPLIST_FILE: ios/DashboardOfDoom/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Dashboard of Doom
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Show environmental conditions near your location.
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: Keep nearby environmental conditions current as you move, including in the background.
+        INFOPLIST_KEY_UILaunchScreen_Generation: 'YES'
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES'
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        LD_RUNPATH_SEARCH_PATHS:
+        - $(inherited)
+        - '@executable_path/Frameworks'
+    dependencies:
+    - package: DoomKitLocation
+    - package: DoomKitSecrets
+    - package: DoomKitNetwork
+    - package: DoomKitProcess
+    - package: DoomKitTools
+    - package: DoomKitServices
+  iOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: '26.0'
+    sources:
+    - path: ios/Tests
+    - path: shared/Tests
+    - path: shared/Sources
+      type: syncedFolder
+    - path: ios/DashboardOfDoom
+      type: syncedFolder
+      includes:
+      - AppActivityLifecycle.swift
+      - BackgroundRefresh.swift
+      - Views/ActivityIndicator.swift
+      - Views/SensorHeaderView.swift
+      - IOSScreen.swift
+      - IOSToolbarConfiguration.swift
+      - Views/LevelMapView.swift
+      - Views/RadiationMapView.swift
+      - Views/ParticleMapView.swift
+    settings:
+      base:
+        SDKROOT: iphoneos
+        SWIFT_VERSION: '5.0'
+        PRODUCT_NAME: iOSTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom.ios-tests
+        GENERATE_INFOPLIST_FILE: 'YES'
+        CODE_SIGNING_ALLOWED: 'NO'
+    dependencies:
+    - package: DoomKitLocation
+    - package: DoomKitSecrets
+    - package: DoomKitNetwork
+    - package: DoomKitProcess
+    - package: DoomKitTools
+    - package: DoomKitServices
+  iOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: '26.0'
+    sources:
+    - path: ios/UITests
+    settings:
+      base:
+        SDKROOT: iphoneos
+        SWIFT_VERSION: '5.0'
+        PRODUCT_NAME: iOSUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.panjas.dashboard-of-doom.ios-ui-tests
+        GENERATE_INFOPLIST_FILE: 'YES'
+        CODE_SIGNING_ALLOWED: 'NO'
+        TEST_TARGET_NAME: DashboardOfDoom-iOS
+    dependencies:
+    - target: DashboardOfDoom-iOS
+schemes:
+  iOSUITests:
+    build:
+      targets:
+        DashboardOfDoom-iOS: all
+        iOSUITests: all
+    test:
+      config: Debug
+      targets:
+      - iOSUITests
+  DashboardOfDoom-iOS:
+    build:
+      targets:
+        DashboardOfDoom-iOS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+      - iOSTests
+    archive:
+      config: Release
+  iOSTests:
+    build:
+      targets:
+        iOSTests: all
+    test:
+      config: Debug
+      targets:
+      - iOSTests
+  PointOfInterestTests:
+    build:
+      targets:
+        PointOfInterestTests: all
+    test:
+      config: Debug
+      targets:
+      - PointOfInterestTests
+  DashboardOfDoom:
+    build:
+      targets:
+        DashboardOfDoom: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

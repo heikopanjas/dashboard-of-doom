@@ -1,0 +1,1296 @@
+# Recent Updates & Decisions
+
+This file is the append-only log of project decisions and notable changes, maintained by coding agents following the `recent-updates` skill. Everything below the marker line is user-owned history: slopctl never overwrites it during init or merge.
+
+<!-- {changelog} -->
+
+### 2026-10-26 (v7.1.3, apple silicon only, 13:25)
+
+- the macos app builds for arm64 only (`ARCHS: arm64` on the app target in `project.yml`), locally and in ci; the workflows now expect an arm64 executable
+- rationale: the user dropped the x86_64 builds; senor particle does the same
+- consequence: intel macs can no longer run release 7.1.3 or later
+- validation: the local release build is arm64 only; actionlint passes
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, ci builds and notarized releases, 13:10)
+
+- added `.github/workflows/build.yml` and `.github/workflows/release.yml` for the macos app, modelled on senor particle and token torch
+- build: strict lint, package and pointofinteresttests suites with and without thread sanitizer, then a developer id archive as a workflow artifact; pushes to develop are also notarized and published as a github prerelease
+- release: the same checks, a notarized and stapled build, and on pushes to main the `v<MARKETING_VERSION>` github release; a version tag already on another commit fails the run
+- the workflows install the weatherkit developer id provisioning profile from a secret, which the reference apps do not need, and use `GITHUB_RUN_ID` as `CFBundleVersion`
+- decisions with the user: macos only, no sparkle yet (added to roadmap.md), artifacts only for feature branches, prereleases on develop
+- validation: actionlint passes both workflows; locally all package tests, the release-mode runs and 228 pointofinteresttests pass, also under thread sanitizer, and version and dependency extraction work; the workflows have not run on github yet, since the repository secrets are not set
+- version: no bump, tooling only
+
+
+### 2026-10-26 (v7.1.3, swift-format over all sources, 12:55)
+
+- every tracked swift file is formatted with the existing `.swift-format`, one mechanical commit listed in `.git-blame-ignore-revs`, and `swift-format lint --strict` now reports nothing
+- the remaining findings were fixed by hand: lowercamelcase for the haversine labels (`location0`, `latitude0`), the polygon offsets and the party selector cases (`freieWaehler`, `bvbFw`, `buntSaar`, `plusBrandenburg`, `werteUnion`; their int raw values are unchanged and nothing used the names as strings), no force unwraps in the particle controller and the tests, ascii identifiers in tests
+- kept with an ignore comment: the `as! Self` in the dimension `baseUnit()` overrides and the two test fixtures whose closures capture the fixture
+- rationale: the ci lint job is strict, as in senor particle and token torch, chosen by the user
+- validation: all package tests (and release mode for process, tools, services), 228 pointofinteresttests, both app builds and the macos build script tests pass
+- version: no bump, no behaviour change
+
+
+### 2026-10-26 (v7.1.3, popup fix verified with ice, 12:45)
+
+- verified on screen by the user with ice: the popup closes when the hidden section is hidden again, and stays open on clicks inside it
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, popup closes on clicks outside under menu bar managers, 12:30)
+
+- fix: with ice, revealing the hidden section, opening the dashboard and hiding the section again left the popup open, and no click closed it
+- cause: opened from the hidden section the app stays inactive, and a transient popover only closes on a click in its own app or when the app resigns active; clicks on ice's item, other apps or the desktop go to other processes
+- decision: while the popup is open a global mouse-down monitor closes it on any click sent to another app; it sees no clicks inside the popup, so the anchor fix of 2026-09-28 still keeps the popup open when ice rehides on such a click
+- not covered: switching apps with the keyboard while the app is inactive still leaves the popup open
+- validation: the macos app builds; not verified on screen with ice or bartender, which needs the user
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, four-day ttf estimate, 01:25)
+
+- the ttf estimate covers 4 days instead of the 5 set at 01:20; the other energy prices keep 30
+- rationale: the user asked for four days of forecast
+- validation: series estimate tests pass
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, five-day ttf estimate, 01:20)
+
+- the ttf estimate covers 5 days instead of the 3 set at 01:15; the other energy prices keep 30
+- rationale: the user asked for five days of forecast
+- validation: series estimate tests pass
+- version: no bump, ships in the still unreleased 7.1.3
+
+
+### 2026-10-26 (v7.1.3, three-day ttf estimate, 01:15)
+
+- the ttf chart's estimate covers 3 days instead of 30, so the measured month fills the chart width; brent futures, brent spot and lng keep 30 days, chosen per selector by `EnergyController.horizon(for:)`
+- rationale: ttf has only about a month of history from eurooilwatch, so a 30-day estimate took half the chart; the user wants the history stretched with three days of forecast
+- validation: series estimate tests pass, including a new one for the per-selector horizon
+- version: no bump, ships in the still unreleased 7.1.3 with the thinner forecast line
+
+
+### 2026-10-26 (v7.1.3, thinner forecast line, 01:00)
+
+- the forecast line in every sensor, covid, poll and energy chart and its legend swatch are 0.75 points wide instead of 1.5, one shared constant `ForecastMarks.lineWidth`; the band, colors and the hairline at now are unchanged
+- the flat lines themselves stay: a live backtest showed a trend loses to the last value on brent, brent spot and lng, radiation is a baseline by design, and no keyless forward curve for ttf or lng exists; eia's steo brent forecast was found but not adopted
+- rationale: the user wants the forecast line, flat or not, less prominent than the measured 1-point series while keeping the band visuals
+- version bump: both apps 7.1.2 to 7.1.3 (patch: visual tweak); macos build 159 to 160 and ios build 187 to 188
+
+
+### 2026-10-26 (v7.1.2, remove advisory cards, 00:07)
+
+- removed marad and centcom cards, settings switches, presenter subscriptions, fetching, parsing, preview data and source credits on both platforms
+- kept brent spot, brent futures, ttf futures and acer lng spot; the energy ui check now verifies the four charts without advisory cards
+- rationale: the user no longer wants the advisory cards; removing their unused subscriptions also avoids background requests
+- validation: signed macos debug build passes and the rebuilt app is running; ios compiles and the energy ui regression passes with four benchmarks and no advisory cards; services tests pass in debug and release; whitespace check passes
+- version bump: both apps 7.1.1 to 7.1.2 (patch: discard the unreleased advisory integration); macos build 158 to 159 and ios build 186 to 187
+
+
+### 2026-10-25 (v7.1.1, maritime card on energy, 23:59)
+
+- moved the middle east maritime card from home to below the energy price charts on both platforms; it remains available while price data is loading
+- updated settings text and the simulator regression to check that home has no maritime card and energy shows it after all four benchmarks
+- rationale: the user wants maritime supply context on the energy screen
+- validation: both apps compile unsigned; the simulator ui test confirms no maritime card on home and both maritime sections below all four energy benchmarks; whitespace check passes
+- version bump: both apps 7.1.0 to 7.1.1 (patch: correct the new card's placement); macos build 157 to 158 and ios build 185 to 186
+
+
+### 2026-10-25 (v7.1.0, european energy and middle east maritime, 23:48)
+
+- energy shows brent spot, brent futures, ttf futures and acer lng spot; the first three use eurooilwatch without a key and retain dated observations and distinct units; undated ttf live prices are ignored
+- home gains a separate maritime card and settings switches on both platforms: active marad advisories verified against official status and expiry, plus optional regional centcom public affairs news from the verified dvids unit feed
+- centcom requires named middle east sea routes, dated news within 14 days and original-source links; unrelated regions, podcasts, photos, videos and duplicates are excluded; no invented severity or maritime notifications
+- sources fail independently, keep their last verified values, remove expired entries and report update failures; global polling is bounded across location changes and cancelled generations cannot publish
+- known limitation: official marad access returns http 403 in this environment; the app reports verification failure rather than showing unverified advisories as active; centcom rss and eurooilwatch feeds are reachable
+- rationale: the user wants distinct european oil/gas benchmarks and middle east shipping context alongside local home warnings
+- validation: both apps compile unsigned; full suites pass with 233 macos and 283 ios tests, followed by 24 focused tests on each platform for the final changes; all six packages pass in debug and process/tools/services in release; simulator ui checks pass for the home card and four charts; formatting and whitespace checks pass; live centcom rss and eurooilwatch feeds verified, marad live status blocked by http 403
+- version bump: both apps 7.0.0 to 7.1.0 (minor: additional benchmarks and maritime source); macos build 156 to 157 and ios build 184 to 185
+
+
+### 2026-10-25 (v7.0.0, ukoilwatch brent futures and wti removal)
+
+- brent uses ukoilwatch's keyless latest-quote and history json endpoints, sourced from yahoo finance; charts, menu-bar labels and notification settings identify it as futures
+- market session dates determine chart timestamps; the latest quote replaces or extends matching futures history, while an older quote cannot overwrite newer history and download dates never make an old close look current
+- either brent endpoint can fail independently; lng remains on acer, and source contract, observation and quote-status details travel with the reading in customData
+- removed wti requests, selector, charts, explainer, notification rule and menu-bar choice; retained lng's selector id and safely ignore persisted wti choices
+- replaced the eia/public-domain oil attribution with ukoilwatch and yahoo finance attribution and the provider's access terms
+- rationale: the user wants fresher brent prices without api keys and no wti for the german market
+- validation: both apps compile unsigned; 226 macos and 276 ios unit tests pass, including quote/history merging, market dates, invalid data, independent failures and saved wti selections; all six packages pass in debug and process, tools and services also pass in release; live ukoilwatch quote/history downloads, formatting and whitespace checks pass
+- version bump: both apps 6.8.0 to 7.0.0 (major: removal of the wti feature); macos build 155 to 156 and ios build 183 to 184
+
+### 2026-10-14 (macos v6.8.1, ios v6.8.2, one english term for pegel and wasserstand, 22:20)
+
+- the pegelonline source is called water level everywhere a full name fits: the ios sources toggle and settings card (were water), the ios navigation title and the about entry (were water levels), the ios toolbar label and the macos dashboard and settings tabs (were level); the ios notification footnote and the multiple sensors help texts follow
+- level charts are titled with the waterway alone, the level suffix is gone; the chart axis and the menu bar value keep level as the short form under a heading that already says water level
+- gauge stays the word for the station and high water the notification title for the event; preference keys and enum case names are unchanged, so no setting resets
+- rationale: the user wanted one unified english word for pegel and wasserstand; the app used five, and water level names the quantity the way radiation and energy do, while pegelonline's own english term gauge is kept for the station
+- rationale: water level measures 56 points at 10 pt, so it fits the fixed 64-point macos tab buttons and the tab strips did not change
+- validation: both apps build; 222 macos and 272 ios unit tests pass; the four toolbar and the navigation ui tests pass on the iphone 17 pro simulator with the new labels; the only remaining level string in app code is the menu bar value; swift-format and whitespace clean; release 6.8.2 (185) installed and launched on the iphone 18 pro at 22:13 cest
+- version bump: macos 6.8.0 (155) to 6.8.1 (156) and ios 6.8.1 (184) to 6.8.2 (185), patch on both for user-visible wording only
+
+### 2026-10-14 (ios v6.8.1, toolbar menu offers only enabled sources, 21:35)
+
+- the long-press menu of the four customizable ios toolbar buttons lists only the sources that are switched on, in the usual order; a disabled source is left out even when it is the slot's current assignment, so that slot shows no checkmark
+- with every source off the menu holds one disabled hint row, turn on a source in settings, so the long press still answers and the buttons stay interactive
+- the toolbar configuration model is unchanged, its disabled branch stays for stored assignments whose source was switched off later; readme, the settings footnote and the accessibility hint say the menu offers enabled sources
+- rationale: choosing a disabled source produced a dimmed button whose screen could not open, a dead end the user wanted removed; both options for the current slot and for the all-off case were decided with the user
+- validation: 272 ios unit tests pass; the four toolbar ui tests pass on the iphone 17 pro simulator, the disabled-replacement test replaced by one that checks the menu entries with two sources on, and the all-off test now checking the hint row; swift-format and whitespace clean; the signed release build 6.8.1 (184) was installed and launched on the iphone 18 pro at 21:38 cest
+- version bump: ios 6.8.0 (183) to 6.8.1 (184), patch for a behaviour fix without a new screen; macos unchanged
+
+### 2026-10-14 (ios v6.8.0, physical iphone launch, 20:48)
+
+- the signed debug build 6.8.0 (183) from feature/custom-toolbar was installed and launched on the user-confirmed iphone 17 pro running ios 27.0
+- validation: code signature verification passed; devicectl confirmed installation and launch at 20:27 cest; physical-device toolbar interactions and live data were not tested
+- rationale: the user requested running the completed feature on the paired iphone; device evidence is recorded separately in ios/MIGRATION.md
+- version bump: none; deployment of the same ios 6.8.0 (183) build
+
+### 2026-10-14 (ios v6.8.0, customizable toolbar and separate sensor screens, 20:23)
+
+- ios always shows seven toolbar buttons: home, weather, level, radiation, particles, covid-19 and settings by default; the four middle positions persist locally and offer all six source screens on long press
+- choosing a screen already assigned elsewhere swaps positions; enabled choices open immediately, disabled sources retain dimmed buttons whose taps do nothing but whose long presses still customize
+- home, weather and settings stay fixed; customization never enables or disables a source, and an enabled source keeps refreshing even without a toolbar position
+- level and radiation replace the environment screen with separate maps and sensor sections, each using six distinct colors; their existing multiple sensors switches now allow up to six sensors, retaining saved choices and the single-sensor default
+- rationale: the user wants four personally chosen source shortcuts without changing the toolbar size, and separate maps let level and radiation each show six sensors
+- validation: 272 ios and 222 macos unit tests pass; all six package suites pass in debug and process, tools and services also pass in release; both apps compile; five iphone and four ipad ui tests pass, covering long press, swaps, persistence, disabled sources, six versus one sensor, navigation and chart gestures; light, dark and large-text screenshots inspected; whitespace and new-file swift-format checks pass
+- version bump: ios 6.7.0 (182) to 6.8.0 (183), minor for customizable navigation and separate sensor screens; no physical-device validation in this change
+
+
+### 2026-09-29 (macos v6.8.0, ios v6.7.0, chart badges and forecast lines in dark mode, 00:52)
+
+- badge text is black in both appearances, on every chart badge; the drag-selected badges keep their dark base in dark mode
+- uncertain orange on the dark base is stronger (0.75), and the forecast badge's gray too (0.9), so black text reads at 5.9:1 and 5.3:1; the forecast badge lost its outline
+- forecast lines and their legend swatch are drawn at 40 % in dark mode; at full strength and at 60 % they were too bright on the black chart
+- rationale: tried with the user on the iphone and in the simulator, round by round; white text in dark mode was readable, but the user preferred one text color
+- known: black text on the dark good and bad badges stays at about 3:1 and 2.2:1, accepted
+- validation: 223 macos and 267 ios tests pass, both apps build; checked in dark and light screenshots in the ios simulator, and on the iphone by the user
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, translucent current-value badges, 23:43)
+
+- the current value's badge in every chart is half transparent again, without the opaque base; the drag-selected value, forecast and hazard badges stay opaque
+- rationale: the user found the solid green and orange fine for the other badges but wanted the chart to show through under the current value
+- its text still follows the appearance, white in dark mode, so the dark mode readability fix is kept for the text
+- validation: both apps build; installed on the iphone 18 pro
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (ios v6.7.0, location simulation on ios, 23:14)
+
+- ios gets the macos simulation: an icon at the upper right of every screen opens a menu with simulation… and stop simulation, the sheet has the same search, map of germany and start, and an orange sim · place capsule sits next to the title while simulating, a tap offering to stop
+- decisions with the user: the entry point is an icon at the upper right, the indicator a capsule by the title
+- the simulation view moved to shared code with small platform switches; a new shared simulation presenter carries the state and the place's name for swiftui
+- the location card in settings names the simulated place, and the background refresh no longer waits for a real fix while simulating
+- verified in the ios simulator by a ui test from hkw to dresden and back; radiation followed only after about a minute, because bfs answered each request in 20 to 30 s that evening, not because of the simulation
+- validation: 223 macos and 267 ios tests, location and process package tests pass, both apps build
+- version bump: none; folded into the unreleased ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, stop simulation as its own menu entry, 21:05)
+
+- simulation… stays in the menu and opens the window during a simulation too, with stop simulation as its own entry below it, disabled while nothing is simulated
+- rationale: the user wants to move from one simulated place to another without going back to the real location in between; replacing the entry forced a stop first
+- validation: the macos app builds; the menu needs the user on screen
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, level gauges at low water, 20:31)
+
+- fix: simulating koblenz, the nearest gauge had no chart and read n/a, the rhine gauge had no chart, and a lahn gauge drew its values below the plot over the axis labels
+- cause: the station list included gauges without a water level (koblenz-lützel measures only clearance height); a chart was only shown for values above zero, while the rhine stood at −4 cm; and the level axis always started at zero
+- the station list asks for water level gauges only, any level counts as data, and the axis reaches below zero with the data
+- a forecast that leaves the measured range gets a little room, so its line does not run along the edge
+- verified live in the ios simulator at koblenz: the rhine gauge with its pegelonline forecast, the mosel and the lahn gauges, all inside their plots; the simulator is back at hkw
+- validation: services package and 220 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, state polls and readable chart badges, 18:39)
+
+- fix: state polls showed the bundestag's for every state but berlin; simulating passau and koblenz showed the same numbers as berlin's federal ones
+- cause: the state came from the geocoder, which names it in the device's language (bavaria, rhineland-palatinate), and matched none of dawum's german names but berlin's
+- decision: the state now comes from the bkg district key the covid source already resolves, whose first two digits are the state's; passau shows bavaria's polls and koblenz rhineland-palatinate's
+- fix: chart value badges were hard to read in dark mode, the macos default: dark green with black text, the chart showing through. they are opaque now, with white text in dark mode and unchanged in light mode
+- verified live in the ios simulator at passau and koblenz, and with the dark fixture; the simulator is back at hkw
+- validation: 217 macos and 261 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, covid districts outside berlin, 17:59)
+
+- fix: covid showed nothing new for any district outside berlin and kept the last one; a simulation at büsum kept showing berlin mitte
+- cause: the bkg district service answers in utm metres unless asked for latitude and longitude, and the app read the metres as degrees, so the district never matched and its centroid could not be geocoded, which dropped the sensor; berlin worked only through its bundled borough file
+- the request asks for epsg:4326, the parser refuses geometry that cannot be degrees, and only land features count, so the wadden sea is no district of its own
+- verified live in the ios simulator at büsum: dithmarschen with its outline, then back to hkw
+- validation: services package and 215 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, location simulation, 17:45)
+
+- simulation… in the status item's right-click menu opens a window with a search field, a map of germany and a start button; start shows the whole app as if the mac were at the picked place, and the entry reads stop simulation until it is stopped
+- decision: the location manager simulates, not a second source: real fixes keep coming but are only remembered, so a simulation is not overwritten, and stopping returns to the last real fix at once; the streams stay open, so the maps and nearest places follow
+- decision: the coordinator refreshes every source when a simulation starts, moves or ends; on macos a new location otherwise waits for each source's own interval
+- decisions with the user: warnings pause while simulating, a simulation ends when the app quits, and the status item tag reads sim in orange
+- only places in germany can be simulated: the reverse-geocoded country decides, the bounding box is a pre-check
+- not verified on screen: the menu, the window and the tag need the user, since the terminal cannot click the menu bar
+- validation: location and process package tests in debug and release, 212 macos and 256 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, one show forecast switch per source, 17:05)
+
+- decision with the user: the global show forecasts switch is replaced by one show forecast switch per source, in that source's own settings: a forecast section on the macos covid-19, level, radiation, particles, energy and polls tabs, and a row in the ios water, radiation, particulate matter, energy and election polls cards
+- ios gets a covid-19 card again, shown while covid is on, since the switch is all there is to set for it
+- each switch has its own footnote saying whose forecast it is, how far it reaches and whether it warns; turning one off hides that source's forecast, stops its requests and estimates, and stops its forecast warnings, and refreshes that source only
+- the global key was added today and never released, so nothing is migrated
+- verified live on ios at hkw with the radiation forecast off by launch argument: radiation ends at now while level keeps its estimate, and the settings show the per-source rows
+- validation: 207 macos and 252 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, poll trends on weekly averages, 16:28)
+
+- decision with the user: poll estimates are fitted on weekly averages of the polls, 13 weeks ahead; on day-averaged polls the pollster-to-pollster noise beat the trend in every backtest, so every party showed only the last value. live, most parties now follow a trend
+- decision with the user: covid keeps its last-value estimate with the wide band, as an honest statement of how little the mostly-zero district numbers say
+- fix: the poll chart title had a spacer of its own that left the forecast legend no room; it now shows as on the other charts
+- validation: 205 macos tests pass, both apps build, the poll tab checked live
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 6, the app's own estimates, 16:19)
+
+- where no provider forecasts, the charts continue with the app's own estimate, labelled as such: radiation its usual range for a day, energy the last price for 30 days, level gauges without a pegelonline forecast their tide or trend, polls a trend for 90 days, covid the weekly pattern or trend for 14 days
+- decision: every estimate is backtested on its own series first and gives way to the last value when it does worse, and a feed that stopped is not continued
+- the polls no longer append an arima forecast that was smoothed into the measured line, and covid's one-day nowcast is gone, so both show what was reported
+- the forecast legend shortens instead of pushing chart titles onto two lines
+- the show forecasts switch refreshes every source
+- seen live at hkw: flat estimates for radiation and the spree-oder-wasserstrasse gauge, the last price for energy; every poll party fell back to the last value, and berlin mitte's covid counts, mostly zeros, get a wide band
+- validation: 203 macos and 248 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (sensor forecasts step 5, the forecasting engine, 15:57)
+
+- a forecasting engine in doomkittools: a forecaster that puts a series on an even grid, transforms, predicts, transforms back and clamps, five models (last value, damped trend, seasonal pattern, tide, usual range) and a rolling-origin backtest
+- decision: a band that widens with the horizon for every model that wanders, 80 % coverage to match pegelonline's percentiles, and linear interpolation instead of carrying values forward, which would narrow the band
+- on seeded synthetic series each model beats repeating the last value on its own kind of series and its band holds about 80 %; the damped trend does worse than the last value on a tide, which is why tidal gauges need detecting
+- nothing in the apps uses it yet; step 6 does
+- validation: 37 tools package tests pass in debug and release, both apps build
+- version bump: none; package only
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 4, warnings from provider forecasts, 15:50)
+
+- the uba forecast warns for pm10, pm2.5, no2 and ozone, and the pegelonline forecast warns when a gauge is expected to reach its flood marks, both within the next 24 hours; the notice names the provider
+- decision: a forecast is another input on the reading's own key, as the weatherkit forecast already is, so a value that was announced does not notify again when it arrives
+- only provider forecasts warn, never the app's own estimates, and nothing warns from a forecast while show forecasts is off
+- the ios warning explainers for level and particles mention the forecasts
+- validation: 195 macos and 240 ios tests pass, both apps build; a real forecast warning was not triggered, since nothing near hkw forecasts over a limit
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 3, the pegelonline level forecast, 15:40)
+
+- level gauges with a pegelonline forecast show it as a provider forecast after the measurements: 43 gauges on the elbe, rhine, oder, danube and saale, none in berlin
+- decision: the station request made for the flood marks also asks which series the gauge forecasts, so only a gauge with a forecast costs a second request; nothing is asked while show forecasts is off
+- the oder's 10 and 90 percentiles are the band; where the run turns from forecast to estimate is recorded but not yet drawn differently
+- the show forecasts switch now refreshes level too, and its footnote names the rivers
+- verified live in the simulator at dresden: the elbe chart continues from 0.62 m with the falling forecast; the simulator is back at hkw
+- validation: services package, 191 macos and 236 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, solid forecast lines, 15:17)
+
+- forecast lines are solid instead of dashed, and so are the legend swatch and the drag marker's badge outline
+- rationale: the user found the dashed lines made the forecasts unrecognizable; an hourly forecast such as uba's broke into dots. the forecast stays apart from the measurements, which are a filled area, while the forecast is a line without fill
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 2, the show forecasts switch and the uba forecast, 15:13)
+
+- a show forecasts switch, on by default: a charts section on the macos general tab and a forecasts card after sources on ios, with the same footnote; off, the charts hide forecasts at once and no forecast is downloaded
+- particles take the uba forecast from the forecast channel as a provider forecast per pollutant instead of appending it to the measurements; the charts draw it dashed with a uba forecast legend
+- fix: measurements are smoothed whether or not the forecast arrives, and a failed forecast window no longer drops the station
+- fix: uba times are cet all year and are now read as such; the device time zone put every particle reading an hour early in summer
+- the uba requests use the service's current host, luftdaten.umweltbundesamt.de, instead of following a redirect
+- verified live in the simulator at hkw: pm10, pm2.5, ozone and no2 show the uba forecast after the last measurement, which reads 14:00 cest
+- validation: services package, 184 macos and 229 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, ios v6.7.0, sensor forecasts step 1, the forecast channel and its chart marks, 14:54)
+
+- decision with the user: forecasts come back in seven steps; provider forecasts where they exist (pegelonline wv on 43 gauges, uba particles), the app's own estimate elsewhere, always labelled as such; a dashed line with an 80 % band and a hairline at now; one global show forecasts switch, default on; only provider forecasts may warn
+- finding: the old forecasts were not removed on purpose; commit 813e824 of 2025-12-24 replaced the arima output of level, radiation and covid with zero-valued placeholders without a note, so those charts dropped to zero after now
+- a forecast is now its own typed channel, `ProcessForecast` on `ProcessSensor.forecasts`, forwarded by transformer, reading and presenter; rationale: quality cannot mark a forecast, since uncertain already means gap fill, unvalidated, poll and nowcast, and every source can have one
+- the twelve source charts on both platforms draw a forecast, a legend in the title row and a forecast-aware drag marker; the weatherkit charts are untouched
+- the placeholders are gone, so level, radiation and covid end at their last measurement; covid's nowcast no longer crashes on a single value
+- the remaining steps are in roadmap.md
+- validation: 26 process package, 178 macos and 223 ios tests pass, both apps build; the ios fixture screenshots show a provider forecast with a widening band on level and an estimate on radiation
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-28 (macos v6.8.0, settings open from the hidden section of a menu bar manager, 14:05)
+
+- fix: with the status item in ice's hidden section, settings from the right click menu did nothing; the panel was created but never shown
+- cause: an nspanel hides while its app is inactive, and the app did not become active when the menu came from the hidden section; the activation call is only a request
+- decision: the settings panel and the popup's anchor panel no longer hide on deactivation; the settings panel now stays visible when another app comes to the front, like an ordinary window
+- fix: the popup's fallback anchor used the status bar thickness, 22 points, where the menu bar under a notch is taller; it now takes the height from the screen
+- validation: 172 macos tests pass, the macos app builds; not verified on screen with ice, which needs the user
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-28 (macos v6.8.0, popup stays open under menu bar managers, 13:47)
+
+- fix: with a menu bar manager such as ice, a click on a tab in the dashboard popup closed it; without one it stayed open
+- cause: the popup hung from the status item, which the manager moves off screen when it rehides its section on a click outside the menu bar, and a popover closes when its anchor leaves the screen
+- decision: the popup hangs from an invisible click-through panel placed where the item is when it opens; an item hidden off screen gives a place at the right end of the menu bar, so the hotkey works then too
+- a press on the item while the popup is open closes it and no longer reopens it
+- not verified on screen: the popup with ice needs the user
+- validation: 172 macos tests pass, the macos app builds
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-27 (macos v6.8.0, ios v6.7.0, home section spacing and headings, 00:45)
+
+- every home section heading sits the same distance below its divider on macOS, 5 points, as current conditions does; nearest places added the stack's default spacing on top, so it now uses none there on macos, while ios, whose home stack spaces every row alike, is unchanged
+- a little room between the nearest places heading and the first place, on both platforms
+- the warnings card heading is a headline with its icon like the other home sections, with the last update under it in small grey type, on both platforms
+- the general tab of the macos settings uses the gearshape symbol instead of gear
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-27 (macos v6.8.0, ios v6.7.0, map labels projected from the visible rectangle, 00:25)
+
+- fix: in the macos popup every label and connector sat about 23 points above its dot, on every map. `MapReader`'s conversion returned points that far off inside the popover while mapkit drew the dots correctly; in the separate window it had matched
+- decision: `CollisionMapView` projects labels, connectors and place markers itself from the visible map rectangle each camera change reports (`MapProjection`). the maps cannot rotate or pitch, so the rectangle fills the view and the projection is plain arithmetic, the same in a window, the popup and on ios; the retry passes that waited for mapreader to register its map are gone
+- two earlier attempts were tried and removed: re-projecting when the popup reopens, and turning off the popup's safe area. neither changed the offset, since the cause was the conversion itself
+- verified by the user on screen after the change
+- validation: 168 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-27 (macos v6.8.0, the home tab scrolls and carries the warnings, 00:10)
+
+- the macos home tab scrolls like the ios home screen: the map at a fixed 500 points, then the forecast, the conditions, the nearest places and the warnings card while the warnings switch is on
+- decision: the macos warnings tab is gone and the warnings live only on home, as on ios; `HazardCardView` moved to shared unchanged and replaces the macos `WarningsView`, so both apps show the same card with the dwd source note
+- the toolbar is eight tabs now; the warnings settings tab stays for the switch and the refresh interval
+- validation: 165 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, the dashboard is a popup on the status item again, 23:50)
+
+- a left click on the status item opens the full tabbed dashboard in a popover under it again, as before the separate window of september 7; a click elsewhere closes it, and it keeps its tab
+- decision: the popup replaces the window; there is no separate dashboard window any more
+- decision: settings, about and quit moved to a right click, or control click, on the status item; the popup itself gets no extra controls, and open dashboard left the menu since a click does it
+- decision: the global shortcut toggles the popup
+- the popup is 800 wide and as tall as fits below the menu bar, up to 860 and never below the 720 the content needs, so a 13 inch display still shows it whole (`DashboardPopoverSize`, tested)
+- the roadmap entry for the popup is removed; the settings cleanup is the last one left
+- not verified on screen: clicking, the right click menu and the hotkey need the user, since the terminal can neither see nor click the menu bar; the app builds, launches and runs
+- validation: 165 macos tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, the status item shows one or two chosen values, 23:20)
+
+- the macos status item shows one or two values the user ticks in settings, general, menu bar, from any sources, after a small vertical dod tag; one at menu bar text size, two stacked in a smaller font
+- decision: the model and the view follow senor-particle, the author's other menu bar app, including its vertical tag, which here always reads dod. a source symbol per row was tried first and dropped at the user's request: at menu bar size the symbols were unreadable
+- decision: the status item is an appkit nsstatusitem instead of a swiftui menubarextra, since a menu bar extra's label cannot hold the custom drawn view. it is also the base for the popup task on the roadmap
+- consequence: the dashboard became an appkit window like the settings panel. the swiftui window scene could only be opened with the openwindow action the app got from the menu bar extra; the window is built once, kept when closed and remembers its frame
+- nothing ticked, or only values whose source is off, shows the temperature as before; the selection is kept for when a source comes back
+- the roadmap entry for the status item is removed now that it is done
+- not verified on screen: the terminal has no screen recording permission, so the look of the status item in light and dark menu bars is for the user to check; a launch with two values set ran without problems
+- validation: 161 macos and 217 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.7.0, data sources and licence obligations, 22:40)
+
+- the macos about tab lists every data source with the credit its licence asks for, and ios gains an about section at the end of settings with the same list, from one shared `DataSources` list
+- each provider's terms were checked on september 26, 2026; the prescribed wording is used where there is one (bkg, dawum, bfs, dwd, osm)
+- fix: the apple weather mark and legal link were shown nowhere, which the weatherkit terms and app store guideline 5.2.5 require. `WeatherAttributionView` loads them from weatherkit and sits in about and under both weather tabs
+- fix: dwd warnings now carry "quelle: deutscher wetterdienst" and the other feeds their issuer under each warning; bfs radiation data carries its source note under the charts, as the geonutzv asks
+- fix: tankerkoenig forbids filtering the user did not ask for, so leaving out closed stations became the open stations only switch, on by default; off, closed stations rank with a lock
+- about now says the app is not for emergencies, which the weatherkit terms also require of apps showing warnings
+- outside the code: tankerkoenig requires its credit in the app store description of both apps; nina publishes no api licence; acer's reuse terms contradict themselves; overpass discourages public apps on its public server; the uba api v3 now redirects to a new host
+- validation: 152 macos and 211 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.7.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.7.0, one enable switch per source family, 22:00)
+
+- every source family except weather has one switch on both platforms: on, it updates, shows its value on the home map and has its tab; off, it stops updating and its tab and label go, and an open tab of it returns to home
+- decision: the historical keys stay, so nobody's choice resets. ios drops its second, map only keys for covid and polls (`showCovid`, `showElectionPolls`); a user who had a label off but the source on now sees the label
+- decision: ios settings has one sources card with the seven switches; the home card keeps only weather, whose switch still just hides the temperature label because weather always updates. source sections show only while the source is on, and the covid section, which held only its switch, is gone
+- decision: the ios environment tab loses the section and labels of a source that is off and leaves the toolbar only when both level and radiation are off
+- macos filters its toolbar by the switches and returns to home when the open tab's source goes off; its weather toggle is now "show on home map"
+- fix: a switch is read one way everywhere, `SourcePreferences.enabled`, so a launch argument such as `-enableCovid YES` starts the fetch as well as showing the tab; `ConditionalSubscription` read it with `as? Bool` and ignored the string
+- verified live on macos: with water level, covid, radiation and polls off in the user's settings, only particles, warnings and energy were fetched
+- validation: 148 macos and 207 ios tests pass, the ios ui test passes, both apps build
+- version bump: ios 6.6.1 to 6.7.0 (182), MINOR, settings and tabs change behaviour; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, home map camera follows the switches, 21:40)
+
+- fix: switching polls and radiation off in settings left the home map framing them. only the `onChange` handlers in `MapView` told the camera, and the view only exists while the home tab is on screen; a switched off source no longer refreshes, so nothing else did
+- fix: the camera rectangle only grew. every update added to it and only removing a source rebuilt it, so a sensor that moved, or a nearest station that changed, left the old area in the frame
+- decision: `MapPresenter` stores each source's location with its visibility check and re-evaluates all checks when any setting changes, wherever the change happens; the view's handlers are gone, so there is one mechanism
+- decision: the rectangle is rebuilt from the visible locations each time, and the camera only moves when that set changed, because settings such as `warningState` are written on every refresh
+- `MapPresenterTests` cover a hidden source, a settings change without a refresh, a moved sensor, an update that keeps its check, and the rectangle itself
+- validation: 144 macos and 203 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, the macos home tab gets the ios home rows, 21:15)
+
+- the macos home tab shows what ios home shows except the warnings card, which macos has as a tab: the map, the next 24 hours, the current conditions and the nearest places
+- decision: no scrolling. the rows keep their height and the map takes the rest, so it still grows with the window; the window's minimum height went from 500 to 720 so the rows cannot squash the map below 260 points
+- `ForecastStripView`, `CurrentConditionsView`, `NearestPlacesView` and `AccentLabel` moved to shared unchanged for ios; `accentLabel()` leaves text alone on macOS, whose window sets its own label colors
+- decision: macos fetches all five point of interest categories whatever the map switches say, as ios does, so the nearest places row is complete; the master switch is "show on map" on both platforms. with the switches at their default, on, this adds no requests
+- seen live: all five categories were requested, and all five failed because overpass-api.de answered slower than the request timeout (about 10 s for a small test query) and the fallback overpass.private.coffee did not answer at all. that is the server, not this change; the presenter retries after its five minute cooldown and the row appears once data arrives
+- validation: 139 macos and 198 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, any station off reports only complete stations, 21:00)
+
+- with any station off, every reported particle station now reports pm10, pm2.5, no2 and o3. before only the first had to; the extras followed by distance whatever they measured, so a tab could list stations with one or two pollutants
+- decision: fewer stations rather than incomplete ones. when fewer than the limit qualify, only those are shown; when none qualify at all the nearest are used, so an outage of the measurement endpoint does not empty the tab
+- probing now runs in rounds of as many stations as are still missing, three at a time, so the single station default still probes one at a time and nothing is probed in vain. a reported station always carries its probed measurements
+- cost: each probe is a request. at hkw six qualifying stations took 15 measurement requests and 6 forecasts, against 7 and 6 before
+- the settings footnotes on both platforms say that off means only complete stations, possibly fewer of them
+- validation: 139 macos and 198 ios tests pass, both apps build, verified live with launch arguments
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, the covid district map on macos, 20:45)
+
+- the macos covid tab starts with the district map ios has: the outline shaded, the incidence at its centroid, the reader's dot
+- `CovidMapView` moved to shared unchanged; it never used ios only api, and `CovidController` already put the outline in `customData` on both platforms. its ios tests pass against the shared copy
+- on macos the map, the header and the chart grid scroll together, as on the level and energy tabs
+- validation: 138 macos and 197 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, level waterway choice and any station, 20:30)
+
+- the nearest sensor toggles did not say what they do. for level it meant allow waterways other than natural ones, for particles allow stations that report fewer or other pollutants than pm10, pm2.5, no2 and o3. the behaviour already matched; the presentation did not
+- decision: level's two switches, nearest sensor and other waterways, became one waterways choice: natural, natural first, any waterway. they overlapped, since other waterways changed nothing once nearest sensor was on. natural first is only offered with multiple sensors on, where it differs from natural
+- decision: the particle toggle is now any station, with a footnote that says the extras follow by distance either way
+- decision: the stored keys `nearestLevelSensor`, `nearestParticleSensor` and `multiSensorLevelOtherWaterways` stay, so nobody's choice resets and the controllers did not change; `SourcePreferences.LevelWaterways` maps the choice to the two switches and back, and the key names are now constants
+- verified live on macos with launch arguments: any waterway skips the natural waterway lookup, natural runs it. at hkw both give the same six gauges, because the spree-oder-wasserstrasse is both the nearest natural and the nearest waterway
+- validation: 138 macos and 197 ios tests pass, both apps build
+- version bump: none; folded into the unreleased macos 6.8.0 and ios 6.6.1
+
+### 2026-09-26 (macos v6.8.0, ios v6.6.1, home map camera fits level, radiation and particles again, 20:05)
+
+- fix: the home map zoomed to the weather and covid dots only, and the level, radiation and particle labels sat at its edges without their dots, two of them on top of each other
+- cause: those three presenters decided whether their nearest sensor joins the camera with `UserDefaults.standard.bool(forKey:)`. an untouched switch is unset, which `bool(forKey:)` reads as off, while settings, the refresh subscription and the map labels all treat it as on. so the sources refreshed and drew labels but asked to be removed from the camera. confirmed in the user's defaults: `showLevels`, `showRadiation` and `showParticles` were unset
+- fix: the condition asks the presenter's own subscription, which reads the same key with the same default. covid and polls already went through `SourcePreferences` and were right
+- not caused by the multi sensor work: the lines predate it. it affects ios the same way whenever `showWater`, `showRadiation` or `showParticles` are unset
+- `HomeMapRegionTests` covers all three; with the old level line restored it fails
+- version bump: ios 6.6.0 to 6.6.1 (182), PATCH, a bug fix. macos folds it into the unreleased 6.8.0
+
+### 2026-09-26 (macos v6.8.0, level, radiation and particles tabs with six sensors and a map, 19:40)
+
+- macos replaces the sensors tab with level, radiation and particles tabs. each starts with its own map, a dot and label per sensor plus the reader's dot, and lists up to six sensors nearest first behind a multiple sensors switch, off by default like on ios. level also gets other waterways
+- decision: six on macos, three for level and radiation on ios. ios puts both on one environment map, where three and three is the label solver's limit of six; on macos each has a map of its own, so each can take all six label colors
+- decision: level and radiation have one chart per sensor, so their sensors sit in a two column grid of cards, header above chart; particles keep one section per station with the pollutant grid
+- the cap was one per source below the views on macos; `SourcePreferences.sensorMaximum` now gives the three switchable sources `macOSSensorMaximum`, six, on macos. `ProcessSensor.maximumPerSource` and the controllers are unchanged
+- six color palettes for the macos level and radiation tabs start with the ios three, so the nearest sensor keeps its home color on both platforms
+- the map annotation builders and the header words moved to shared `SensorAnnotations` and `SensorLabels`; the ios views forward to them and their tests pass unchanged. the macos charts now take a reading instead of the presenter, as the ios ones do
+- verified live with the switches on by launch argument: six radiation series, six level series with six mark requests, and seven particle measurement requests, the probe plus six, no errors
+- validation: 132 macos and 191 ios tests pass, both apps build
+- version bump: macos 6.7.0 to 6.8.0 (155), MINOR, new tabs and settings. ios unchanged in behaviour, no bump
+
+### 2026-09-26 (no version change, location provider and geocoder kept, 18:05)
+
+- decision: the location provider stays on `CLLocationManager` and geocoding stays on `CLGeocoder`. the docs no longer call a `liveUpdates` provider planned; they record the decision, its reasons and when to revisit it
+- rationale for the provider: `CLLocationManager` is not deprecated, and the app only reacts to movement over 100 m, so the new api would bring no visible gain while changing the background behaviour notifications depend on. it would still need a location manager to tell always from while using, its ios sessions do not exist on macos, and macos would lose its kilometre accuracy
+- rationale for the geocoder: `CLGeocoder` is deprecated as of ios and macos 26 but works. `MKReverseGeocodingRequest` needs macos 26 while the app supports macos 15, and mapkit's address has no federal state, which the polls need. the warnings appear only in the ios build
+- revisit when `CLGeocoder` stops working or is removed, when macos 15 support ends, or when the open device checks show a real provider problem. those checks come first
+- removed notes from `ios/MIGRATION.md` and AGENTS.md that had stopped being true: the signing blocker (signed builds install on the iphone now), the failed signed device build row, the claim that migration changes sit uncommitted, dormant hazards, and the instruction to use the long gone `feature/ios-modernization` branch
+- version bump: none, documentation only
+
+### 2026-09-26 (macos v6.7.0, ios v6.6.0, notifications with warning values per sensor family, 16:10)
+
+- both apps send a local notice when a reading reaches its warning or critical limit. eight families with their own switch: weather, hazards, level, radiation, particles, covid, energy and fuel. polls are left out
+- every rule has two limits the user can change, with defaults from the dwd (heat, frost, gusts, heavy rain), the uba index bands (pm10, pm2.5, no2) and the eu ozone thresholds. hazards take a minimum severity instead
+- decision: level takes no number. a gauge on the spree reads about 1.5 m and one on the elbe about 3 m, so each gauge is compared against its own pegelonline marks: the first flood stage or the mean high water, then the second stage, highest navigable level or record high above it. the marks travel in `customData["marks"]`, fetched per gauge at about 2 kb
+- decision: every fetched sensor is checked, not only the nearest, each with its own key and its own notice
+- decision: notify only on escalation, re-arm on easing, and never repeat a key and level within 6 hours, so a value hovering at a limit stays quiet. current weather and the forecast share a key as two inputs, so an announced frost does not notify again when it arrives
+- decision: nothing is judged on the berlin fallback location, so a cold background launch cannot warn about berlin. seen working in the simulator: with location permission pending every check was skipped, once granted the checks ran
+- ios wakes itself with a background refresh task while notifications are on, and doom-kit-process gained `refreshAllAndWait` and `refreshSubscriptionsAndWait` so the task can wait for the refreshes before it completes
+- the master switch starts off and asks for permission when turned on. ios has a notifications card with a page per family, macos a notify settings tab with a section per family
+- not done: the time sensitive entitlement. critical notices request time sensitive delivery and fall back to ordinary alerts without it. it changes signing, and the macos developer id profile is manual, so it waits for an explicit decision
+- the roadmap entry is deleted now that the work is done, as the roadmap's own rule says
+- validation: package tests pass (process 22, services), 124 macos and 183 ios tests pass, both apps build. in the simulator at hkw with lowered limits the notifier posted a radiation notice for the real reading, which ios refused only because the permission prompt was unanswered, and a relaunch did not post it again
+- version bump: macos 6.6.0 to 6.7.0 (154) and ios 6.5.0 to 6.6.0 (181), MINOR on both: a new feature and new settings, nothing removed
+
+### 2026-09-26 (macos v6.6.0, hazards, energy and fuel on macos, and a roadmap, 15:20)
+
+- the notifications plan is parked in a new `ROADMAP.md`: warning and critical limits per sensor family on both platforms, level measured against each gauge's own pegelonline marks, every fetched sensor checked, and an ios background refresh task. it records the defaults with their dwd, uba and eu basis and the live finding that 561 of 737 gauges publish marks
+- rationale: the notifications work has to cover families macos did not have, so those came first, and the research should not have to be repeated when the plan is picked up
+- macos gains a warnings tab and an energy tab. the backend was already compiled on macos, so this is views, three presenters in the app delegate and settings
+- decision: warnings are a tab of their own rather than a card under the home map, which stays a full-size map
+- decision: the settings panel widens from 660 to 800 points for two new tabs, warnings and energy, instead of folding hazards into another tab
+- `SensorMapView` and `FuelMapView` moved to shared so macos can show the fuel map. the only platform switch is the map height: ios keeps 367 and 667 on ipad, macos uses a fixed 367 like its charts. ios behaviour is unchanged
+- the energy explainer texts moved to a shared `EnergyExplainers`, so both platforms print the same footnotes
+- the macos energy chart uses the macos drag overlay, since the ios interactive overlay is built on a uikit gesture recognizer
+- the warnings view checks `showHazards` before anything else, because the hazard presenter never leaves loading while switched off and the tab would otherwise spin forever
+- the signed macos debug build passed `--keychain-check` with no entitlement change, and it found the tankerkoenig key stored on ios and fetched stations with it, so icloud keychain carries keys between the apps
+- readme: the claim of native notifications is replaced by the tab list and a pointer to the roadmap, and energy and fuel are listed as sources
+- validation: both apps build, 89 macos and 146 ios tests pass, the same counts as before
+- version bump: macos 6.5.4 to 6.6.0 (MINOR - new user visible tabs and settings, nothing removed), build 152 to 153. ios unchanged
+
+### 2026-09-26 (ios v6.5.0, customData written down as a rule, and level made to follow it, 01:20)
+
+- the owner stated the principle: `customData` is for all required data that does not fit the standard controller interface, and it is there to keep the apps and doomkit as stateless as possible. it is now a rule under architecture patterns rather than four incidental mentions inside feature bullets
+- an audit against it found the codebase largely conforms: no source specific typed fields on the shared models, no process presenter holding source state, controllers holding only injected config, and no source knowledge at all in the location, network, tools and secrets packages
+- level was the exception and is now fixed rather than documented away. `sensor.name` was the waterway and the gauge rode in `customData["station"]`, the reverse of the rule and the opposite of every other source. the sensor is now named after its gauge and the waterway travels in `customData["waterway"]`
+- decision: nothing visible changes. both level chart titles show the waterway, which is what tells three charts in a stack apart while the header names the gauge, so the chart views read the waterway out of `customData` instead of out of the name. this is a data model correction, not a ui change
+- `LevelController.Station` lost its ambiguous `name` field for `waterway` and `gauge`, so no field needs a comment to say which name it holds. the waterway match against the bundled network and the re-casing both still act on the waterway
+- the re-casing stays attached to the waterway on purpose: `capitalizeGerman` splits on whitespace and would turn a gauge into `Berlin-mühlendamm Up`. gauges are re-cased for display by `SensorHeaderView.displayName`, which keeps the hyphen and the `OP` and `UP` suffixes
+- `SensorHeaderView.title` collapsed to one lookup, since every source now answers `sensor.name`
+- particles wrote `customData["station"]` with the identical string it passed as the sensor name, so that key is gone; with level converted, the `station` key has left the codebase
+- two dead paths removed: covid wrote a `name` key nothing read, and `ProcessPresenter.label` read a `label` key no production controller wrote and no view consumed, so it answered `<Unknown>` for every real source. removing it is a public api change in doom-kit-process
+- decision: `ProcessSelector` stays as it is and is recorded as an accepted asymmetry. it enumerates all eight sources and embeds pegelonline codes, uba component ids and dawum party ids inside a package, but selectors key measurements and route charts, so `customData` cannot absorb them without losing type safety
+- the fixture lost its `namedAfterStation` flag, which existed only for level's inversion, and its level sensors gained a waterway and gauge shaped names; the nearest level chart used to read `HKW fixture Level` and now reads `Spree Level` like the two below it
+- validation: 89 macos, 146 ios and 20 process package tests, both apps build, ui test passes; the screenshot shows all three level charts titled `Spree Level` with headers reading `Berlin-Mühlendamm OP` and `Berlin-Charlottenburg UP`, the same two strings in the same two places as before
+- version bump: none; folded into the pending ios 6.5.0 (180). user visible only in that it should be invisible
+
+### 2026-09-26 (ios v6.5.0, the covid tab draws its district, 00:40)
+
+- the covid tab now starts with a map of the reporting district: the boundary shaded purple with a stroke, one label at the centroid with the incidence, and the reader's black dot
+- rationale: the tab gave four charts and an address, and that address is the districts computed centroid rather than a sensor site, so nothing said what area the numbers covered or whether the reader was inside it
+- the boundary was already being fetched and thrown away. `CovidController` resolves the district by point in polygon containment against bkg vg250, and inside berlin against the bundled bezirk file, then kept only the centroid
+- decision: the ring travels in `customData`, which is a dictionary of `Any` and exists for exactly this. neither `ProcessSensor` nor the process package changed
+- decision: `CollisionMapView` got `polygons` and a `polygonColor` defaulting to the covid purple, rather than the colour being hard coded in the render path, so the next source with an area passes its own. first use of `MapPolygon` in the repo
+- the polygon is map content and needs no projection, so it stays out of the layout request and label placement is untouched
+- decision: `rect(for:)` gained a `padding` factor. the default doubling is the room six labels need; a district fills its own frame, so the covid map passes 1.15 and the other three maps keep their framing and their tests
+- the label id is the fixed string covid rather than one built from the reading, because the covid sensor carries no `sourceID` and so the reading id changes every refresh, which would move the labels placement with it
+- checked rather than assumed: a berlin bezirk ring is 734 to 2124 vertices, so no decimation was needed
+- the ui fixture gained a stand in district, a lopsided ring rather than a circle, so the screenshot exercises the shape and the camera fit
+- two pre existing problems found and deliberately left alone: the covid sensor sets neither `sourceID` nor `distance`, and there is no district cache, so a moving reader re-downloads and re-parses every neighbouring kreis on each location update
+- validation: 88 macos and 145 ios unit tests, both apps build, ui test passes; the screenshot shows the shaded district, the label at its centroid and the reader's dot. the live bkg and berlin bezirk path is unchanged upstream of the one line that carries the ring, and was not separately re-verified on screen
+- version bump: none; folded into the pending ios 6.5.0 (180), but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-26 (ios v6.5.0, a black dot for the reader on the three tab maps, 00:05)
+
+- the energy, environment and particles maps now show where the reader is, as a black dot with the white halo the home map gives the user, and no label
+- rationale: the three maps showed where the readings are but not where the reader is, so the distance under each chart had nothing to point at
+- decision: the marker joins the camera fit rather than only appearing when it happens to fall inside the sensors' box. a dot that can be off screen is not worth having, and the cost is the right answer anyway: when the nearest gauge on a natural waterway is far away, the map zooms out until both fit and that distance is the reading
+- decision: black with the halo, not a bare black dot. the dark mode screenshot is the argument, black alone disappears into a dark basemap
+- decision: it lives in `SensorMapView`, so all three tabs got it at once and the three `annotations(...)` builders still return exactly the sensor arrays their tests assert on
+- the gate moved from the fitted rectangle to the sensor array, so the marker can never be enough to make an empty map appear; the map still shows nothing until a sensor has loaded
+- the marker shows whatever the location origin, including the berlin fallback, because that is what the home map does; telling `.fallback` from `.measured` would be a behaviour the rest of the app does not have
+- `MapAnnotationSnapshot`'s value init gained a defaulted `user` parameter, which only the presenter init could set before. `CollisionMapView` needed nothing: it already drew the halo and already treated a label-less annotation as a dot that reserves clearance
+- `Color.user` is black and deliberately outside the six label colors, since it marks where the reader is rather than what a sensor measures
+- consequence: the marker reserves 15 points of clearance in the layout solver, so labels near the reader shift a few points. none is dropped
+- validation: 88 macos and 138 ios unit tests, both apps build, ui test passes; the screenshots show one unlabelled black dot at HKW on all three tabs, and the dark mode environment shot shows the halo earning its place
+- version bump: none; folded into the pending ios 6.5.0 (180), but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-21 (ios v6.5.0, six particle stations instead of three, 00:20)
+
+- the particles tab now reports six measuring stations with its multiple sensors switch on, where level and radiation still report three
+- decision: the cap became per source rather than one platform constant. `sensorLimit(forKey:)` was already the single place the limit is decided, so `sensorMaximum(forKey:)` went behind it and no controller changed
+- decision: six and not more, for two reasons that happen to agree. six is what the label placement solver was built for, and the palette has six colors, one per station, so a seventh would have to repeat a color. color is the only link between a map label and its chart, so a repeat would break the feature rather than just look odd
+- `Color.particleSensors` grew from three colors to all six home label colors; the nearest still keeps green, the home particle color. it no longer wraps, so the wrap test moved to index six
+- macos still fetches only the nearest whatever the source, so the particles cap is platform guarded and stays at one there
+- cost: one request per station, so particles now make twice as many as before. the settings footnote reads the cap rather than hard coding it, so it says six by itself
+- the ui fixture gained three more stations and now spreads them across both axes instead of stacking them in one column, which was an unrealistic worst case for the solver
+- validation: 88 macos and 134 ios unit tests, both apps build, ui test passes; the screenshot shows six labels in six colors placed without a connector line, the nearest green and matching its header pill
+
+### 2026-09-20 (ios v6.5.0, the fuel map pins take the six label colors, 23:05)
+
+- the six filling station pins were all `Color.energy`, the tab's brown, and read muddy over map terrain at half opacity; they now take the six home label colors, one per rank, as the home and environment maps do
+- decision: warm first, orange, pink, yellow, green, blue, purple, so the dearest end of the list reads hot and the cheapest end cool
+- decision: the color marks the rank, not the price level, so switching dearest to cheapest keeps the same six colors in the same order and only the stations under them change. the numbered icon is what says which rank a pin is; the color is there to tell six pins apart
+- consequence: the palette has exactly as many colors as the map shows stations, which is a second reason six is the right count. a seventh would have had to repeat a color
+- `Color.fuelStations` is a separate array rather than a case in `Color.sensor(selector:index:)`, because fuel uses all six while the per-source lists use three each and the nearest of each keeps its own home color; there is no home color for a filling station to keep
+- validation: 87 macos and 133 ios unit tests, both apps build, ui test passes; the screenshot shows six distinct pills with their dots matching, still placed without a connector line
+
+### 2026-09-20 (ios v6.5.0, filling stations as a map instead of a list, 22:50)
+
+- the filling stations moved from a list at the bottom of the energy tab to a map at the top, above the crude charts, where the other tabs put theirs; the list is gone
+- rationale: a price list says how much but not where, and where is the useful half. the fuel, order and radius pickers still drive the selection exactly as before
+- decision: six stations, not seven, because six is the documented limit of the label placement solver; seven would have been one past what it was built for
+- decision: the rank rides in the label's icon slot as a numbered circle rather than being squeezed into the text, which leaves the price at full size in a fixed width label
+- the station model gained coordinates, which it never had because a list did not need them; a station the api sends without them is skipped, since it cannot be mapped
+- the cc by credit line moved with the feature to sit under the map, attribution being a licence condition rather than decoration
+- consequence: station names are gone entirely, since a map label holds one icon and one value. position now identifies a station
+- the spoken price helper went with the list rows; the map label carries its own accessibility, so nothing called it any more
+- validation: 86 macos and 132 ios unit tests, both apps build, ui test passes; the screenshot shows six numbered pins laid out without overlap or connectors and the closed fixture station correctly absent. the crowded case, six labels at a 5 km radius, is still only testable on the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, dearest filling stations on the energy tab, 21:45)
+
+- the energy tab now ends with the seven dearest filling stations around the user, from tankerkoenig, which redistributes the bundeskartellamt's mts-k price data; settings gain a key field, a fuel picker, an order picker and a radius picker
+- this is the first source that needs an api key, so it is the first user of the keychain store; the key goes in through settings and never near the repository, and the service takes it as a parameter rather than reading a store, because the services package cannot see the app layer, the golden url test needs a reproducible value and unsigned test runners cannot read the keychain anyway
+- decision, forced by the api: sort by price is rejected while asking for all fuels, so the request always sorts by distance and every ranking happens locally. that is why the fuel and order pickers reorder instantly with no request, while the radius picker refetches
+- decision: the radius offers 5, 10 and 25 km because the api caps at 25, checked directly: 26 and 50 return exactly the same stations
+- decision: closed stations are dropped, as asked, even though they still report a price; equal prices are broken by distance, nearest first, so the list does not wobble between refreshes
+- prices are written german pump style, 2,40 with a raised 9 and a euro sign, rather than the 2,41 the request sketched: the tenth of a cent is the digit the ranking turns on, so rounding it away would show stations the list ranks apart as identically priced. voiceover gets plain digits instead of the raised one
+- the presenter copies the hazard one, a refreshable holding models rather than readings, with the generation counter and a five minute, one kilometre failure cooldown, since ios refreshes on every movement and tankerkoenig asks for at most one request every five minutes. it rides the energy enable key, so one switch governs the whole tab
+- the secret field gained an onchange callback: a keychain write is not a userdefaults change, so nothing would otherwise notice a new key until the next hourly refresh
+- the preference keys live in source preferences rather than on the ios view, because the controller needs the radius and the macos test target compiles the controller but not ios views
+- known cosmetic wrinkle: station names are re-cased with the gauge name formatter, which fixes shouting names like berlin - westhafenstrasse but turns the company suffix ohg into ohg
+- validation: 86 macos and 131 ios unit tests, all six packages, both apps build, ui test passes; the fixture screenshot shows seven stations with the closed one correctly absent, and the expected live top seven was computed from the api for comparison on the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, keychain store for api keys and tokens, 19:00)
+
+- a sixth local package, doomkitsecrets, keeps api keys and tokens in the keychain, one string per named key, behind a small store protocol with a memory double for tests; the app's instance is appsecrets shared, and a secretfield settings row lets a key be pasted or removed. nothing consumes a key yet; it is there for the first source that needs one
+- decision: items are synchronizable, so a key entered on the phone reaches the mac through icloud keychain, as asked; they use the data protection keychain, which is the one that syncs and the one the sandboxed macos app has, and are readable after first unlock so a background refresh can use them
+- decision: a package of its own rather than a corner of the network package, so credentials do not pull the security framework into request code and the boundary stays as clean as the other five
+- the keychain only works in an entitled process: the unsigned test runners and the unsigned simulator app both fail with missing entitlement, which is how a round trip test in the ios unit target failed and was removed. instead a debug launch argument runs a write, replace and remove of a probe key in the app itself; on the signed device build it passed
+- validation: package tests for the memory store, the item query and the key type; both apps build; the device self check passed and the app was relaunched normally afterwards
+- version bump: none; no user visible change
+
+### 2026-09-20 (ios v6.5.0, energy prices tab and covid behind a switch, 18:00)
+
+- a new ios energy tab shows daily brent and wti crude oil prices in usd per barrel and the eu lng spot price in eur per mwh, one chart each over the last year, a quarter at first and widened on request; it takes the slot the covid tab had
+- a short footnote under each chart says what the price is and where it comes from, since the tab is for people who do not follow the markets; flush against the chart it blended into the axis labels, and a gray card was not wanted either, so it is inset with a card's padding but no visible box, and a divider separates the chart sections; the range headroom went from five to two percent so the prices fill their chart. the actual cause of the blending, found from a device screenshot, was the chart's area fill: drawn from zero on an axis that starts near the prices, it ran out of the plot and was painted behind the explainer, so the area is now anchored at the range's floor, the way the particle chart already does it
+- the covid tab stays in the app behind a new enable switch, off by default on ios, and appears next to polls when switched on; macos keeps its covid tab and its single switch, on by default, the way polls already differ between the platforms
+- sources: brent and wti come from the datasets oil-prices github mirror of the us eia daily series, plain csv, public domain, no key; lng comes from acer, the eu energy regulator, which has published a daily eu lng price since 2023 as a quoted latin-1 csv, no key
+- decision: the mirror rather than the eia api, which needs a key that would have to live in settings or outside the repo; if the volunteer mirror ever stops, switching the url to the eia api is a small change and was written up as such
+- decision: no free api exists for ttf or jkm, the european and asian lng benchmarks; every candidate was paid, a yahoo finance scrape, or dead, and dbnomics' ttf dataset was checked directly and stops in 2024. acer's own daily eu lng assessment is the one real free lng source and is what the tab shows; the benchmark column is a spread that goes negative and is left out
+- decision: prices have no place, so the source is not on the map at all; the home map's label solver is sized for exactly six labels and stays there
+- the selector, two single-unit dimensions, a service with three golden url entries, a controller with pure tested parsers, a transformer, a presenter and the tab; adding the selector case needed two exhaustive switches and nothing else
+- dates parse as utc midnight so the chart drag lands on days; weekends and holidays carry the last price forward as uncertain, since markets are closed
+- covid copies the polls two key shape on ios, an enable key for fetching and the tab and the old show key for the map label only; this also replaces the presenter's bool read of the show key, which treated an unset key as off for the map, with the same object read the other sources use
+- fixtures, the subscription tests, the policy test and the ui test now enumerate the new source and the covid enable key; the ui test enables covid so its screenshot survives
+- validation: all five packages, 82 macos and 117 ios unit tests, both apps build, ui test passes; the real app in the simulator fetched all three files without error, and the parsers are pinned to rows copied verbatim from those files. the tab was seen with fixture data only; real charts are for the device
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible and adds a tab, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, map of the particulate stations on the particles tab, 17:00)
+
+- the ios particles tab now starts with a map of its stations, a dot and a label for each, with the same colored header pills under it, as the environment tab has
+- the map itself moved into a shared view holding the camera, the height, the divider and the empty state; the environment and particles maps only build their annotations. the environment map is unchanged, which the screenshot confirms
+- decision: a station reports up to a dozen pollutants and a label has room for one, so the label shows the first pollutant in the tab's chart order that has a value, pm10 then pm25, ozone and no2, so it always matches the first chart under it. the alternative, picking by the fewest gaps or a fixed pollutant, was not needed; pm10 with n/a is the fallback for a station with no values
+- decision: particle colors are green for the nearest, the home particle color, then pink and blue. the tab is separate from environment, so the colors are reused across tabs and no color is spent on telling the tabs apart
+- the pollutant chooser skips the marker for all pollutants, which is the first case of the enum but never reported
+- known and untouched: the home map's particle label still takes an arbitrary pollutant, the first key of an unordered dictionary
+- tests: the station annotations, ids, colors, order and text, the pollutant order and its fallbacks, the switch off and on, and that the map and the sections agree on each station's color; the palette test now covers the particle colors. an existing test that treated particles as a source without a color list was corrected
+- validation: 76 macos and 111 ios unit tests, both apps build, ui test passes; the screenshots show three labels in green, pink and blue with matching pills on the particles tab and the environment tab unchanged. real uba stations on a real map are not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, environment header pills use the map label transparency, 16:05)
+
+- the coloured pill above each environment chart now has the same half transparent fill as the map label, so the pill and its label are the same tint; it was opaque before
+- rationale: requested, so a pill and its label match in tone as well as in hue
+- known consequence, seen in the screenshots: in light mode the pill is pastel with legible black text, but in dark mode the tint sits on a black page and comes out dark brown or olive, and the black text on it is hard to read. the map label has the same weakness over a dark map. this was the reason the pill had been opaque
+- options left open: an opaque pill again, or light text on the pill in dark mode only, which keeps the same transparency; not done, since neither was asked for
+- validation: build and ui test pass; light and dark screenshots checked
+- version bump: none; folded into the pending ios 6.5.0
+
+### 2026-09-20 (ios v6.5.0, per sensor colors on the environment map and headers, 15:50)
+
+- every level and radiation sensor on the environment tab now has one of the six label colors from the home screen, on its map label, dot and connector and on the header above its chart, so a label can be matched to its chart
+- the palette is one function, color sensor: radiation orange, pink, purple and level yellow, green, blue, nearest first. the nearest of each keeps its home color, orange for radiation and yellow for level, and the extras take the four that are left; the six are exactly the colors of the home labels and no new color values were added. the survey color is pink, not red, which the question offered had wrong
+- decision: charts get a colored header pill only. the plots keep their accent gradient, which is one shared value used by ten chart views on both platforms and so is not touched here; the price is that in dark mode the accent can be orange or blue, which are also sensor colors, so a fill can resemble another sensor's pill
+- the map annotation snapshot carries an optional color, nil by default, and its display color falls back to the selector's, so the home map and macos are unchanged; the label, the dot and the connector read it in the three places that used the selector color. the label type gets a defaulted color so its existing callers and tests compile as before
+- the header view gets an optional color; with one, the address row is a rounded pill in it with black text, and without one it is plain, so the particles tab is unchanged. the pill is opaque where the map label is half transparent, because half transparent on a black page in dark mode reads dark
+- the color is applied with multiple sensors off as well, so the two nearest sensors are still orange and yellow and match their labels
+- the map and the sections work out each sensor's color from its position separately, so a test pins that they agree
+- known limits: color is the only link between a label and a chart, since the labels carry no station name, so people who cannot tell the colors apart cannot make the match; pink beside orange and yellow beside green are close in hue at half opacity over map tiles
+- tests: the palette is the six home colors, all different, nearest keep theirs, other selectors keep their category color, and indices wrap; the map annotations carry the colors in tab order and match the sections; the snapshot falls back to the selector color
+- validation: 75 macos and 102 ios unit tests, both apps build, ui test passes; the screenshots show six different colors on the map with matching pills, legible black text on all six in light mode and on orange in dark mode at the largest text size, plain particles headers, and the earlier home map look unchanged
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, map of level and radiation sensors on the environment tab, 15:30)
+
+- the ios environment tab now starts with a map showing only level and radiation sensors, a dot and a label for every sensor the tab lists below it, so the extra sensors from multiple sensors finally have a place on a map; the home map still labels only the nearest sensor of each source and is unchanged
+- decision: a new view rather than reuse of the home map view, which hard codes the six home categories and takes its camera from a shared singleton keyed by presenter with one point each; changing that would have touched the home camera, which the map rules say not to do to fit labels. the collision map view underneath needs only a camera and a list of annotations, so the new view uses it directly with its own camera
+- the camera is a rectangle around the sensors, grown by half its size on each side for the labels and never smaller than about three kilometres, so a lone sensor does not zoom in to nothing; it is recomputed from the data and its setter ignores writes, so it follows the sensors as they load and refresh
+- labels are built from each reading rather than a presenter, through a second initialiser on the annotation snapshot; ids are the category plus the reading's source id, since ids must be unique within a map and an id used twice silently drops a label
+- the map reads the same visible readings as the sections, so turning a source's multiple sensors off removes its extra labels at once and the map re-fits around what is left
+- decision: sensors only, as asked; no points of interest, weather label, user marker or header, and it cannot be panned, like the home map, so it does not fight the scrolling. it renders nothing until a sensor has loaded, so the spinners below stay the only loading sign
+- the settings footnotes said the map always shows the nearest sensor, which stopped being true with two maps, so all four now say the map on the home screen shows only the nearest one; the plan named three, particulates was changed too so they read the same
+- known limits: labels sit at half opacity as on the home map with places off, so street names show through them; six close labels are what the placement solver was sized for; the labels carry the icon and value only, and the station names are in the sections below
+- tests: annotation building, ids, order and the fallbacks, the camera rectangle for none, one, identical and distant sensors, the snapshot initialiser, and that the map follows each source's switch; the ui test now scrolls further on this tab
+- validation: 69 macos and 93 ios unit tests, both apps build, ui test passes; the screenshots show six labels and dots clear of each other with a connector where one is displaced, two labels after re-fitting with the switches off at the largest text size, and the home map unchanged. real gauges and stations on a real map are not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, level other waterways setting, 15:10)
+
+- new ios setting for level, other waterways, that lets the extra gauges be on other rivers and canals instead of only the first gauge's waterway
+- decision: it changes only the extra gauges; the first gauge keeps its rule, the nearest on the nearest natural waterway or the plain nearest with nearest sensor on. the alternative, all three strictly nearest, is what nearest sensor plus multiple sensors already gives, so a new switch would have duplicated it
+- consequence: the extras come after the first, so one can be nearer than the first when it sits on another waterway, and the distances down the stack do not always increase; the first stays first because the map pin, the address and the menu label read the first reading
+- decision: default off, ios only, and shown in the water card only while multiple sensors is on, since without extra gauges it would change nothing, the same way the poll scope picker only appears when polls are enabled
+- selection: the existing waterway then nearest rule is factored out unchanged and used for the first gauge with a limit of one; the extras are the nearest remaining gauges, through the same nearest function so the 1000 km cutoff still applies. with the setting off, or a limit of one, the result is exactly what it was, so the default and macos are untouched
+- the extras carry their own waterway name, so their chart titles now read their own river, which also tells them apart
+- the controller reads the setting per refresh through an injectable closure, like nearest sensor and the sensor limit; the toggle refreshes the level source so the change takes effect at once
+- tests: seven cases for the selection, using a spree, havel and canal layout in which two extras are nearer than the first, plus the default, a limit of one, no matching waterway, no repeats, fewer gauges than the limit and the cutoff; the new key is pinned and listed in the unrelated key loop
+- validation: 67 macos and 82 ios unit tests, both apps build, ui test passes; the settings screenshot shows the toggle in the standard card style under multiple sensors, off. the fixtures seed readings directly, so the effect on real gauges is not seen yet
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, multiple sensors setting per source, default off, 14:45)
+
+- level, radiation and particles each get an ios setting, multiple sensors, that turns the multi-sensor behaviour on; off means the previous behaviour: one sensor, the nearest, one station's data fetched, one section shown
+- decision: three switches, one per source, rather than one for all; particulates are the expensive one, about seven requests against three, so the switches can be used independently
+- decision: the default is off, so out of the box nothing is multi-sensor and the extra sections appear only after a switch is turned on. the build that was on the phone showed three sections and shows one again until the switches are turned on
+- decision: ios only; macos already fetches and shows one sensor, so a switch there would do nothing
+- keys are multisensorlevel, multisensorradiation and multisensorparticles, only ever read with bool for key, so unset is off and launch arguments reach them, which the ui test uses
+- one function, source preferences sensor limit, turns a key into a limit: one when off, the platform cap when on. each controller takes it as an injectable closure re-read on every refresh, the same shape as the nearest sensor closure, so a switch takes effect on the next refresh without restarting anything
+- radiation was the one source with no seam for the limit, its station count was hard coded in a private function; it now takes a limit, and with the switch off it fetches one station where the old code fetched three and threw two away, so off is slightly cheaper than the previous behaviour, with the same result on screen
+- the three views list visible readings, which trims to the nearest when the switch is off. the presenter keeps its last readings until a refresh replaces them, so trimming only the fetch would leave the extra sections on screen after switching off, for good if the refresh failed. trimming in the view makes the switch immediate
+- each toggle refreshes its source, so turning it on loads the extra sensors at once
+- radiation had no ios settings section; it got one, between water and particulate matter, matching the order on the home screen
+- footnotes say what the switch does to the data and to the map, which always shows the nearest sensor, and interpolate the cap so the text cannot go stale
+- tests: source preferences limit per key, including a launch argument string, visible readings on and off, and the radiation station limit, which gives radiation its first controller test; the unrelated key loop in the conditional subscription test lists the three new keys. the ui test turns the switches on for its first launch and leaves them off for the large text launch, and now also captures the settings tab
+- validation: 60 macos and 75 ios unit tests, both apps build, ui test passes; the screenshots show the settings cards in the standard style, three sections per source with the switches on, and a single radiation section with them off
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, sensor cap is three and particulate matter is multi-sensor, 14:20)
+
+- the per source sensor cap drops from five to three, and is one on macos: macos shows only the nearest sensor, so it no longer downloads the extra ones, for level and radiation as well; the cap is one constant with a platform condition, and the level and radiation controllers already derived from it
+- particulate matter now reports up to three stations and the ios particles tab shows each as a section, the same way as the environment tab; the nearest section is unchanged
+- decision: the first sensor is still the nearest station reporting pm10, pm25, no2 and o3, and the others are the stations that follow it by distance whatever they report; the other reading, three nearest stations that all qualify, was offered and not chosen, so sensors 2 and 3 can show fewer pollutants. following it, rather than the next nearest overall, keeps the array in distance order when the first sensor is not the nearest station
+- the particulate probe is left as it was, sequential and unbounded, so a source with no qualifying station can still probe every station; bounding it is a follow up, not part of this change
+- decision: the nearest station with no data still publishes nothing, so the last values stay, as before; level and radiation keep publishing an empty first sensor. the difference is deliberate, each keeps what it did
+- particulate errors are now isolated per station, so one bad forecast drops that station instead of the whole refresh, and a failed geocode of the nearest station no longer discards the refresh, the next station with an address becomes the first sensor
+- sensor candidate holds a dictionary of series per station and takes an injectable geocoder, which made the geocode in order rules testable for the first time; the particle controller takes an injectable nearest preference like level does, and its station selection is a pure function under test
+- requests per refresh on ios go from 3 to 7 in the best case for particles; macos stays at 3
+- tests: level selection and process package expectations moved from five ids to three; the level recovery test passes an explicit limit because the default is now the platform cap and is one on macos, which is how it failed once. new suites for the particle station selection and the sensor candidate rules
+- fixtures and ui test: level, radiation and particles get three sensors each, and the ui test captures the middle and bottom of the environment and particles tabs
+- validation: all five packages in debug and process, tools and services in release; 50 macos and 65 ios unit tests; both apps build; ui test passes and its screenshots show three sections per source in distance order with no unknown placeholder. real uba data was not checked, only the fixtures
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, environment tab shows up to five sensors per source, 13:55)
+
+- the ios environment tab now shows every reading of level and radiation, nearest first, each as its own section with a header and its charts, with a divider between sensors; the nearest section is unchanged
+- the two chart views take a reading instead of reading the presenter, and the container views loop over the readings keyed by the source id, so a gauge keeps its identity and its drag selection across refreshes
+- processreading is now identifiable and owns the availability check; the presenter's version delegates to it for the nearest reading, so macos behaves as before
+- sensors 2 to 5 have no address because only the nearest is geocoded, so their header shows the station name and the distance instead; the level station name is the gauge, carried in custom data, since the sensor name is the waterway and identical for all five
+- decision: pegelonline writes names in capitals, so the display name re-cases only names written that way and keeps a two letter last word as it is, which turns BERLIN-CHARLOTTENBURG OP into Berlin-Charlottenburg OP and leaves mixed case bfs names alone; a token rule was chosen over a fixed list of suffixes so new gauges need nothing
+- decision: every level chart keeps the waterway in its title, so five charts read the same; the header above each one tells them apart, and changing the title was left out of this change
+- decision: all five sections are stacked rather than collapsed or paged, as asked; the tab is now several screens tall
+- removed the dead macos branches from the two ios container views, since the ios folder is never compiled for macos and they could not fit the loop
+- fixtures: level and radiation get five sensors in the ui fixture; the ui test captures the middle and bottom of the tab and the tab at the largest accessibility size, which is how the names, distances and text wrapping were checked
+- project.yml: the header view is on the ios unit test include list
+- validation: all five packages in debug and process, tools and services in release; 37 macos and 52 ios unit tests; both apps build without warnings from the new code; ui test passes; the screenshots show five sections with distances increasing, no unknown placeholder, and no clipping at the largest accessibility size. real gauge and station names were not seen yet, only the fixture ones
+- version bump: none; folded into the pending ios 6.5.0, but this is user visible, so it should become 6.6.0 (181) if 6.5.0 has already shipped
+
+### 2026-09-20 (ios v6.5.0, doomkit reports up to five sensors per source, 13:35)
+
+- a source can now report up to five sensors, nearest first; level and radiation produce several, the other five sources still produce one and everything reads the first
+- processpresenter stores readings, an array of sensor plus its rendered series, and sensor, measurements, current, faceplate, range, trend and timestamp are now get only forwards to the first reading; no view, chart or map code changed
+- publish ignores an empty array, so a failed or cancelled refresh keeps the last good values and never moves the map camera; an app side overload also drives the map region through a visibility policy, because the seven publish bodies were not one shape: forecast never touches the map, weather always does, the rest follow their switch
+- replace is the unconditional variant for fixtures and tests; the two preview helpers that read then mutated the dictionaries now merge into the first reading
+- processsensor gains a stable source id and a distance in metres, and conforms to processlocatable; the per refresh uuid id stays and is documented as ephemeral
+- level: the gauges on the nearest natural waterway, up to five, not padded with other rivers when it has fewer; no waterway means the five nearest overall; the 1000 km cutoff of the old single lookup is kept so a user outside germany still gets nothing; the gauge name is carried in custom data because the station name is the waterway and would be identical for all five
+- radiation: three stations become five
+- series are fetched two at a time through a new ordered concurrent compact map, then assembled by one shared sensor candidate step; only the first sensor is geocoded, so geocoding cost is unchanged; candidates are tried in order until one geocodes, which keeps radiation's old skip on failure and makes level degrade the same way instead of returning nothing
+- decision: the nearest station is emitted even when it has no data, as before, so an outage shows an empty chart instead of silently moving the pin to another station; later stations with no data are dropped. the known consequence is that a transient fetch failure still blanks the chart, which was already true and is left for a separate change
+- decision: the scalar forwards are get only rather than write through to the first reading; write through would have avoided six fixture edits but reintroduces the single sensor assumption this change removes
+- project.yml: the macos unit test target lists its sources, so the two new presenter files, the array extension and the sensor candidate were added to it
+- validation: all five packages in debug and process, tools and services in release; 37 macos and 48 ios unit tests; both apps build without warnings from the new code; new tests cover waterway selection, the distance cutoff, ordering under out of order completion, the concurrency bound, empty publish and the scalar forwarding. the simulator run at hkw showed level choosing five gauges on the spree in distance order and radiation fetching five stations two at a time; the map labels matched develop, but the location prompt could not be dismissed from the command line, so the level and radiation labels themselves were not seen in either build
+- version bump: none; plumbing with no visible change, folded into the pending ios 6.5.0
+
+### 2026-09-20 (ios v6.5.0, rename Shared to shared, 03:30)
+
+- the shared code directory is now lowercase, matching ios, macos and every other tracked path at the root
+- rationale: project.yml and README.md already spelled it shared, and only the case insensitive mac filesystem kept that working; a case sensitive checkout or a linux ci runner would not have found the sources
+- done as two git mv steps through a temporary name, since core.ignorecase is true and a direct rename is a no-op there; git recorded all 152 files as pure renames rather than delete plus add, so blame survives
+- two agents.md path references to bundled resources were the only stale spellings left in the repo
+- validation: xcodegen regenerate, macOS and iOS Debug builds, all five local packages build
+- version bump: none; a path rename with no behavior change
+
+### 2026-09-20 (ios v6.5.0, poi master switch reframed and label opacity rule, 02:40)
+
+- the ios points of interest master switch is now labelled "Show on map", since that is all it does once every category loads regardless of the switches; macos keeps "Show points of interest", where it still stops fetching
+- the section gets a "Points of Interest" headline in the ios settings view, so every section has one; it was the only one relying on its first toggle as a title
+- environmental map labels are now opaque when pins will actually be drawn, meaning the master switch is on and at least one category is selected, rather than on the master switch alone; before, master on with all five categories off left the labels opaque over a map with no pins
+- the opacity is read from the switches through a new showsAnyPlaces property, not from the loaded points, so it keeps the no-flicker property the old rule had while a fetch is in flight
+- decision: keep the master switch rather than delete it, and do not move decluttering onto the map; the user pointed out the map is already visually full between the floating sensor labels and a dense pin layer, so a one tap clear that preserves the per category choices earns its row in settings
+- found while verifying: launch arguments cannot drive showPlaces or the category keys, because the presenter reads them with object as Bool to tell unset from false and argument domain values arrive as strings; AppStorage switches like showHazards use bool and do respond; noted in agents.md so the next session does not repeat the attempt
+- validation: iOS and macOS Debug builds, 39 iOS and 28 macOS tests including a new showsAnyPlaces case over all four switch combinations; the three way visual comparison could not be done for the reason above
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, tap a warning to open it on nina, 02:10)
+
+- tapping a warning row on the ios home screen opens the alert's own page on warnung.bund.de in the system browser; the row shows a small open-in-browser symbol and has an accessibility hint
+- the link is the form the nina web app uses itself, meldungen slash list id slash slug, found by reading the site's javascript bundle; the shorter meldung slash id redirect route rendered "meldung nicht mehr vorhanden" for an alert that was live, and the cap web field was not usable either, since dwd sets it to its generic warnings page and some issuers leave it empty
+- validation: iOS Debug and macOS Debug builds, 38 iOS and 27 macOS tests including a url test; both a dwd and a mowas alert opened to their map and text in simulator safari
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, all place categories on home, places always load, 01:55)
+
+- the nearest places row on the ios home screen now lists the closest liquor or convenience store, funeral director and cemetery as well as the pharmacy and hospital, in that order
+- ios keeps loading all five point of interest categories whatever the settings switches say; the switches now change only what the map draws, and the row is populated even with places switched off
+- rationale: the user wants the row always filled; before, switching places off emptied the row and turning a category off dropped it from the row
+- done with a second published list on the shared presenter: points stays the map's filtered set, allPoints is everything cached nearby, and an opt in fetchesWhenHidden flag that only ios sets; macos keeps not fetching what is switched off, since it has no consumer for hidden points
+- the points of interest explainer on ios now says the switches change only the map; macos keeps its old text
+- validation: iOS and macOS Debug builds, 37 iOS tests and 26 macOS tests including a new presenter test for fetching while hidden; simulator screenshots with places off show a clear map and a five entry row
+- version bump: none; folded into the pending ios 6.5.0 (180)
+
+### 2026-09-20 (ios v6.5.0, home rows below the map and nina warnings, 01:45)
+
+- replace the level and radiation charts below the ios home map, which duplicated the environment tab, with four rows the user chose: an hourly forecast strip, a current conditions row, the nearest pharmacy and hospital, and a warnings card
+- the forecast strip and conditions row show data the app already loaded but never displayed on ios: 111 hourly forecast points with condition symbols and rain chance, and feels-like, humidity, wind, gusts and pressure from the current weather; no controller or transformer changed
+- the nearest places row is a client side minimum over the points of interest already loaded and draws its own leading divider, so nothing remains when places are off
+- revive the dormant nina hazards: the proxy host the app used no longer resolves, so the service now uses the official warnung.bund.de host, which returns the same shapes; live at hkw the card listed two dwd storm warnings, one covering berlin and one 16 km away
+- rationale for the rewrite rather than a host swap: the old view had no empty state, the old presenter was registered nowhere and would have crashed the app on launch, it ran its own location loop outside the coordinator, and the controller fetched detail, geometry and a reverse geocode for every alert in germany, serially
+- the controller now fetches the four list feeds concurrently, then each alert's small geojson to decide relevance, and only then the cap details for alerts inside or within 50 km for dwd and 25 km for civil feeds, with at most 4 region and 2 detail requests in flight; a geojson is a multi feature collection with one polygon per district and the old parser read only the first
+- relevance is decided by expiry rather than a 3 day sent window, since a live mowas drinking water notice was 16 days old; cancellations arrive as their own type and are dropped
+- the presenter is a small ProcessRefreshable with a conditional subscription, a showHazards switch in the home settings, and the same failure cooldown as points of interest; a failed fetch keeps the last list and never shows a false all clear
+- the geojson ring parser moved out of the covid controller into a shared GeoJSON helper used by both
+- the services package tests had not compiled since the waterway change removed LevelService.fetchWaterways and the covid district lookup moved to bkg; the stale case is removed and the covid expectation updated, so the package is green again
+- validation: iOS Debug and Release builds, macOS Debug build, 36 iOS tests including three new suites, 25 macOS tests, the services package; simulator screenshots on iphone and ipad in light and dark with the ui fixture, which now populates the forecast strip, conditions and three sample warnings; live run at hkw against the real feed
+- version bump: ios 6.4.0 (179) to 6.5.0 (180) (MINOR - new home screen content and a revived data source); macOS untouched
+
+### 2026-09-20 (ios v6.4.0, move the location section down, 01:35)
+
+- move the ios settings location section below points of interest, so the order is general, home, points of interest, location, water, particulate matter, election polls
+- rationale: the user asked for it; it also groups location next to the two nearest sensor sections it affects, since location is what decides which gauge and station are chosen
+- validation: iOS Debug build and an ipad simulator screenshot of the new order
+- version bump: none; folded into the pending work on top of ee0f4e6
+
+### 2026-09-20 (ios v6.4.0, clearer settings explainers and location section, 01:25)
+
+- reword every short explainer on the ios settings page and restyle the location section to match the others
+- the home switches did not say that they also stop a source from updating; covid, water, radiation and particles cancel that source's refresh, so the matching tab sits on stale values, while weather and the poll map switch only hide the map label; the texts now say which of the two a switch does
+- the election polls enable switch had no explainer at all although it also decides whether the polls tab exists
+- the two nearest sensor switches described what they avoid rather than what they pick; they now say the app otherwise prefers a gauge on a natural river, or a station reporting all four pollutants
+- the poll scope text now names the bundestag and the parliament where you are, which is how the scope actually resolves, from the constituency at your location
+- the location section was the odd one out: its heading sat inside the card and the card was narrower than every other section, because its texts had no trailing Spacer to push the card to full width; it now uses the same heading outside, full width card, and an Access row that reads like the toggle rows
+- also reworded the points of interest explainer, which lives in a shared view, so the macos settings window picks up the same text
+- validation: iOS and macOS Debug builds, 21 iOS tests; every section checked on an ipad simulator in light and dark, including the two sections below the fold, which were temporarily moved to the top to be photographed and then restored
+- version bump: none; folded into the pending work on top of ee0f4e6
+
+### 2026-09-20 (ios v6.4.0, chart markers match axis labels, 01:10)
+
+- in light mode the vertical marker line and dot on each ios chart now use the secondary system label color, the same color as the axis labels along the bottom and right of the chart, instead of the primary label color from the previous entry
+- rationale: the user wanted the markers to match the axis labels; the charts use default axis styling, so those labels are the secondary label color, and using the same semantic color keeps them in step if that default changes
+- measured on a simulator screenshot: axis labels and the marker line over white background both read 138, 138, 142; the marker is drawn at 60 percent opacity like the labels, so over the blue area fill it blends to a bluish gray instead of a pure gray
+- scope is unchanged from the previous entry: light mode only, dark mode keeps the accent; no test or version change
+- validation: iOS Debug build and the pixel comparison above; the drag-selected markers use the same edit but could not be triggered from the command line
+
+### 2026-09-20 (ios v6.4.0, chart markers use system color in light mode, 00:55)
+
+- the vertical marker line and the dot on each ios chart now use the system label color in light mode and keep the accent in dark mode
+- covers the current value marker and the marker shown while dragging, in all six charts: covid, forecast, level, particle, radiation and survey, so twelve rule marks and twelve point marks
+- rationale: the user asked for these to follow the system color in light mode, like the accent text labels changed in the previous entries; a blue line and dot on the blue fill were also hard to pick out
+- chart marks are not views, so the accentLabel modifier does not apply; each chart reads the color scheme and uses a shared ColorScheme.markerColor, defined next to accentLabel
+- the area fill under each line is not a marker and keeps the accent in both modes
+- validation: iOS Debug build; in the simulator, light mode shows a black line and dot on the level chart and dark mode with a stored orange accent shows an orange line and dot; the dragging markers use the same edit but could not be triggered, since the simulator cannot touch from the command line
+- version bump: none; the earlier work is committed as ee0f4e6 but the version was already raised to 6.4.0 (179) there, and this is a small follow-up inside it
+
+### 2026-09-20 (ios v6.4.0, wider bottom toolbar, 00:45)
+
+- widen the ios bottom toolbar capsule, which spanned about 60 percent of the screen; it now sits 16 points from each screen edge
+- cause: on ios 26 the capsule is sized to its content, so the spacers between the buttons had nothing to expand into, and a maximum width frame inside a toolbar item is not honored either
+- the capsule now gets an explicit width: the container width measured with onGeometryChange, minus horizontal safe area, minus a 21 point margin, capped at 600 points; the capsule draws about 5 points outside its content, so 21 gives a 16 point visible gap
+- the cap keeps the six or seven icons from spreading across a 13 inch ipad; on iphone it is edge to edge
+- decision: keep the single glass capsule the user already had; the alternative, separate round glass buttons split by flexible toolbar spacers, was declined because it changes the look
+- correction to the 2026-09-19 header entry: the light mode title row is a 34 point minimum, not a fixed height, and it does grow at accessibility text sizes; agents.md now says so
+- validation: iOS Debug build; in the simulator the gap is equal on both sides in light and dark, the seven icon case with election polls on fits, the largest accessibility text size does not clip, and on an iPad Pro 13 inch the capsule is centered at about 600 points; landscape was not checked because the simulator cannot rotate from the command line
+- version bump: none; folded into the pending ios 6.4.0 (179), which is still uncommitted
+
+### 2026-09-20 (ios v6.4.0, system label color for accent text in light mode, 00:35)
+
+- ios text labels that were accent colored now use the system label color in light mode; in dark mode they keep the accent
+- affected labels are the location row (icon and address) in the covid, forecast, level, particle, radiation and survey views, and the chart title in each of the six chart views, twelve sites in all
+- tab icons, chart lines and gradients are not labels and keep the accent in both modes; the last update lines were already gray and are unchanged
+- one small modifier, accentLabel, carries the rule instead of a color scheme check in twelve files; new accent-colored text should use it
+- hazard view still uses the accent directly; it is commented out of the home screen, so it was left alone
+- rationale: with the system accent now blue in light mode, blue headings and addresses on white read as links; the user asked for these labels to use the system color instead
+- validation: iOS Debug build; in the simulator, light mode shows black labels with blue icons and chart lines, and dark mode with a stored orange accent still shows orange labels
+- version bump: none; folded into the pending ios 6.4.0 (179), which is still uncommitted
+
+### 2026-09-20 (ios v6.4.0, system accent in light mode, 00:20)
+
+- ios light mode now uses the system accent and the accent picker is hidden there; the accent choice applies in dark mode only
+- rationale: the user tried the deeper light variants from the previous entry on the iphone and preferred the stock look; this supersedes those variants (B35C00, 007C96, 0057D9), which are removed along with the light/dark color wrapper
+- ios has no user-set system accent like macos, so the system accent here means systemBlue; the AccentColor asset is now systemBlue, with systemCyan for dark to match the default
+- a nil tint falls back to the asset catalog accent, not to swiftui's built-in blue, which is why the asset had to change; the previous entry had set it to the custom cyan, so a nil tint alone would have left light mode teal
+- ColorPresenter.tint(for:) returns nil in light mode and the selected color in dark mode; the stored choice is kept, so it is still there when the app returns to dark
+- the picker keeps orange, cyan and blue in dark mode as plain system colors, and its footnote now says light mode uses the system color
+- validation: iOS Debug and Release builds, macOS Debug build, 21 iOS tests including a new light mode test; in the simulator, a stored orange accent shows stock blue in light mode and orange in dark mode, and a stored blue shows blue in dark mode
+- version bump: none; this is folded into the pending ios 6.4.0 (179), which is still uncommitted, following the earlier pending-migration entries
+
+### 2026-09-19 (ios v6.4.0, light mode header and three accents, 17:20)
+
+- ios light mode shows the title as bold text instead of the logo image; the logo is dark red lettering drawn for black and disappears on white, and macOS already did this before its header was removed in dd0f972; dark mode keeps the logo
+- the header row keeps a 34 point minimum height in both schemes so the map below does not move when the theme changes, and the title shrinks to fit rather than growing at large Dynamic Type sizes
+- reduce the accent choices from fifteen to orange, cyan and blue; white, gray and black were invisible against one of the two themes and the rest were rarely useful
+- light mode uses deeper accents (B35C00, 007C96, 0057D9, about 4.7 to 6.2 to 1 against white) because the system orange and cyan measure about 2.2 to 1 and made every chart line and tab icon look faint; dark mode keeps the system colors
+- replace the two index-matched accent arrays with one array of accent structs; the old lookup fell back to index 6, which would have crashed at launch once the arrays shrank below seven entries
+- retired accents migrate on launch to the nearest survivor (red, yellow, brown and pink to orange; green, mint and teal to cyan; indigo and purple to blue; white, gray and black to the cyan default) and the stored value is rewritten, so the settings ring and the tint cannot disagree
+- settings swatches are now buttons with accessibility labels, and the settings view no longer writes the selectedColor key itself; the presenter is the only writer
+- apply the tint on the NavigationStack in ContentView instead of in the App body; a first attempt one level lower, on the ScrollView chain, left the charts and bottom bar on the default color, found by launching with a non-default accent and seeing cyan
+- the asset catalog AccentColor was black in light mode and referenced a macOS color in dark mode; it is now the cyan default, so anything the tint misses degrades to the accent
+- validation: iOS Debug and Release builds, macOS Debug build, 20 iOS tests including the migration cases; in the simulator, orange and a retired purple (now blue) retint the charts, header text and tab bar, and dark mode shows the logo
+- version bump: ios 6.3.0 (178) to 6.4.0 (179) (MINOR - user-visible palette and header changes); macOS untouched
+
+### 2026-09-07 (macos v6.5.4, area-weighted covid district centroid, 17:50)
+
+- fix the covid sensor's displayed location, reported by the user as an oddly specific street address for a district-wide statistic
+- the location was a district polygon centroid computed as a plain average of every boundary vertex, which is skewed toward wherever the boundary happens to be traced with more points, such as a winding riverbank; for berlin mitte this landed the reverse-geocoded placemark on seydlitzstrasse, a real address but not near the district's actual center
+- replace it with a proper area-weighted centroid, computed per ring with the standard polygon centroid formula and combined across a district's rings by area, so a multi-part district is not skewed by one oddly-shaped or finely-traced piece
+- this is the same function used for every district nationwide, not just berlin's boroughs, since both call sites share it
+- validation: computed both the old and new centroid for berlin mitte and reverse-geocoded each; the old one reproduces the user's exact report, the new one resolves to a different, still-plausible address in the same postal district; all automated checks pass (22 tool tests, debug and release macos builds, point-of-interest tests, ios build, six build-script tests); the district id resolution itself was already correct and unaffected, since it uses real point-in-polygon containment separately from this display-only centroid
+- version bump: 6.5.3 to 6.5.4 (patch - corrects a display value, no new user-facing capability)
+
+### 2026-09-07 (macos v6.5.3, audit waterway classification against wrrl, 17:25)
+
+- audit the name-based natural/artificial heuristic from the previous entry against wasserblick, the eu water framework directive's own water body classification, after the user downloaded the current dataset directly (the public version investigated during the previous entry's research pass was inaccessible)
+- parsed the esri filegdb format by hand to read it, since no gdal or python geo library was available in this environment; validated the parser byte-exact against the declared field count and per-row length before trusting any output
+- found wrrl cannot replace the heuristic wholesale: its names are ecological water bodies, not pegelonline's shipping-route names, so only 47 of 103 names join exactly; and its artificial flag is origin-based, not behavioural, so a canal dug along an old river course reads as not artificial to wrrl, which is the wrong signal for a heuristic that cares whether the level is naturally variable or lock-controlled
+- of the 47 exact-name joins, most disagreements were kanal-named waterways where wrrl's origin-based flag was simply the wrong classifier for our purpose and the existing heuristic was kept
+- one real correction: muritz-elde-wasserstrasse has no kanal in its name but is a heavily locked system connecting the mueritz lake district to the elbe; wrrl's constituent water bodies agree it is artificial by a clear majority, so it is now hard-overridden in the offline curation script rather than left to the name heuristic
+- no swift code changed; only the bundled classification data and its curation script were touched
+- version bump: 6.5.2 to 6.5.3 (patch - corrects one waterway's classification, no new user-facing capability)
+
+### 2026-09-07 (macos v6.5.2, waterway lookup via bundled verknet-bwastr, 16:50)
+
+- replace the osm overpass query used to find the nearest natural waterway for water-level gauge resolution with a bundled, offline-converted federal waterway network, removing the osm dependency from level lookups entirely
+- rationale: the prior overpass-based fix already solved the real problem it targeted (the pegelonline station reported as nearest is not always on the waterway nearest to the user, e.g. a landwehrkanal gauge outranking a spree gauge purely because of gauge placement, not because overpass was wrong), but the user asked to remove osm from this codepath too since it shares overpass's latency and reliability problems with the covid lookup this session already replaced
+- investigated whether gdws's authoritative verknet-bwastr dataset could also resolve the classification question, not just geometry; its schema has no natural/artificial field at all, only implicit in freetext segment names, so osm's waterway=river/canal tag was actually the cleaner classifier for that specific question, before this change removed it; also checked pegelonline's new beta hydas api and the eu water framework directive's wrrl/wasserblick classification (bfg hosts the right schema but the public arcgis folder is empty and the live one requires auth), neither usable as a live replacement today
+- built a one-time offline conversion pipeline (not shipped): hand-wrote a shapefile and dbf binary parser since no gdal was available, converted verknet's utm32n geometry to wgs84 with a closed-form inverse transverse mercator formula, then matched each of pegelonline's 103 distinct waterway names against verknet's segment groups through several normalization tiers (hyphenation, concatenation, nested parent groups, description-text fallback), hand-assigning the natural/artificial flag per matched name since verknet has no such field; 81 of 103 names matched real geometry, the rest (foreign rivers, a few nested sub-canal names) fall back to the existing nearest-gauge behavior
+- bundle the curated result as compressed json (`bundeswasserstrassennetz.json.zlib`, 2mb) and add a new open-polyline nearest-point primitive alongside the existing closed-polygon one, since a river is a line, not a ring
+- delete the overpass-based waterway query, name-matching, and synchronization code from the level controller and service entirely; overpass is now used only by the background point-of-interest system
+- add a wsv/gdws attribution line to the about tab alongside the existing bkg and berlin credits, even though the data's geozg/geonutzv licence does not require it
+- validation: new polyline-proximity unit tests pass alongside all existing tests (22 total), signed debug and release builds succeed, point-of-interest tests pass including the existing missing-waterway-data fallback case, ios build unaffected, nine build-script tests pass; live verification at the user's real location and of the canal-only-nearby fallback case is still pending
+- version bump: 6.5.1 to 6.5.2 (patch - corrects existing gauge-resolution behavior, no new user-facing capability)
+
+### 2026-09-07 (macos v6.5.1, berlin bezirk exception for covid lookup, 15:50)
+
+- discovered during manual verification of the prior entry: bkg's vg250 kreis layer models all of berlin as one feature, but rki reports covid data per berlin bezirk (12 boroughs, ids 11001 through 11012), since the bezirke are not independent gemeinden and never appear as separate features in any bkg layer; the whole-city id bkg returns for berlin is not even a valid rki district id, so covid data for any berlin location silently never loaded under the prior entry's implementation
+- confirmed live against the current rki district list that this is the only such exception nationwide: 411 rki districts against germany's roughly 401 official kreise, with hamburg and every other city reporting as a single district like the rest of the country; the user's recollection was that hamburg had the same problem historically, but the live api disagrees today, so hamburg is left unhandled as a known possible gap rather than asserted fixed
+- when bkg resolves a location to berlin's whole-city feature, fall through to a bundled dataset of the 12 bezirk boundaries (sourced from the amt fuer statistik berlin-brandenburg via a cc-by mirror) and re-resolve with the same point-in-polygon and nearest-edge logic already written for the general case, reusing rather than duplicating it
+- add a second attribution line for the bezirk data alongside the bkg one
+- validation: live end to end test at the user's actual location now correctly resolves to berlin mitte and successfully loads real incidence, cases, deaths, and recovered data, closing out the manual verification left pending in the previous entry; signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected
+- no version bump: continues the 6.5.1 patch from the previous entry
+
+### 2026-09-07 (macos v6.5.1, covid district lookup via bkg wfs, 14:45)
+
+- replace the osm overpass query used to resolve a location's covid district with a direct query against bkg's own vg250 wfs kreis layer
+- rationale: the overpass approach queried four administrative tiers at once as a workaround for incomplete regionalschluessel tagging in osm, but never deduplicated the resulting candidates and only ever had centroid distance to rank them, since overpass's out center never returns real polygon geometry; a kreis and a nested gemeinde or stadtteil could both surface as separate candidates, and centroid distance is a poor proxy for which polygon a point actually falls inside near a kreis border
+- bkg is the federal agency that owns the regionalschluessel scheme itself, so querying only its kreis layer returns exactly one feature per kreis with no tagging gaps to work around, and real multipolygon geometry enables genuine point-in-polygon containment for the first time, with a nearest-polygon-edge fallback for points outside every fetched candidate
+- reused the app's existing point-in-polygon and nearest-point-on-polygon helpers and the geojson polygon-parsing pattern already established by the unrelated civil-protection hazard controller, rather than introducing new geometry primitives
+- add a bkg attribution line to the macos about tab per its data licence; no equivalent about surface exists on ios today, so ios carries no attribution yet, a known gap rather than an in-scope fix
+- no fallback to overpass if bkg is unreachable; district data is simply skipped that refresh cycle, matching how every other network failure in this controller already behaves
+- validation: verified the bkg wfs endpoint, layer name, and response shape live before implementation; isPointInPolygon and filterItemsInPolygon unit tests still pass; manual verification of district resolution across several real locations, including a kreis-border case, and of graceful offline behavior is still pending
+- version bump: 6.5.0 to 6.5.1 (patch - corrects existing district-resolution behavior, no new user-facing capability)
+
+### 2026-09-07 (macos v6.5.0, combined sensors tab, 14:00)
+
+- merge the level, radiation, and particles dashboard tabs into one sensors tab with a gauge icon, shortening the toolbar from seven tabs to five
+- stack the three sections vertically in one scrolling view, each keeping its own placemark and last update header since these sensors can each sit at a different location
+- also rename weather forecast to weather and particulate matter to particles in the toolbar, matching the existing settings tab labels
+- rationale: level, radiation, and particles are all small, thematically related physical sensor readings, and did not need a dedicated toolbar slot each
+- explicitly left the settings window untouched: it keeps separate level, radiation, and particles tabs with their own enable toggles and refresh intervals, since merging the dashboard display has no bearing on those per source settings
+- validation: signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected since it owns separate content and category views; manually verified all three sections render with distinct locations and data, dividers separate them, and settings still shows the three tabs unchanged
+- no version bump: continues the current macos 6.5.0 cycle
+
+### 2026-09-07 (macos v6.5.0, remove dashboard card chrome, 12:10)
+
+- remove the card treatment from all six category views and from the home map, and delete the now unused dashboard card modifier
+- keep only the outer padding on the home map, so it stays inset from the window edges with square corners and no border
+- rationale: the card look was not wanted; charts read better bare on the plain background
+- chart height stays at the fixed 167 points introduced in the previous entry; nothing here reintroduces height growth
+- validation: signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected; a clean build confirms no stale references to the deleted modifier, and the bare charts and padded map were verified visually
+- no version bump: continues the current macos 6.5.0 cycle
+
+### 2026-09-07 (macos v6.5.0, dashboard chart cards, 12:00)
+
+- present each chart as a card with a faint fill, hairline border, and the app's existing corner radius of 13, via a new shared `dashboardCard` view modifier
+- restore the fixed 167 point chart height and remove the geometryreader that had made charts grow with the window
+- rationale: growing charts were not wanted; a card layout reads better than bare charts on a flat background
+- apply the same outer padding to the home map as the category tabs, and give it the same card treatment with no inner padding so it fills its card edge to edge; this also restores the rounded map look the pre-tab layout had
+- use concrete black and white opacities rather than the semantic primary color inside the light and dark color initializer, which resolves through a dynamic nscolor provider
+- validation: signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected; manually verified cards on every category tab, the fixed chart height on a single-chart category, the padded and clipped map, and card contrast in both light and dark themes
+- two apparent regressions during verification were false alarms from accessibility scripting, not app defects: system events does not enumerate the settings nspanel and does not report frontmost correctly for this lsuielement app; the settings panel was confirmed visible through its own window frame
+- no version bump: continues the current macos 6.5.0 cycle
+
+### 2026-09-07 (macos v6.5.0, tabbed dashboard and resizable window, 11:40)
+
+- replace the dashboard header title, logo, and settings button with a toolbar strip of category buttons matching the settings window pattern: home, weather forecast, covid-19, level, radiation, particulate matter, polls
+- replace the stacked disclosure-group panels with a tab interface; selecting a toolbar button shows exactly one category full screen instead of scrolling through all of them at once
+- make the home tab the full-size map view, filling the whole content area instead of a fixed 600 point strip above the panels
+- make the dashboard window freely resizable with a 700x500 minimum and no maximum, instead of a fixed 800x859
+- make each category's chart grid grow to fill available height via a per-view geometryreader, falling back to a 167 point minimum with scrolling once a category has too many selectors to fit
+- extract the settings window's toolbar button into a shared `toolbartabbutton` view reused by both the settings panel and the new dashboard toolbar, removing the duplicate implementation
+- truncate the full election party name on macos to one line, matching the existing ios truncation, since narrow resized windows would otherwise wrap it across three or four lines and crush the chart
+- rationale: the previous single scrolling column did not scale to many data sources and could not be resized at all; the map was squeezed into a small preview instead of being a first class view
+- bug caught during manual verification: wrapping each category view in an additional outer scrollview at the content-view level collapsed its internal geometryreader to zero height, rendering charts invisibly; fixed by letting each category view scroll only internally
+- validation: signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected since ios owns a separate content view and map sizing modifier; manually verified every toolbar tab, chart growth at a 3-selector category, chart scrolling at a 12-selector category, the 700x500 resize floor, unbounded growth to 1400x1000, and single-line party name truncation at the minimum width
+- no version bump: continues the current macos 6.5.0 cycle
+
+### 2026-09-07 (macos v6.5.0, menu bar menu and global hotkey, 11:10)
+
+- replace the menu bar click-to-open dashboard popover with a status item menu: open dashboard, settings, about, quit
+- promote the dashboard to a real swiftui window scene opened and focused via appdelegate, since the menu no longer hosts it directly
+- add a user-configurable system-wide hotkey, default control-command-d, that toggles the dashboard window, using the sindresorhus keyboardshortcuts package
+- move all nine presenters from app-struct state into appdelegate as non-optional properties so settings and the dashboard window both see live presenters regardless of which scene renders first
+- add a shared settings-selection object so about opens the settings panel directly on its about tab while other entry points keep the last used tab
+- remove the header quit button from the dashboard now that quit lives in the menu; keep the settings ellipsis button
+- rationale: a single click-to-open popover left no room for settings, about, or a keyboard path to the app; the previous onAppear presenter handoff also broke silently once the dashboard stopped being the first rendered view
+- validation: signed debug and release builds succeed, all 14 macos unit tests and nine build-script tests pass, ios build unaffected; manually verified the menu, dashboard window open and close, about routing, the recorder, and the global hotkey opening, closing, and raising the window from another frontmost app
+- version bump: 6.4.3 to 6.5.0 (minor - new user-facing capability, no breaking change)
+
+### 2026-09-07 (macos v6.4.3, archive paths, 01:37)
+
+- fix macos archive finalization by applying output roots through xcode build-location preferences; keep direct build-setting overrides for ordinary debug and release builds
+- rationale: command-line SYMROOT and OBJROOT flatten the archive layout and cause the missing BuildProductsPath error after successful compilation
+- add regression assertions for archive routing; shell syntax, shellcheck, and all nine macos and ios build-script tests pass
+- validation: reproduced the original archive error; repaired release archive, developer id export, and strict code signature verification pass; apple notarization upload awaits explicit approval
+- no version bump: build tooling correction with unchanged app behavior and signing configuration
+
+### 2026-09-07 (ios v6.3.0, ios display name, 01:12)
+
+- explicitly set the ios display name in the source plist and product name in project.yml to Dashboard of Doom for iphone and ipad
+- align the ios product name with the display name and update the simulator installation path; retain the module name, app identifier, signing, and background location configuration
+- no version bump for this display metadata correction
+
+
+### 2026-09-07 (macos v6.4.3, ios v6.3.0, platform directories, 00:54)
+
+- group macos app sources, rendering tests, build-script tests, signing export configuration, and screenshots under macos
+- group ios app sources, unit and ui tests, build-script tests, build entry point, and migration record under ios
+- group common app sources and tests, five doomkit packages and their tests, and shared test tooling under shared
+- retain repository entry points and the combined xcodegen specification at root; retain existing build output locations and dependency pins
+- validation: all 187 tracked swift files preserved byte-for-byte, both signed debug app builds and signature checks pass, 14 macos tests, 17 ios tests, and nine build-script tests pass
+- package validation: all five packages pass debug tests from their new paths; process, tools, and services also pass release tests
+- no version bump: directory organization only, with unchanged app behavior
+
+
+### 2026-09-07 (ios v6.3.0, narrower map labels, 00:39)
+
+- enlarge ios label symbols from subheadline to title3 and reduce horizontal padding from ten to five points per side
+- reduce label width from 142 to 132 points while retaining the 36-point height and callout measurement text
+- validation: all 17 ios tests pass; longer particle and radiation readings visually checked over dense pois in light and dark appearances; signed build installed and launched on iphone
+- included in the pending ios 6.3.0 (178) migration; no additional version bump
+
+
+### 2026-09-07 (ios v6.3.0, compact map labels, 00:32)
+
+- replace tall stacked ios map labels with 142 × 36-point horizontal labels, smaller symbols, and larger callout text
+- rationale: physical iphone screenshots showed symbols dominating the labels and measurement text too small to read comfortably
+- keep collision placement dimensions synchronized, preserve full voiceover values, and retain macos styling
+- validation: all 17 ios tests pass, including dense poi rendering in light and dark appearances; signed iphone build succeeds
+- included in the pending ios 6.3.0 (178) migration; no additional version bump
+
+
+### 2026-09-07 (ios v6.3.0, correct ios app identity, 00:16)
+
+- use the user-confirmed `com.panjas.dashboard-of-doom` app id for ios signing, simulator launching, tests, and current documentation
+- rationale: the imported source's different identifier did not match the intended developer-account configuration and weatherkit authentication failed on the ipad
+- validation: corrected signed debug build installed and launched on the physical ipad; jwt authentication errors no longer appear in its startup log; nine script tests, shell syntax, and shellcheck pass
+- preserve the previous differently identified installation and its data; this correction remains part of the pending ios 6.3.0 (178) migration
+
+
+### 2026-09-06 (macos v6.4.3, ios v6.3.0, ios modernization, 23:53)
+
+- preserve the original ios develop history through a non-squashed subtree import under ios; generate both apps and test targets from root project.yml
+- share controllers, presenters, models, transformers, extensions, and map/poi views with the five local doomkit packages; retain platform entry points, navigation, charts, settings, and assets
+- retain ios always/best-accuracy background location, no automatic pauses, visible indicator, and the 100-metre movement filter; refresh each accepted ios movement and once after foreground return
+- preserve legacy ios water and independent poll enable/visibility preferences, cancellation, disabled-source retention, and unconditional weather/forecast fetching
+- port collision layout and batched poi rendering with ios label dimensions; keep the fallback map available without weatherkit and correct large-text label overflow
+- add isolated ios tests, offline iphone/ipad ui fixtures, and build-ios.sh with explicit output paths and hkw simulator launching
+- validation: all package debug tests and process/tools/services release tests pass on macos and ios simulator; 14 macos app tests, 17 ios app tests, and iphone/ipad ui checks pass; signed macos builds/signatures and unsigned ios simulator/device builds pass
+- physical ios validation remains pending because this mac has no apple development certificate/private key; preserve existing app identities and weatherkit entitlements
+- rationale: modernize the older ios app on the maintained data pipeline while retaining its platform behavior; see ios_migration.md for evidence and remaining device checks
+- version bumps: macos 6.4.2 (146) to 6.4.3 (147), patch for internal consolidation; ios 6.2.0 (177) to 6.3.0 (178), minor for shared infrastructure, source controls, and restored configurable pois
+
+
+### 2026-09-06 (v6.4.2, source refresh controls and readable labels, 22:38)
+
+- remove and cancel disabled covid, water-level, radiation, particle, and poll subscriptions independently of popover visibility; retain successful values and refresh immediately on re-enable
+- preserve unconditional weather and forecast refreshes and existing poi fetch controls
+- stop cancelled controller work before dependent requests, station fallbacks, and geocoding
+- use opaque environmental label backgrounds while the poi master switch is enabled, including loading and empty results; retain half opacity otherwise
+- rationale: respect source switches and keep dense places from obscuring environmental labels without changing placement or rendering
+- validation: 14 app tests passed, including parameterized coverage of all five sources; 16 process tests passed in both debug and release; unsigned app build passed; inspected rendered dense-poi overlays in light and dark appearances
+- version bump: 6.4.1 (145) to 6.4.2 (146), patch for refresh and label readability fixes
+
+### 2026-09-06 (v6.4.1, recover shared map data requests)
+
+- coordinate all overpass requests with environmental discovery ahead of background pois
+- fall back to a secondary public endpoint for availability failures and remember unavailable hosts
+- respect shared rate-limit cooldowns without rotating endpoints on quota refusals
+- retain official water-level data by choosing the nearest gauge when waterway discovery fails
+- add injected regressions for scheduling, cancellation, fallback, cooldowns, and gauge recovery
+- rationale: the unavailable primary overpass service blocked covid, water levels, and every poi category
+- version bump: 6.4.0 (144) to 6.4.1 (145), patch for data-loading recovery
+
+### 2026-09-05 (v6.4.0, points of interest restored, 23:30)
+
+- restore all five poi categories with master and individual settings switches, enabled by default
+- render every valid onscreen place with compact category symbols in one canvas, retaining apple places and environmental label priority
+- retain the 6.7 km search radius, cache per category for an hour within 1 km, and bound requests to two across cancelled generations
+- publish successful categories as they arrive so a slow or failing request cannot hold back other places
+- give the app delegate explicit startup and shutdown ownership, reuse the existing location stream, and keep popover reopening independent of fetching
+- use one core graphics image pass inside canvas after repeated swiftui symbol and image draws crashed the gpu encoder at 10,000 points
+- add isolated macos swift testing coverage and deterministic dense map previews
+- rationale: avoid per-place annotation views and identity churn while preserving the user's choice to show all places without clustering or thinning
+- version bump: 6.3.6 (143) to 6.4.0 (144), minor for restored configurable poi functionality
+
+
+### 2026-09-05 (v6.3.6, map collision score precision, 22:37)
+
+- replaced area subtraction with nonnegative outside-strip clipping scores, ensuring contained labels score exactly zero.
+- excluded negligible floating-point edge noise from overlap scoring without weakening comparator ordering.
+- reproduced the unwanted-connector bug with fractional-coordinate tests and verified that genuine clipping still overrides the preferred anchor.
+- rationale: rounding errors must not outweigh direct attachment or preserve unnecessary connector lines.
+- version bump: 6.3.5 to 6.3.6, build 142 to 143 (PATCH - display correction).
+
+### 2026-09-05 (v6.3.5, direct map label attachment, 22:23)
+
+- restored direct above-right label attachment instead of leaving a clearance gap around each source dot.
+- prioritized fewer connectors and natural anchors over retaining old placements, so startup and crowding offsets disappear when space opens up.
+- retained geometry-only caching; text refreshes do not determine placement quality.
+- added regression tests for direct attachment and removing obsolete connectors after visibility and viewport changes, plus a separated-location preview.
+- rationale: labels should visibly belong to their dots and only use lines when displacement is required.
+- version bump: 6.3.4 to 6.3.5, build 141 to 142 (PATCH - display correction).
+
+### 2026-09-05 (v6.3.4, map label collision correction, 22:03)
+
+- separated macos map labels using one ordered snapshot, native location dots, and a projected overlay with category-colored connectors.
+- added a pure tools layout solver with bounded deterministic beam search, marker clearance, outward anchors, and a viewport grid fallback.
+- favored stable placements across refreshes; cached by geometry and kept text updates independent of layout.
+- moved projection outside rendering and deferred geometry changes in a cancellable view task to handle transient map registration; retained weather dots when labels are disabled.
+- preserved label styling, selectors, region fitting, noninteractive maps, signing, entitlements, pins, and the unvalidated ios presentation.
+- added ordinary-import geometry regression tests and deterministic crowded-map previews; validation evidence is recorded in package_validation.md.
+- rationale: make crowded measurements readable without changing their geographic meaning or refresh behavior.
+- version bump: 6.3.3 to 6.3.4, build 140 to 141 (PATCH - display correction).
+
+
+### 2026-09-05 (v6.3.3, units tools and services extraction, 21:39)
+
+- moved eight unit files into doom-kit-process and extracted eight utility files into doom-kit-tools and seven service files into doom-kit-services.
+- kept tools independent of process models; measurement smoothing callers preserve original metadata and units while creating new value identities.
+- exported synchronous sendable trace with mutex-protected formatting and output; retained original filtering and shared logger configuration.
+- preserved all 25 static service fetch contracts with trailing injectable network managers and shared tools logging and geometry.
+- added ordinary-import regression tests using captured numerical and request fixtures, fake network dependencies, and concurrent file logging.
+- rationale: reuse units, tools, and api services across clients without changing app behavior, signing, preferences, or pinned dependencies.
+- version bump: 6.3.2 to 6.3.3, build 139 to 140 (PATCH - complete internal refactor).
+
+
+### 2026-09-05 (v6.3.2, process module expansion, 21:05)
+
+- moved all ten remaining process files into doom-kit-process, with local location and network dependencies and public model/helper contracts.
+- opened presenter and transformer bases for app subclasses; retained arbitrary metadata and weak, observation-excluded coordinator cleanup.
+- made coordinator construction inactive and injectable; appprocess supplies managers and starts it at the existing first-presenter initialization point.
+- retained fallback, first-measurement and settings refresh behavior, with cancellation generations and restart coverage.
+- rationale: consolidate process contracts and lifecycle implementation in the agreed single module while preserving app behavior.
+- version bump: 6.3.1 to 6.3.2, build 138 to 139 (PATCH - internal refactor).
+
+
+### 2026-09-05 (v6.3.1, 20:40 CEST extract update packages)
+
+- extracted local doom-kit-location, doom-kit-network, and doom-kit-process packages with swift tools 6.2 and swift 6 language mode; kept the app in swift 5 mode
+- declared macos 15 and ios 26 package support; ios validation and integration remain deferred
+- replaced location delegates and network notifications with bounded per-consumer state streams and explicit lifecycle ownership
+- isolated the initial core location delegate behind an injectable provider; native live updates remain a follow-up with separate behavior validation
+- consolidated raw and decoded network requests, added injectable monitoring and timing, and replaced readiness polling with bounded observation
+- moved scheduling into an independent main-actor generic manager with uuid removal, registration replacement, and cancel/restart generations
+- kept fallback, measured-location, startup, and settings policy in the app coordinator; added per-refresh transformers and cancellation checks before publication
+- added deterministic package tests and documented cancellation, shutdown, restart, and injection contracts
+- rationale: make update providers replaceable while fixing stale refresh publication and lifecycle leaks
+- version bump: 6.3.0 to 6.3.1, build 138 (patch - internal extraction and refresh cancellation fixes)
+
+
+### 2026-09-05 (v6.3.0, 19:54 CEST consolidate build script)
+
+- made build.sh default to a signed debug build, with separate release and notarization modes
+- made clean remove root build outputs and exit unless combined with a build mode
+- regenerated the xcodegen project before builds and fixed output paths under .build
+- required accepted notarization before stapling and repackaged the stapled app for distribution
+- added mock-based script tests for routing, cleanup, and failure handling
+- rationale: provide one predictable command for development and distribution workflows
+- version bump: none; build tooling changes without application behavior changes
+
+### 2026-09-05 (v6.3.0, 19:43 CEST migrate to xcodegen)
+
+- made project.yml authoritative for the app target, build settings, dependency, and shared scheme
+- preserved debug and release settings, signing, entitlements, app version 6.3.0, and build 137
+- ignored generated project files while retaining the tracked package lockfile
+- documented generation, signing configuration, and command-line builds
+- rationale: maintain reproducible project configuration through xcodegen going forward
+- version bump: none; build-system migration without application behavior changes
+
+### 2026-09-05 (v6.3.0, 19:38 CEST instruction accuracy update)
+
+- clarified swift language mode and the macos deployment target
+- refreshed the technology status date and macos-specific guidance
+- replaced unrelated commit examples and corrected the omega symbol name
+- rationale: align agent guidance with project settings and remove copied examples
+- version bump: none; documentation-only corrections
+
+### 2026-09-05 (v6.3.0, consolidate project history)
+
+- moved the historical updates from AGENTS.md into UPDATES.md, preserving all entries
+- linked AGENTS.md to the consolidated log
+- rationale: keep current instructions separate from project history
+- version bump: none; documentation-only consolidation
+
+### January 9, 2026 (ProcessManager Timer RunLoop Fix)
+- **Critical Bug Fix**: Subscription system timer was never firing, causing data to never update after initial load
+- **Root Cause**: `Timer.scheduledTimer` was called from inside a `Task` block in `ProcessManager.init()`. Tasks run on a cooperative thread pool where threads lack an active RunLoop, so the timer was scheduled but never fired
+- **Solution**: Wrapped timer scheduling in `DispatchQueue.main.async` to ensure the timer is added to the main RunLoop
+- **Files Changed**: `ProcessManager.swift`
+- **Added Logging**: Added trace log in `updateSubscriptions()` to help verify timer is firing
+- **Reasoning**: Foundation `Timer` requires an active RunLoop on its thread. The main thread always has an active RunLoop, ensuring reliable timer execution
+
+### January 9, 2026 (Settings Reactivity - Sensor and Scope Options)
+- **Bug Fix**: "Use Nearest Sensor" toggles (Level/Particles) and "Federal vs State" poll scope now trigger immediate data refresh
+- **Root Cause**: Settings were only read during periodic data refresh, not when user changed them in settings window
+- **Solution**: 
+  - Added presenter references to `SettingsView` (`levelPresenter`, `particlePresenter`, `surveyPresenter`)
+  - Added `.onChange` modifiers that call `ProcessManager.shared.refreshSubscription(subscriber:)` when settings change
+  - Modified `AppDelegate` to store presenter references, passed from main App via `.onAppear`
+- **Files Changed**: `SettingsView.swift`, `DashboardOfDoomApp.swift`
+- **Reasoning**: When behavioral settings change (not just visibility), the data needs to be re-fetched with the new parameters. Direct presenter access enables immediate refresh
+
+### January 9, 2026 (MapView Settings Reactivity Fix)
+- **Bug Fix**: Map annotations and map region now update immediately when services are enabled/disabled in settings
+- **Root Cause**: `MapView` was using direct `UserDefaults.standard.bool(forKey:)` calls which SwiftUI does not observe for changes
+- **Solution**: Added `@AppStorage` property wrappers to `MapView` for all service visibility settings (`showWeather`, `showCovid`, `showLevels`, `showRadiation`, `showParticles`, `showElectionPolls`)
+- **Map Region Updates**: Added `.onChange` modifiers that call `MapPresenter.shared.updateRegion()` when settings change, ensuring the map zooms to fit visible annotations
+- **Technical Detail**: `@AppStorage` integrates with SwiftUI's observation system, triggering view re-renders when values change. The `updateMapRegion()` helper registers or removes presenter locations from the `MapPresenter` visible region
+- **Reasoning**: Consistent use of `@AppStorage` across views that depend on the same settings ensures reactive UI updates without manual notification mechanisms
+
+### January 9, 2026 (ContentView Header UI Simplification)
+- **Header Title Display**: Light mode shows "Dashboard of Doom" text, dark mode shows the logo image (`dashboard-of-doom-logo`)
+- **Direct Action Buttons**: Replaced dropdown menu with two direct action buttons in the header bar:
+  - `ellipsis.circle` button → Opens settings window via `appDelegate.showSettings()`
+  - `togglepower` button → Quits application via `NSApplication.shared.terminate(nil)`
+- **Removed AppMenuView**: Deleted `Views/AppMenuView.swift` - buttons now implemented directly in `ContentView.swift`
+- **UX Improvement**: Simplified interaction by eliminating popover menu, saving a click for common actions
+- **Reasoning**: Direct buttons provide faster access to settings and quit functionality without needing a menu. Color scheme-aware header title maintains brand identity while optimizing for dark mode aesthetics
+
+### December 24, 2025 (Settings Window Implementation)
+- **Settings Window Architecture**: Implemented NSPanel-based settings window for menu bar extra application
+- **Window Ordering Solution**: Used NSPanel with .popUpMenu level and NSRunningApplication activation to ensure settings window appears in front
+- **AppDelegate Environment Injection**: Made AppDelegate @Observable and passed through SwiftUI environment to access from menu bar extra views
+- **Technical Details**: SwiftUI's Settings scene incompatible with menu bar extras for proper window ordering. NSPanel with NSHostingController provides reliable control over window levels and activation
+- **Implementation Pattern**: Settings persist via @AppStorage directly in SettingsView, no presenter needed. Panel reused across invocations via persistent AppDelegate property
+- **Reasoning**: Menu bar extras lack parent windows for activation context. Direct NSPanel management with aggressive activation (NSRunningApplication.current.activate) and high window level (.popUpMenu) ensures settings appear reliably in front of other windows
+
+### November 4, 2025 (Evening Update - Build System)
+- **Build Configuration**: Added comprehensive .gitignore file for Xcode project
+- **Source Control**: Implemented proper ignore patterns for macOS development including xcuserdata, DerivedData, build artifacts, Swift Package Manager files, dependency managers, fastlane outputs, macOS system files, IDE configurations, and temporary files
+- **Reasoning**: Essential for maintaining clean repository state, preventing accidental commits of user-specific settings, build artifacts, and system files. Follows Xcode and Swift community best practices for version control
+
+### November 4, 2025 (Evening Update - README)
+- **README.md Modernization**: Updated README.md to reflect macOS-only repository status
+- **Platform Focus**: Removed iOS-specific content, badges, and installation instructions
+- **Repository Structure**: Updated project structure diagram to show actual macOS-only file organization
+- **Installation Updates**: Changed clone URL to heikopanjas/dashboard-of-doom-mac and simplified setup steps for single-platform development
+- **Feature Enhancement**: Expanded macOS menu bar application features section with detailed system integration capabilities
+- **Architecture Simplification**: Removed cross-platform architecture references, focused on MVP pattern for menu bar apps
+- **Reasoning**: After separating repositories, README.md needed comprehensive updates to accurately represent the macOS-only codebase, remove iOS references, and provide clear installation instructions for the new repository location
+
+### November 4, 2025 (Evening Update)
+- **Repository Split**: Updated AGENTS.md to reflect macOS-only repository status after separation from iOS codebase
+- **Platform Focus**: Removed cross-platform references and iOS-specific content, emphasizing macOS menu bar application architecture
+- **Structure Clarification**: Updated Repository Structure, Platform Architecture, Platform-Specific Considerations, Code Organization, and Maintenance Guidelines sections to reflect single-platform focus
+- **Reasoning**: The project has been split into separate iOS and macOS repositories. This macOS repository now contains a dedicated menu bar application with similar business logic patterns but platform-specific implementations. Documentation needed to accurately reflect this architectural change and guide future development with correct platform context
+
+### November 4, 2025
+- **Documentation Consolidation**: Replaced full content in `.github/copilot-instructions.md` and `CLAUDE.md` with simple references to `AGENTS.md`
+- **Implementation Accuracy Update**: Synchronized AGENTS.md with actual codebase implementation details including iOS 26.0+ deployment target, WeatherKit integration, URLSession retry extensions, implemented utilities (ARIMA, MovingAverage, HaversineDistance, PointInPolygon, PolygonProximityCalculator, OSMUtilities, MathematicalSymbols, Trace), and accurate data source listings
+- **Git Workflow Enhancement**: Integrated comprehensive commit message guidelines into Development Workflow section with detailed conventional commits format, character limits, special character safety rules, and practical examples to prevent terminal crashes and ensure clean git history
+- **Reasoning**: Completed the consolidation process started on November 2nd by removing duplicate content from both agent-specific files and establishing AGENTS.md as the single source of truth. Updated technical specifications to match the current production codebase, ensuring documentation accurately reflects implemented architecture patterns and available utilities. Enhanced git workflow documentation to provide clear, actionable guidance for maintaining code quality and preventing common commit message issues
+
+### November 2, 2025
+- **Documentation Restructure**: Moved full instructions from `.github/copilot-instructions.md` to `AGENTS.md` at project root
+- **Reasoning**: Centralized agent instructions in a dedicated file for easier maintenance and access, while keeping a simple reference in the GitHub Copilot-specific location
+
+### 2025-10-05 (v0.1.0, initial setup)
+
+- initial AGENTS.md setup
+- established core coding standards and conventions
+- defined repository structure and governance principles
+
+### October 3, 2025
+- **Documentation Cleanup**: Removed 'Contributing' section from README.md
+- **Reasoning**: Streamlined documentation by removing contribution guidelines, focusing on core project documentation and features
+
+### August 22, 2025
+- **Documentation Enhancement**: Added macOS screenshots section to README.md showcasing application UI with four key views (main dashboard, forecast, environment, particles)
+- **File Organization**: Moved copilot instructions from root directory to `.github/` for better project structure and GitHub integration
+- **README Structure**: Enhanced documentation with professional screenshot layout and maintained existing comprehensive feature descriptions
+- **Political Data Visualization**: Added election poll screenshots (state and federal) to showcase comprehensive political polling capabilities
+- **Reasoning**: Improved project presentation for potential contributors and users while organizing development guidelines in standard GitHub directory structure

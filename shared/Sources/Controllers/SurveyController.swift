@@ -1,0 +1,549 @@
+import DoomKitLocation
+import DoomKitProcess
+import DoomKitServices
+import DoomKitTools
+import Foundation
+
+private struct Poll {
+    let id: Int
+    let parliament: Int
+    let institute: Int
+    let results: [Int: Double]
+    let timestamp: Date
+}
+
+private struct Constituency {
+    let name: String
+    let location: Location
+}
+
+private struct Parliament {
+    let id: Int
+    let name: String
+}
+
+struct Descriptor {
+    let shortcut: String
+    let name: String
+}
+
+class SurveyController: ProcessController {
+    //    private let germany = Constituency(name: "Deutschland", location: Location(latitude: 51.1600585, longitude: 10.4473544))
+    private let germany = Constituency(name: "Deutschland", location: Location(latitude: 52.5186, longitude: 13.3763))
+    #if os(iOS)
+    private static let smoothingFactor = 50
+    #else
+    private static let smoothingFactor = 33
+    #endif
+
+    let officialFascists: [ProcessSelector] = [
+        .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvbFw), .survey(.biw), .survey(.bfth), .survey(.werteUnion)
+    ]
+    let realFascists: [ProcessSelector] = [
+        .survey(.cducsu), .survey(.afd), .survey(.npd), .survey(.bayernpartei), .survey(.bvbFw), .survey(.biw),
+        .survey(.bfth), .survey(.werteUnion), .survey(.cdu), .survey(.csu)
+    ]
+    let officialClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw)]
+    let realClowns: [ProcessSelector] = [.survey(.fdp), .survey(.bsw), .survey(.freieWaehler), .survey(.volt)]
+
+    private let showForecasts: @Sendable () -> Bool
+
+    init(showForecasts: @escaping @Sendable () -> Bool = { return SourcePreferences.forecastsVisible(.polls) }) {
+        self.showForecasts = showForecasts
+    }
+
+    func refreshData(for location: Location) async throws -> [ProcessSensor] {
+        var data: [ProcessSensor] = []
+
+        let scope = UserDefaults.standard.integer(forKey: "electionPollScope")
+        if scope == 0 {
+            try Task.checkCancellation()
+            if let sensor = try await self.refreshFederalSurveys(for: location) {
+                try Task.checkCancellation()
+                data.append(sensor)
+            }
+        }
+        else {
+            try Task.checkCancellation()
+            if let sensor = try await self.refreshLocalSurveys(for: location) {
+                try Task.checkCancellation()
+                data.append(sensor)
+            }
+        }
+
+        return data
+    }
+
+    private func refreshFederalSurveys(for location: Location) async throws -> ProcessSensor? {
+        var sensor: ProcessSensor? = nil
+        let sensorName = germany.name
+        let sensorLocation = germany.location
+        let parliamentId = 0  // Bundestag
+
+        try Task.checkCancellation()
+        if let data = try await SurveyService.fetchPolls() {
+            try Task.checkCancellation()
+            if let polls = try await parsePolls(from: data, for: parliamentId) {
+                try Task.checkCancellation()
+                let sortedPolls = polls.sorted { $0.timestamp > $1.timestamp }
+                if sortedPolls.count > 0 {
+                    let significantPolls = Array(sortedPolls.prefix(367).reversed())
+                    var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+
+                    var values: [ProcessValue<Dimension>] = []
+                    for poll in significantPolls {
+                        let measurement = Measurement<Dimension>(
+                            value: Self.computeShare(self.realFascists, from: poll), unit: UnitPercentage.percent)
+                        let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                        values.append(fascism)
+                    }
+                    if values.count > 0 {
+                        measurements[.survey(.fascists)] = values
+                    }
+
+                    values.removeAll(keepingCapacity: true)
+                    for poll in significantPolls {
+                        let measurement = Measurement<Dimension>(
+                            value: Self.computeShare(self.realClowns, from: poll), unit: UnitPercentage.percent)
+                        let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                        values.append(fascism)
+                    }
+                    if values.count > 0 {
+                        measurements[.survey(.clowns)] = values
+                    }
+                    try Task.checkCancellation()
+                    let descriptors = try await parseParties(from: data, constraints: [])
+                    for (selector, _) in descriptors {
+                        values.removeAll(keepingCapacity: true)
+                        for poll in significantPolls {
+                            let measurement = Measurement<Dimension>(
+                                value: Self.computeShare([selector], from: poll), unit: UnitPercentage.percent)
+                            let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                            values.append(fascism)
+                        }
+                        if values.count > 0 {
+                            measurements[selector] = values
+                        }
+                    }
+
+                    try Task.checkCancellation()
+                    let aggregated = await self.aggregateMeasurements(measurements: measurements)
+                    measurements = await self.interpolateMeasurements(measurements: aggregated)
+                    let forecasts = self.showForecasts() ? Self.estimates(from: aggregated) : [:]
+                    try Task.checkCancellation()
+                    if let placemark = await GeocodingService.reverseGeocodeLocation(location: sensorLocation) {
+                        try Task.checkCancellation()
+                        sensor = ProcessSensor(
+                            name: sensorName, location: sensorLocation, placemark: placemark, customData: ["icon": "popcorn"],
+                            measurements: measurements, timestamp: Date.now, forecasts: forecasts)
+                    }
+                }
+            }
+        }
+        return sensor
+    }
+
+    static let parliamentCoordinates: [String: Location] = [
+        "Baden-Württemberg": Location(latitude: 48.7758, longitude: 9.1829),
+        "Bayern": Location(latitude: 48.1351, longitude: 11.5820),
+        "Berlin": Location(latitude: 52.5074, longitude: 13.3823),
+        "Brandenburg": Location(latitude: 52.3988, longitude: 13.0644),
+        "Bremen": Location(latitude: 53.0759, longitude: 8.8072),
+        "Hamburg": Location(latitude: 53.5511, longitude: 9.9937),
+        "Hessen": Location(latitude: 50.0826, longitude: 8.2472),
+        "Mecklenburg-Vorpommern": Location(latitude: 53.6355, longitude: 11.4010),
+        "Niedersachsen": Location(latitude: 52.3759, longitude: 9.7320),
+        "Nordrhein-Westfalen": Location(latitude: 51.2254, longitude: 6.7763),
+        "Rheinland-Pfalz": Location(latitude: 49.9929, longitude: 8.2473),
+        "Saarland": Location(latitude: 49.2401, longitude: 6.9969),
+        "Sachsen": Location(latitude: 51.0504, longitude: 13.7373),
+        "Sachsen-Anhalt": Location(latitude: 52.1205, longitude: 11.6276),
+        "Schleswig-Holstein": Location(latitude: 54.3233, longitude: 10.1228),
+        "Thüringen": Location(latitude: 50.9787, longitude: 11.0328)
+    ]
+
+    /// The federal states by the first two digits of a district's official key (AGS), in the German names DAWUM uses.
+    static let federalStates: [String: String] = [
+        "01": "Schleswig-Holstein", "02": "Hamburg", "03": "Niedersachsen", "04": "Bremen", "05": "Nordrhein-Westfalen", "06": "Hessen",
+        "07": "Rheinland-Pfalz", "08": "Baden-Württemberg", "09": "Bayern", "10": "Saarland", "11": "Berlin", "12": "Brandenburg",
+        "13": "Mecklenburg-Vorpommern", "14": "Sachsen", "15": "Sachsen-Anhalt", "16": "Thüringen"
+    ]
+
+    static func federalState(forDistrict id: String) -> String? {
+        return Self.federalStates[String(id.prefix(2))]
+    }
+
+    /// The state the location lies in, from the district the COVID source resolves: its key starts with the state's. Not from the
+    /// geocoder, which names states in the device's language ("Bavaria"), so they matched none of DAWUM's German names but Berlin's,
+    /// and every other state silently showed the Bundestag's polls.
+    private static func federalState(for location: Location) async throws -> String? {
+        guard let data = try await CovidService.fetchDistricts(for: location, radius: 30000),
+            let district = try CovidController.resolveDistrict(from: data, for: location)
+        else { return nil }
+        return Self.federalState(forDistrict: district.id)
+    }
+
+    /// Whether DAWUM's parliament shortcut names `state`: "Bayern", or "Nordrhein-Westfalen (NRW)".
+    static func parliament(_ shortcut: String, isFor state: String) -> Bool {
+        return shortcut == state || shortcut.hasPrefix(state + " ")
+    }
+
+    private func refreshLocalSurveys(for location: Location) async throws -> ProcessSensor? {
+        var sensor: ProcessSensor? = nil
+        var sensorName = germany.name
+        var sensorLocation = germany.location
+        var parliamentId = 0  // Bundestag
+
+        // Fetch polls data once and reuse it
+        try Task.checkCancellation()
+        guard let data = try await SurveyService.fetchPolls() else {
+            try Task.checkCancellation()
+            return nil
+        }
+
+        try Task.checkCancellation()
+        if let state = try await Self.federalState(for: location) {
+            try Task.checkCancellation()
+            if let parliaments = try await parseParliaments(from: data),
+                let parliament = parliaments.first(where: { Self.parliament($0.name, isFor: state) })
+            {
+                sensorName = state
+                sensorLocation = Self.parliamentCoordinates[state] ?? location
+                parliamentId = parliament.id
+            }
+            else {
+                trace.error("No state parliament polls for %@", state)
+            }
+        }
+        else {
+            trace.error("No federal state found for the location; showing the Bundestag polls")
+        }
+
+        // Reuse the data we already fetched
+        do {
+            try Task.checkCancellation()
+            if let polls = try await parsePolls(from: data, for: parliamentId) {
+                try Task.checkCancellation()
+                let sortedPolls = polls.sorted { $0.timestamp > $1.timestamp }
+                if sortedPolls.count > 0 {
+                    let significantPolls = Array(sortedPolls.prefix(33).reversed())
+                    var measurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+
+                    var values: [ProcessValue<Dimension>] = []
+                    for poll in significantPolls {
+                        let measurement = Measurement<Dimension>(
+                            value: Self.computeShare(self.realFascists, from: poll), unit: UnitPercentage.percent)
+                        let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                        values.append(fascism)
+                    }
+                    if values.count > 0 {
+                        measurements[.survey(.fascists)] = values
+                    }
+
+                    values.removeAll(keepingCapacity: true)
+                    for poll in significantPolls {
+                        let measurement = Measurement<Dimension>(
+                            value: Self.computeShare(self.realClowns, from: poll), unit: UnitPercentage.percent)
+                        let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                        values.append(fascism)
+                    }
+                    if values.count > 0 {
+                        measurements[.survey(.clowns)] = values
+                    }
+
+                    try Task.checkCancellation()
+                    let descriptors = try await parseParties(from: data, constraints: [])
+                    for (selector, _) in descriptors {
+                        values.removeAll(keepingCapacity: true)
+                        for poll in significantPolls {
+                            let measurement = Measurement<Dimension>(
+                                value: Self.computeShare([selector], from: poll), unit: UnitPercentage.percent)
+                            let fascism = ProcessValue<Dimension>(value: measurement, quality: .uncertain, timestamp: poll.timestamp)
+                            values.append(fascism)
+                        }
+                        if values.count > 0 {
+                            measurements[selector] = values
+                        }
+                    }
+
+                    try Task.checkCancellation()
+                    let aggregated = await self.aggregateMeasurements(measurements: measurements)
+                    measurements = await self.interpolateMeasurements(measurements: aggregated)
+                    let forecasts = self.showForecasts() ? Self.estimates(from: aggregated) : [:]
+                    try Task.checkCancellation()
+                    if let placemark = await GeocodingService.reverseGeocodeLocation(location: sensorLocation) {
+                        try Task.checkCancellation()
+                        sensor = ProcessSensor(
+                            name: sensorName, location: sensorLocation, placemark: placemark, customData: ["icon": "popcorn"],
+                            measurements: measurements, timestamp: Date.now, forecasts: forecasts)
+                    }
+                }
+            }
+        }
+        catch {
+            trace.error("Error processing survey data: \(error)")
+        }
+        return sensor
+    }
+
+    private static func parseConstituencies(data: Data) async throws -> [Constituency]? {
+        var constituencies: [Constituency]? = nil
+        if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
+            if let elements = json["elements"] as? [[String: Any]] {
+                var nearestConstituencies: [Constituency] = []
+                for element in elements {
+                    if let center = element["center"] as? [String: Any] {
+                        if let latitude = center["lat"] as? Double, let longitude = center["lon"] as? Double {
+                            if let tags = element["tags"] as? [String: Any] {
+                                if let name = tags["name"] as? String {
+                                    let location = Location(latitude: latitude, longitude: longitude)
+                                    nearestConstituencies.append(Constituency(name: name, location: location))
+                                }
+                            }
+                        }
+                    }
+                }
+                constituencies = nearestConstituencies
+            }
+        }
+        return constituencies
+    }
+
+    private static func fetchConstituency(location: Location) async throws -> Constituency? {
+        var nearestConstituency: Constituency? = nil
+        try Task.checkCancellation()
+        if let data = try await SurveyService.fetchStates(for: location) {
+            try Task.checkCancellation()
+            if let candidateConstituencies = try await Self.parseConstituencies(data: data) {
+                try Task.checkCancellation()
+                // This is more than the distance from List to Oberstdorf (960km)
+                var minDistance = Measurement(value: 1000.0, unit: UnitLength.kilometers)
+                for candidateConstituency in candidateConstituencies {
+                    let candidateLocation = candidateConstituency.location
+                    let distance = haversineDistance(location0: candidateLocation, location1: location)
+                    if distance < minDistance {
+                        minDistance = distance
+                        nearestConstituency = candidateConstituency
+                    }
+                }
+            }
+        }
+        return nearestConstituency
+    }
+
+    private static func computeShare(_ selectors: [ProcessSelector], from poll: Poll) -> Double {
+        var score = 0.0
+        for selector in selectors {
+            let index: Int = selector.rawValue
+            if let result = poll.results[index] {
+                score += result
+            }
+        }
+        return score
+    }
+
+    private func parseParliaments(from data: Data) async throws -> [Parliament]? {
+        var parliaments: [Parliament]? = nil
+        if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
+            if let elements = json["Parliaments"] as? [String: Any] {
+                parliaments = []
+                for element in elements {
+                    if let id = Int(element.key) {
+                        if let found = elements[element.key] as? [String: Any] {
+                            if let name = found["Shortcut"] as? String {
+                                parliaments?.append(Parliament(id: id, name: name))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return parliaments
+    }
+
+    private func parseParties(from data: Data, constraints: [Int]) async throws -> [ProcessSelector: Descriptor] {
+        var parties: [ProcessSelector: Descriptor] = [:]
+        if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
+            if let elements = json["Parties"] as? [String: Any] {
+                parties = [:]
+                for element in elements {
+                    if let id = Int(element.key) {
+                        if constraints.isEmpty == true || constraints.contains(id) {
+                            if let selector = ProcessSelector.Survey(rawValue: id) {
+                                if let party = elements[element.key] as? [String: Any] {
+                                    if let shortcut = party["Shortcut"] as? String {
+                                        if let name = party["Name"] as? String {
+                                            parties[.survey(selector)] = Descriptor(shortcut: shortcut, name: name)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return parties
+    }
+
+    private func parseInstitues(from data: Data) async throws -> [Int: String]? {
+        var institutes: [Int: String]? = nil
+        if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
+            if let elements = json["Institutes"] as? [String: Any] {
+                institutes = [:]
+                for element in elements {
+                    if let id = Int(element.key) {
+                        if let institute = elements[element.key] as? [String: Any] {
+                            if let name = institute["Name"] as? String {
+                                institutes?[id] = name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return institutes
+    }
+
+    private func parsePolls(from data: Data, for parliament: Int) async throws -> [Poll]? {
+        var polls: [Poll]? = nil
+        if let json = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) as? [String: Any] {
+            if let elements = json["Surveys"] as? [String: Any] {
+                polls = []
+                for element in elements {
+                    if let id = Int(element.key) {
+                        if let poll = elements[element.key] as? [String: Any] {
+                            if let date = poll["Date"] as? String {
+                                if let timestamp = Self.parseTimestamp(date: date) {
+                                    if let parliamentString = poll["Parliament_ID"] as? String {
+                                        if let parliamentId = Int(parliamentString) {
+                                            if parliamentId == parliament {
+                                                if let institute = poll["Institute_ID"] as? String {
+                                                    if let instituteId = Int(institute) {
+                                                        if let numbers = poll["Results"] as? [String: Double] {
+                                                            var results: [Int: Double] = [:]
+                                                            for result in numbers {
+                                                                if let key = Int(result.key) {
+                                                                    results[key] = result.value
+                                                                }
+                                                            }
+                                                            polls?.append(
+                                                                Poll(
+                                                                    id: id, parliament: parliamentId, institute: instituteId, results: results,
+                                                                    timestamp: timestamp))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return polls
+    }
+
+    private static func parseTimestamp(date: String) -> Date? {
+        var timestamp: Date? = nil
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
+        if let formattedDate = dateFormatter.date(from: date) {
+            timestamp = formattedDate
+        }
+        return timestamp
+    }
+
+    private func interpolateMeasurements(
+        measurements: [ProcessSelector: [ProcessValue<Dimension>]]
+    ) async -> [ProcessSelector: [ProcessValue<Dimension>]] {
+        var interpolatedMeasurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+        for (selector, measurement) in measurements {
+            interpolatedMeasurements[selector] = await self.interpolateMeasurement(measurements: measurement)
+        }
+        return interpolatedMeasurements
+    }
+
+    private func interpolateMeasurement(measurements: [ProcessValue<Dimension>]) async -> [ProcessValue<Dimension>] {
+        var interpolatedMeasurement: [ProcessValue<Dimension>] = []
+        if let start = measurements.first?.timestamp, let end = measurements.last?.timestamp {
+            var current = start
+            if var last = measurements.first {
+                while current <= end {
+                    if let match = measurements.first(where: { $0.timestamp == current }) {
+                        last = match
+                        interpolatedMeasurement.append(match)
+                    }
+                    else {
+                        interpolatedMeasurement
+                            .append(
+                                ProcessValue<Dimension>(
+                                    value: Measurement(value: last.value.value, unit: UnitPercentage.percent), quality: .uncertain,
+                                    timestamp: current))
+                    }
+                    current = current.addingTimeInterval(60 * 60 * 24)
+                }
+            }
+        }
+
+        let smoothed = gaussianSmoothing(data: interpolatedMeasurement.map { $0.value }, windowSize: 51, sigma: 13)
+        return zip(interpolatedMeasurement, smoothed).map { original, measurement in
+            return ProcessValue(value: measurement, customData: original.customData, quality: original.quality, timestamp: original.timestamp)
+        }
+    }
+
+    private func aggregateMeasurements(
+        measurements: [ProcessSelector: [ProcessValue<Dimension>]]
+    ) async -> [ProcessSelector: [ProcessValue<Dimension>]] {
+        var aggregatedMeasurements: [ProcessSelector: [ProcessValue<Dimension>]] = [:]
+        for (selector, measurement) in measurements {
+            let uniqueMeasurements = Dictionary(grouping: measurement) { $0.timestamp }
+                .map { timestamp, values in
+                    self.aggregateMeasurement(timestamp: timestamp, measurements: values, quality: .uncertain)
+                }.sorted(by: { $0.timestamp < $1.timestamp })
+            aggregatedMeasurements[selector] = uniqueMeasurements
+        }
+        return aggregatedMeasurements
+    }
+
+    private func aggregateMeasurement(timestamp: Date, measurements: [ProcessValue<Dimension>], quality: ProcessQuality) -> ProcessValue<Dimension>
+    {
+        let value = measurements.map(\.value.value).reduce(0, +) / Double(measurements.count)
+        // Use hardcoded unit if no measurements are available
+        let unit = measurements.count > 0 ? measurements[0].value.unit : UnitPercentage.percent
+        return ProcessValue<Dimension>(value: Measurement<Dimension>(value: value, unit: unit), quality: quality, timestamp: timestamp)
+    }
+
+    /// DAWUM publishes polls, not projections, so each party's share is the app's estimate: a damped trend on weekly averages of the
+    /// polls, 13 weeks ahead. Weekly, because pollsters differ by a point or two from one another, and on the day-averaged polls that
+    /// noise beat the trend in every backtest, so every party fell back to the last value. Fitted before the smoothing, so the estimate
+    /// never runs back into the measured line, and kept between 0 and 100. A parliament whose last poll is older than four months is not
+    /// continued.
+    static func estimates(from polls: [ProcessSelector: [ProcessValue<Dimension>]], now: Date = .now) -> [ProcessSelector: ProcessForecast] {
+        let request = ForecastRequest(step: 7 * 24 * 3600, horizon: 13, bounds: 0 ... 100)
+        var forecasts: [ProcessSelector: ProcessForecast] = [:]
+        for (selector, values) in polls {
+            forecasts[selector] = SeriesEstimate.make(
+                from: Self.weekly(values), model: DampedTrendModel(), request: request, maximumAge: 120 * 24 * 3600, now: now)
+        }
+        return forecasts
+    }
+
+    /// The average of each week of polls, counted back from the last poll, so the newest week ends with it and the weeks are evenly
+    /// spaced. Each average is stamped at the end of its week.
+    static func weekly(_ values: [ProcessValue<Dimension>]) -> [ProcessValue<Dimension>] {
+        guard let last = values.map(\.timestamp).max(), let unit = values.first?.value.unit else { return [] }
+        let week: TimeInterval = 7 * 24 * 3600
+        let weeks = Dictionary(grouping: values) { Int((last.timeIntervalSince($0.timestamp) / week).rounded(.down)) }
+        return weeks.map { index, polls in
+            let mean = polls.map { $0.value.converted(to: unit).value }.reduce(0, +) / Double(polls.count)
+            return ProcessValue<Dimension>(
+                value: Measurement(value: mean, unit: unit), quality: .uncertain, timestamp: last.addingTimeInterval(-Double(index) * week))
+        }
+        .sorted { $0.timestamp < $1.timestamp }
+    }
+}

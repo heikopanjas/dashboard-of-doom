@@ -1,0 +1,144 @@
+import Charts
+import DoomKitProcess
+import SwiftUI
+
+struct EnergyChartView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(EnergyPresenter.self) private var presenter
+    @State private var timestamp: Date?
+    @AppStorage(ForecastFamily.energy.key) private var showForecasts = ForecastFamily.enabledByDefault
+    let selector: ProcessSelector
+
+    private let labels: [ProcessSelector: String] = [
+        .energy(.brentSpot): "Brent Spot",
+        .energy(.ttf): "TTF Futures",
+        .energy(.brent): "Brent Futures",
+        .energy(.lng): "LNG Spot"
+    ]
+
+    /// The forecast after the last measurement, while forecasts are switched on.
+    private var forecast: ProcessForecast? {
+        return self.showForecasts ? presenter.forecasts[self.selector] : nil
+    }
+
+    var body: some View {
+        VStack {
+            HStack(alignment: .bottom) {
+                Text(self.labels[selector] ?? "<Unknown>")
+                Spacer()
+                if let forecast = self.forecast {
+                    ForecastLegend(origin: forecast.origin, color: Color.chart)
+                }
+            }
+            Chart {
+                ForEach(presenter.measurements[selector] ?? []) { measurement in
+                    LineMark(
+                        x: .value("Date", measurement.timestamp),
+                        y: .value("Value", measurement.value.value)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(.gray.opacity(0.0))
+                    .lineStyle(StrokeStyle(lineWidth: 1))
+                    // Anchored at the floor of the range, not at zero: the axis starts near the prices, and an area from zero would be
+                    // painted far below the plot, behind whatever comes after the chart.
+                    AreaMark(
+                        x: .value("Date", measurement.timestamp),
+                        yStart: .value("Floor", ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast).lowerBound),
+                        yEnd: .value("Value", measurement.value.value)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(Gradient.linear)
+                }
+
+                if let forecast = self.forecast {
+                    ForecastMarks(
+                        forecast: forecast, anchor: presenter.measurements[selector]?.last, color: Color.chart, colorScheme: self.colorScheme,
+                        xLabel: "Date", yLabel: "Value")
+                }
+
+                if let measurement = presenter.current[selector] {
+                    RuleMark(x: .value("Date", measurement.timestamp))
+                        .lineStyle(StrokeStyle(lineWidth: 1))
+                    PointMark(
+                        x: .value("Date", measurement.timestamp),
+                        y: .value("Value", measurement.value.value)
+                    )
+                    .symbolSize(CGSize(width: 7, height: 7))
+                    .annotation(position: .topLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
+                        VStack {
+                            Text(measurement.timestamp.dateString())
+                                .font(.footnote)
+                            HStack {
+                                Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
+                                if let icon = presenter.trend[selector] {
+                                    Image(systemName: icon)
+                                }
+                            }
+                            .font(.headline)
+                        }
+                        .padding(7)
+                        .padding(.horizontal, 7)
+                        .quality(measurement.quality, opaque: false)
+                    }
+                }
+
+                if let timestamp = self.timestamp {
+                    if let measurement = presenter.measurements[selector]?.first(where: { $0.timestamp == timestamp }) {
+                        RuleMark(x: .value("Date", timestamp))
+                            .lineStyle(StrokeStyle(lineWidth: 1))
+                        PointMark(
+                            x: .value("Date", timestamp),
+                            y: .value("Value", measurement.value.value)
+                        )
+                        .symbolSize(CGSize(width: 7, height: 7))
+                        .annotation(position: .bottomLeading, spacing: 0, overflowResolution: .init(x: .fit, y: .fit)) {
+                            VStack {
+                                Text(timestamp.dateString())
+                                    .font(.footnote)
+                                HStack {
+                                    Text(String(format: "%.2f %@", measurement.value.value, measurement.value.unit.symbol))
+                                        .font(.headline)
+                                }
+                            }
+                            .padding(7)
+                            .padding(.horizontal, 7)
+                            .quality(measurement.quality)
+                        }
+                    }
+                    else if let forecast = self.forecast, let point = ForecastDisplay.point(at: timestamp, in: forecast) {
+                        ForecastMarker(
+                            point: point, origin: forecast.origin, format: "%.2f %@", color: Color.accentColor, xLabel: "Date", yLabel: "Value")
+                    }
+                }
+            }
+            .chartYScale(domain: ForecastDisplay.domain(range: presenter.range[selector], forecast: self.forecast))
+            .chartOverlay { geometryProxy in
+                GeometryReader { geometryReader in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let horizontalAmount = abs(value.translation.width)
+                                    let verticalAmount = abs(value.translation.height)
+                                    if horizontalAmount > verticalAmount * 2.0 {
+                                        if let plotFrame = geometryProxy.plotFrame {
+                                            let x = value.location.x - geometryReader[plotFrame].origin.x
+                                            if let source: Date = geometryProxy.value(atX: x) {
+                                                if let target = Date.round(from: source, strategy: .lastDayChange) {
+                                                    self.timestamp = target
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                .onEnded { value in
+                                    self.timestamp = nil
+                                }
+                        )
+                }
+            }
+        }
+    }
+}

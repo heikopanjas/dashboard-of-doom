@@ -1,5 +1,13 @@
-# Claude Code Instructions for Dashboard of Doom
+# Project Instructions
 
-**For complete project instructions, please refer to [`AGENTS.md`](AGENTS.md) in the project root.**
+This project's instructions live in **AGENTS.md**.
 
-This file serves as a reference point for Claude Code when working with this repository. All comprehensive development guidelines, architecture patterns, coding standards, and detailed instructions are maintained in the primary `AGENTS.md` file.
+**Read `AGENTS.md` before doing anything else.** It is the single source of truth
+for all agents.
+
+## ⚠️ Before You Start
+
+Run `/init-session` at the beginning of each new session, OR read `AGENTS.md` in full
+before proceeding.
+
+**DO NOT** make code changes or commits until you have done one of the above.

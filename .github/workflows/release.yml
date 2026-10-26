@@ -1,0 +1,522 @@
+name: Release
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PROJECT: DashboardOfDoom.xcodeproj
+  SCHEME: DashboardOfDoom
+  TEST_SCHEME: PointOfInterestTests
+  APP_NAME: Dashboard of Doom
+  BUILD_DIR: .build/CI
+  DERIVED_DATA_PATH: .build/DerivedData/CI
+  ARCHIVE_PATH: .build/CI/Dashboard of Doom.xcarchive
+  EXPORT_PATH: .build/CI/export
+  EXPORT_PLIST: macos/exportOptions.plist
+  APP_PATH: .build/CI/export/Dashboard of Doom.app
+  NOTARY_ZIP: .build/CI/DashboardOfDoom-notarization.zip
+  CHANGELOG_PATH: .build/CI/CHANGELOG.md
+  BOM_PATH: .build/CI/BILL_OF_MATERIALS.md
+  PACKAGE_DIR: .build/CI/package
+  PACKAGE_CACHE_DIR: .build/SourcePackages
+  PACKAGE_RESOLVED: DashboardOfDoom.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  PROFILE_NAME: Dashboard of Doom macOS
+  DESTINATION: generic/platform=macOS
+  TEST_DESTINATION: platform=macOS,arch=arm64
+  EXPECTED_ARCHITECTURES: arm64
+
+jobs:
+  lint:
+    name: Lint Swift Sources
+    runs-on: macos-26
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Lint Sources And Tests
+        run: |
+          set -euo pipefail
+          git ls-files -z '*.swift' | xargs -0 xcrun swift-format lint --strict --parallel
+
+  test:
+    name: ${{ matrix.name }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Unit Tests
+            sanitizer: "NO"
+          - name: Unit Tests Under Thread Sanitizer
+            sanitizer: "YES"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Xcode Version
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcode-select -p
+
+      - name: Install XcodeGen
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Run Package Tests
+        env:
+          SANITIZER: ${{ matrix.sanitizer }}
+        run: |
+          set -euo pipefail
+          for package in location network process tools services secrets; do
+            echo "::group::doom-kit-$package"
+            if [[ "$SANITIZER" == "YES" ]]; then
+              swift test --package-path "shared/doom-kit-$package" --sanitize=thread
+            else
+              swift test --package-path "shared/doom-kit-$package"
+            fi
+            echo "::endgroup::"
+          done
+          # Release mode catches what optimisation changes; the sanitizer leg stays in Debug.
+          if [[ "$SANITIZER" == "NO" ]]; then
+            for package in process tools services; do
+              echo "::group::doom-kit-$package (release)"
+              swift test -c release --package-path "shared/doom-kit-$package"
+              echo "::endgroup::"
+            done
+          fi
+
+      - name: Run App Tests
+        env:
+          SANITIZER: ${{ matrix.sanitizer }}
+        run: |
+          set -euo pipefail
+          # The unhosted test target is unsigned; signing secrets stay with the archive job.
+          xcodebuild test \
+            -project "$PROJECT" \
+            -scheme "$TEST_SCHEME" \
+            -destination "$TEST_DESTINATION" \
+            -derivedDataPath ".build/DerivedData/Tests-$SANITIZER" \
+            -clonedSourcePackagesDirPath "$PACKAGE_CACHE_DIR" \
+            -enableThreadSanitizer "$SANITIZER"
+
+      - name: Run Build Script Tests
+        if: matrix.sanitizer == 'NO'
+        run: python3 -m unittest discover -s macos/BuildTests -v
+
+  release:
+    name: Build And Notarize Release App
+    needs:
+      - lint
+      - test
+    runs-on: macos-26
+    timeout-minutes: 90
+    outputs:
+      app_version: ${{ steps.metadata.outputs.app_version }}
+      release_name: ${{ steps.metadata.outputs.release_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Show Xcode Version
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcode-select -p
+
+      - name: Install XcodeGen
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Read Build Metadata
+        id: metadata
+        run: |
+          set -euo pipefail
+          BUILD_SETTINGS="$(xcodebuild \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "$DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$PACKAGE_CACHE_DIR" \
+            -showBuildSettings)"
+          APP_VERSION="$(printf '%s\n' "$BUILD_SETTINGS" | awk '/ MARKETING_VERSION = / { print $3; exit }')"
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "MARKETING_VERSION must contain a version like 1.0 or 1.0.0" >&2
+            exit 1
+          fi
+          DEVELOPMENT_TEAM="$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$EXPORT_PLIST")"
+          RELEASE_NAME="dashboard-of-doom-v${APP_VERSION}"
+          {
+            echo "APP_VERSION=$APP_VERSION"
+            # github.run_id is unique across all workflows of the repository, so prerelease and release builds share one
+            # increasing CFBundleVersion sequence, which Sparkle will need once it is added.
+            echo "BUILD_NUMBER=${GITHUB_RUN_ID}"
+            echo "DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM"
+            echo "RELEASE_NAME=$RELEASE_NAME"
+            echo "ARTIFACT_ZIP=${BUILD_DIR}/${RELEASE_NAME}.zip"
+          } >> "$GITHUB_ENV"
+          {
+            echo "app_version=$APP_VERSION"
+            echo "release_name=$RELEASE_NAME"
+          } >> "$GITHUB_OUTPUT"
+          echo "Building Dashboard of Doom $APP_VERSION (${GITHUB_RUN_ID})"
+
+      - name: Validate Release Version
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="v${APP_VERSION}"
+          if git rev-parse --verify --quiet "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            TAG_COMMIT="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [[ "$TAG_COMMIT" != "$GITHUB_SHA" ]]; then
+              echo "Release tag $RELEASE_TAG belongs to $TAG_COMMIT; increment MARKETING_VERSION" >&2
+              exit 1
+            fi
+            echo "Release tag $RELEASE_TAG already identifies this commit; continuing retry"
+          fi
+
+      - name: Import Developer ID Certificate
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          : "${APPLE_CERTIFICATE_P12_BASE64:?Missing APPLE_CERTIFICATE_P12_BASE64 secret}"
+          : "${APPLE_CERTIFICATE_PASSWORD:?Missing APPLE_CERTIFICATE_PASSWORD secret}"
+          : "${APPLE_SIGNING_IDENTITY:?Missing APPLE_SIGNING_IDENTITY secret}"
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id-application.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/dashboard-of-doom-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          printf '%s' "$APPLE_CERTIFICATE_P12_BASE64" | base64 -D > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -F "$APPLE_SIGNING_IDENTITY"
+
+      - name: Install Provisioning Profile
+        env:
+          MACOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          : "${MACOS_PROVISIONING_PROFILE_BASE64:?Missing MACOS_PROVISIONING_PROFILE_BASE64 secret}"
+          # WeatherKit is a restricted entitlement, so the Developer ID build needs the profile that grants it.
+          PROFILE_SOURCE="$RUNNER_TEMP/dashboard-of-doom.provisionprofile"
+          PROFILE_PLIST="$RUNNER_TEMP/dashboard-of-doom-profile.plist"
+          printf '%s' "$MACOS_PROVISIONING_PROFILE_BASE64" | base64 -D > "$PROFILE_SOURCE"
+          security cms -D -i "$PROFILE_SOURCE" > "$PROFILE_PLIST"
+          PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$PROFILE_PLIST")"
+          INSTALLED_NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$PROFILE_PLIST")"
+          if [[ "$INSTALLED_NAME" != "$PROFILE_NAME" ]]; then
+            echo "Provisioning profile is named '$INSTALLED_NAME', expected '$PROFILE_NAME'" >&2
+            exit 1
+          fi
+          if [[ "$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.developer.weatherkit' "$PROFILE_PLIST")" != "true" ]]; then
+            echo "Provisioning profile does not grant WeatherKit" >&2
+            exit 1
+          fi
+          PROFILE_PATHS=""
+          for PROFILE_DIR in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+            mkdir -p "$PROFILE_DIR"
+            cp "$PROFILE_SOURCE" "$PROFILE_DIR/$PROFILE_UUID.provisionprofile"
+            PROFILE_PATHS="${PROFILE_PATHS}${PROFILE_DIR}/${PROFILE_UUID}.provisionprofile:"
+          done
+          echo "PROFILE_PATHS=$PROFILE_PATHS" >> "$GITHUB_ENV"
+          echo "Installed profile $INSTALLED_NAME ($PROFILE_UUID)"
+
+      - name: Clean Release Artifacts
+        run: |
+          set -euo pipefail
+          rm -rf "$BUILD_DIR" "$DERIVED_DATA_PATH"
+          mkdir -p "$BUILD_DIR"
+
+      - name: Resolve Package Dependencies
+        run: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$PACKAGE_CACHE_DIR"
+
+      - name: Archive Release App
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "$DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA_PATH" \
+            -clonedSourcePackagesDirPath "$PACKAGE_CACHE_DIR" \
+            -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+            CODE_SIGN_IDENTITY="$APPLE_SIGNING_IDENTITY" \
+            MARKETING_VERSION="$APP_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+      - name: Export Developer ID App
+        run: |
+          set -euo pipefail
+          rm -rf "$EXPORT_PATH"
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportPath "$EXPORT_PATH" \
+            -exportOptionsPlist "$EXPORT_PLIST"
+
+      - name: Verify Exported App
+        run: |
+          set -euo pipefail
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          EXECUTABLE_PATH="${APP_PATH}/Contents/MacOS/${APP_NAME}"
+          EXECUTABLE_ARCHITECTURES="$(lipo -archs "$EXECUTABLE_PATH" | tr ' ' '\n' | sort | xargs)"
+          if [[ "$EXECUTABLE_ARCHITECTURES" != "$EXPECTED_ARCHITECTURES" ]]; then
+            echo "Expected $EXPECTED_ARCHITECTURES executable but found $EXECUTABLE_ARCHITECTURES" >&2
+            exit 1
+          fi
+          ENTITLEMENTS_PLIST="$RUNNER_TEMP/dashboard-of-doom-entitlements.plist"
+          codesign -d --entitlements - --xml "$APP_PATH" > "$ENTITLEMENTS_PLIST"
+          if [[ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.weatherkit' "$ENTITLEMENTS_PLIST")" != "true" ]]; then
+            echo "Exported app is not signed with the WeatherKit entitlement" >&2
+            exit 1
+          fi
+
+      - name: Create Notarization Zip
+        run: |
+          set -euo pipefail
+          rm -f "$NOTARY_ZIP"
+          ditto -c -k --keepParent "$APP_PATH" "$NOTARY_ZIP"
+          ls -lh "$NOTARY_ZIP"
+
+      - name: Submit For Notarization
+        env:
+          APPSTORE_CONNECT_KEY_ID: ${{ secrets.APPSTORE_CONNECT_KEY_ID }}
+          APPSTORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_CONNECT_ISSUER_ID }}
+          APPSTORE_CONNECT_KEY_P8_BASE64: ${{ secrets.APPSTORE_CONNECT_KEY_P8_BASE64 }}
+        run: |
+          set -euo pipefail
+          : "${APPSTORE_CONNECT_KEY_ID:?Missing APPSTORE_CONNECT_KEY_ID secret}"
+          : "${APPSTORE_CONNECT_ISSUER_ID:?Missing APPSTORE_CONNECT_ISSUER_ID secret}"
+          : "${APPSTORE_CONNECT_KEY_P8_BASE64:?Missing APPSTORE_CONNECT_KEY_P8_BASE64 secret}"
+          KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          NOTARIZATION_RESULT="$RUNNER_TEMP/notarization-result.json"
+          printf '%s' "$APPSTORE_CONNECT_KEY_P8_BASE64" | base64 -D > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+
+          set +e
+          xcrun notarytool submit "$NOTARY_ZIP" \
+            --key "$KEY_PATH" \
+            --key-id "$APPSTORE_CONNECT_KEY_ID" \
+            --issuer "$APPSTORE_CONNECT_ISSUER_ID" \
+            --wait \
+            --timeout 30m \
+            --output-format json > "$NOTARIZATION_RESULT"
+          NOTARIZATION_STATUS=$?
+          set -e
+
+          cat "$NOTARIZATION_RESULT"
+          SUBMISSION_STATUS="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status", ""))' "$NOTARIZATION_RESULT" 2>/dev/null || true)"
+          if [[ $NOTARIZATION_STATUS -ne 0 || "$SUBMISSION_STATUS" != "Accepted" ]]; then
+            SUBMISSION_ID="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("id", ""))' "$NOTARIZATION_RESULT" 2>/dev/null || true)"
+            if [[ -n "$SUBMISSION_ID" ]]; then
+              xcrun notarytool log "$SUBMISSION_ID" \
+                --key "$KEY_PATH" \
+                --key-id "$APPSTORE_CONNECT_KEY_ID" \
+                --issuer "$APPSTORE_CONNECT_ISSUER_ID" || true
+            fi
+            echo "Notarization failed: exit ${NOTARIZATION_STATUS}, status ${SUBMISSION_STATUS:-unknown}" >&2
+            exit 1
+          fi
+
+      - name: Staple Notarization Ticket
+        run: |
+          set -euo pipefail
+          xcrun stapler staple "$APP_PATH"
+
+      - name: Verify Notarized App
+        run: |
+          set -euo pipefail
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          spctl -a -vvv "$APP_PATH"
+
+      - name: Generate Changelog And Bill Of Materials
+        run: |
+          set -euo pipefail
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude "v${APP_VERSION}-pre.*" 2>/dev/null || true)"
+          {
+            echo "# Changelog"
+            echo
+            echo "- version: ${APP_VERSION}"
+            echo "- build: ${BUILD_NUMBER}"
+            echo "- commit: ${GITHUB_SHA}"
+            echo "- branch: ${GITHUB_REF_NAME}"
+            echo
+            if [[ -n "$PREVIOUS_TAG" ]]; then
+              echo "## Changes since ${PREVIOUS_TAG}"
+              git log --no-merges --pretty='- %s (%h)' "${PREVIOUS_TAG}..HEAD"
+            else
+              echo "## Changes"
+              git log --no-merges --pretty='- %s (%h)' HEAD
+            fi
+          } > "$CHANGELOG_PATH"
+
+          BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist")"
+          BUNDLE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist")"
+          BUNDLE_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
+          EXECUTABLE_ARCHITECTURES="$(lipo -archs "${APP_PATH}/Contents/MacOS/${APP_NAME}")"
+          XCODE_VERSION="$(xcodebuild -version | tr '\n' ' ')"
+          SWIFT_VERSION="$(swift --version 2>&1 | head -n 1)"
+          MACOS_VERSION="$(sw_vers -productVersion)"
+          {
+            echo "# Bill Of Materials"
+            echo
+            echo "- artifact: $(basename "$ARTIFACT_ZIP")"
+            echo "- included app: Dashboard of Doom.app"
+            echo "- included changelog: CHANGELOG.md"
+            echo "- included bill of materials: BILL_OF_MATERIALS.md"
+            echo "- bundle identifier: ${BUNDLE_ID}"
+            echo "- bundle version: ${BUNDLE_VERSION}"
+            echo "- bundle build: ${BUNDLE_BUILD}"
+            echo "- executable architectures: ${EXECUTABLE_ARCHITECTURES}"
+            echo "- notarized: true"
+            echo "- source commit: ${GITHUB_SHA}"
+            echo "- source branch: ${GITHUB_REF_NAME}"
+            echo "- runner image: macos-26"
+            echo "- macos version: ${MACOS_VERSION}"
+            echo "- xcode version: ${XCODE_VERSION}"
+            echo "- swift version: ${SWIFT_VERSION}"
+            echo
+            echo "## Dependencies"
+            jq -r '.pins[] | "- \(.identity): \(.state.version // .state.branch // .state.revision)"' "$PACKAGE_RESOLVED"
+            echo
+            echo "## Local Packages"
+            for PACKAGE in shared/doom-kit-*; do
+              echo "- $(basename "$PACKAGE")"
+            done
+          } > "$BOM_PATH"
+          ls -lh "$CHANGELOG_PATH" "$BOM_PATH"
+
+      - name: Package App Artifact
+        run: |
+          set -euo pipefail
+          rm -rf "$PACKAGE_DIR"
+          mkdir -p "$PACKAGE_DIR"
+          ditto "$APP_PATH" "${PACKAGE_DIR}/Dashboard of Doom.app"
+          cp "$CHANGELOG_PATH" "${PACKAGE_DIR}/CHANGELOG.md"
+          cp "$BOM_PATH" "${PACKAGE_DIR}/BILL_OF_MATERIALS.md"
+          ARTIFACT_ABSOLUTE="$(pwd)/$ARTIFACT_ZIP"
+          (
+            cd "$PACKAGE_DIR"
+            ditto -c -k . "$ARTIFACT_ABSOLUTE"
+          )
+          ls -lh "$ARTIFACT_ZIP"
+
+      - name: Upload App Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ env.RELEASE_NAME }}
+          path: ${{ env.ARTIFACT_ZIP }}
+          if-no-files-found: error
+
+      - name: Clean Up Signing Material
+        if: always()
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/developer-id-application.p12" "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/dashboard-of-doom.provisionprofile"
+          if [[ -n "${PROFILE_PATHS:-}" ]]; then
+            IFS=':' read -r -a INSTALLED_PROFILES <<< "$PROFILE_PATHS"
+            for PROFILE in "${INSTALLED_PROFILES[@]}"; do
+              rm -f "$PROFILE"
+            done
+          fi
+          if [[ -n "${KEYCHAIN_PATH:-}" && -f "$KEYCHAIN_PATH" ]]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
+
+  publish:
+    name: Publish GitHub Release
+    if: github.event_name == 'push'
+    needs:
+      - release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Notarized App Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.release.outputs.release_name }}
+          path: dist
+
+      - name: Publish GitHub Release
+        env:
+          APP_VERSION: ${{ needs.release.outputs.app_version }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: ${{ needs.release.outputs.release_name }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="v${APP_VERSION}"
+          ARTIFACT_PATH="dist/${RELEASE_NAME}.zip"
+          if [[ ! -f "$ARTIFACT_PATH" ]]; then
+            echo "Release artifact not found at $ARTIFACT_PATH" >&2
+            exit 1
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            RELEASE_TARGET="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json targetCommitish --jq .targetCommitish)"
+            if [[ "$RELEASE_TARGET" != "$GITHUB_SHA" ]]; then
+              echo "Release $RELEASE_TAG targets $RELEASE_TARGET instead of $GITHUB_SHA" >&2
+              exit 1
+            fi
+            gh release upload "$RELEASE_TAG" "$ARTIFACT_PATH" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$ARTIFACT_PATH" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Dashboard of Doom ${RELEASE_TAG}" \
+              --generate-notes
+          fi
